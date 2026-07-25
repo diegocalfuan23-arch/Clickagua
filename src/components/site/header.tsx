@@ -1,0 +1,60 @@
+import Link from "next/link";
+import { Droplet } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+const enlaces = [
+  { href: "#como-funciona", label: "Cómo funciona" },
+  { href: "#caracteristicas", label: "Beneficios" },
+  { href: "#planes", label: "Planes" },
+];
+
+export function Header() {
+  return (
+    <header className="sticky top-0 z-40 pt-4">
+      <div className="mx-auto flex max-w-[1180px] justify-center px-7">
+        <nav className="flex w-full max-w-3xl items-center gap-2 rounded-full border border-border/90 bg-card/85 py-2 pr-2 pl-5 shadow-md backdrop-blur-md">
+          <Link
+            href="#"
+            className="mr-1.5 flex items-center gap-2 font-display text-base font-semibold"
+          >
+            <span className="flex size-6.5 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-secondary">
+              <Droplet className="size-3.5 fill-white text-white" />
+            </span>
+            ClickAgua
+          </Link>
+
+          <div className="hidden flex-1 gap-5.5 text-sm text-muted-foreground sm:flex">
+            {enlaces.map((enlace) => (
+              <a
+                key={enlace.href}
+                href={enlace.href}
+                className="transition-colors hover:text-foreground"
+              >
+                {enlace.label}
+              </a>
+            ))}
+          </div>
+
+          <div className="ml-auto flex items-center gap-3.5">
+            <a
+              href="#"
+              className="hidden text-sm whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground sm:inline"
+            >
+              Acceso APR
+            </a>
+            <a
+              href="#cta"
+              className={cn(
+                buttonVariants(),
+                "rounded-full bg-foreground text-background hover:bg-foreground/90"
+              )}
+            >
+              Habla con el bot
+            </a>
+          </div>
+        </nav>
+      </div>
+    </header>
+  );
+}
