@@ -1,4 +1,10 @@
-import { Check } from "lucide-react";
+import { Check, Droplet, MapPin } from "lucide-react";
+
+// Patrón fijo (no aleatorio) para simular un código de barras sin desajustes de hidratación SSR.
+const barcodeWidths = [
+  2, 1, 3, 1, 1, 2, 1, 3, 2, 1, 1, 3, 1, 2, 1, 1, 3, 2, 1, 1, 2, 1, 3, 1, 1, 2,
+  1, 1, 3, 2, 1, 2, 1, 3, 1, 1, 2, 1, 1, 3,
+];
 
 const puntos = [
   {
@@ -23,31 +29,73 @@ export function InvoiceSection() {
     <section id="boleta" className="border-y border-border bg-muted/40 py-23">
       <div className="mx-auto grid max-w-[1180px] gap-15 px-7 sm:grid-cols-[0.9fr_1.1fr] sm:items-center">
         <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
-          <div className="flex items-baseline justify-between bg-foreground px-5.5 py-4.5 text-background">
-            <div>
-              <div className="font-mono text-[0.72rem] font-semibold tracking-[0.09em] opacity-75 uppercase">
-                Boleta · junio 2026
+          <div className="bg-foreground px-5.5 py-4.5 text-background">
+            <div className="flex items-baseline justify-between">
+              <div className="flex items-center gap-2">
+                <span className="flex size-6 items-center justify-center rounded-md bg-primary">
+                  <Droplet className="size-3.5 fill-white text-white" />
+                </span>
+                <span className="font-display text-[0.98rem] font-semibold">
+                  APR Pitrelahué
+                </span>
               </div>
-              <div className="mt-1 font-display text-[1.05rem]">
-                María Huenchuñir
-              </div>
+              <span className="rounded-full bg-secondary/90 px-2.5 py-1 font-mono text-[0.68rem] font-bold tracking-[0.05em] uppercase">
+                Pendiente
+              </span>
             </div>
-            <div className="font-mono text-[0.72rem] font-semibold tracking-[0.09em] opacity-75 uppercase">
-              Pendiente
+            <div className="mt-3.5 font-mono text-[0.72rem] font-semibold tracking-[0.09em] opacity-70 uppercase">
+              Boleta N.º 004821 · Período junio 2026
+            </div>
+            <div className="mt-1 font-display text-[1.1rem]">
+              María Huenchuñir
+            </div>
+            <div className="mt-1.5 flex items-center gap-1.5 text-[0.8rem] opacity-75">
+              <MapPin className="size-3.5 shrink-0" />
+              Camino Real 1420, Pitrelahué
             </div>
           </div>
+
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 border-b border-border px-5.5 py-4.5 text-[0.82rem]">
+            <div>
+              <div className="text-muted-foreground">N.º de cliente</div>
+              <div className="font-semibold tabular-nums">00184-2</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">N.º de medidor</div>
+              <div className="font-semibold tabular-nums">MD-77341</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Lectura anterior</div>
+              <div className="font-semibold tabular-nums">842 m³</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Lectura actual</div>
+              <div className="font-semibold tabular-nums">856 m³</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Fecha de emisión</div>
+              <div className="font-semibold tabular-nums">01/07/2026</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">Fecha de vencimiento</div>
+              <div className="font-semibold tabular-nums text-secondary">
+                30/07/2026
+              </div>
+            </div>
+          </div>
+
           <div className="p-5.5">
             <div className="flex justify-between border-b border-dashed border-border py-3 text-[0.92rem]">
-              <span className="text-muted-foreground">Consumo</span>
-              <span className="font-semibold tabular-nums">14 m³</span>
+              <span className="text-muted-foreground">Consumo (14 m³)</span>
+              <span className="font-semibold tabular-nums">$6.350</span>
             </div>
             <div className="flex justify-between border-b border-dashed border-border py-3 text-[0.92rem]">
               <span className="text-muted-foreground">Cargo fijo</span>
               <span className="font-semibold tabular-nums">$2.100</span>
             </div>
             <div className="flex justify-between py-3 text-[0.92rem]">
-              <span className="text-muted-foreground">Cargo variable</span>
-              <span className="font-semibold tabular-nums">$6.350</span>
+              <span className="text-muted-foreground">Reposición de subsidio</span>
+              <span className="font-semibold tabular-nums">$0</span>
             </div>
             <div className="mt-2 flex items-baseline justify-between border-t-2 border-foreground pt-4">
               <span>Total a pagar</span>
@@ -55,6 +103,21 @@ export function InvoiceSection() {
                 $8.450
               </span>
             </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-4 border-t border-border bg-muted/50 px-5.5 py-4">
+            <div className="flex h-8 items-end gap-[2px]" aria-hidden>
+              {barcodeWidths.map((w, i) => (
+                <span
+                  key={i}
+                  className="bg-foreground"
+                  style={{ width: `${w}px`, height: "100%" }}
+                />
+              ))}
+            </div>
+            <span className="font-mono text-[0.68rem] text-muted-foreground">
+              00184268450300726
+            </span>
           </div>
         </div>
 
