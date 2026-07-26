@@ -8,7 +8,7 @@ export function Hero() {
     <section className="pt-16 pb-10 text-center">
       <div className="mx-auto flex max-w-[720px] flex-col items-center px-7">
         <span className="rounded-full bg-primary/10 px-3.5 py-1.5 font-mono text-[0.72rem] font-semibold tracking-[0.09em] text-primary uppercase">
-          Software para APR y SSR · Chile
+          Gestión de socios y boletas para APR y SSR · Chile
         </span>
         <h1 className="mt-5.5 mb-5 font-display text-[clamp(2.6rem,5.2vw,4.1rem)] leading-[1.05] font-semibold text-balance">
           Que tu comité de agua
