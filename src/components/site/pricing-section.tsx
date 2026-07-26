@@ -117,7 +117,7 @@ export function PricingSection() {
               </ul>
 
               <a
-                href="#cta"
+                href="#contacto"
                 className={cn(
                   buttonVariants({
                     variant: plan.destacado ? "default" : "outline",

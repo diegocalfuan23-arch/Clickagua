@@ -22,16 +22,16 @@ export function Hero() {
         </p>
         <div className="mb-2 flex flex-wrap justify-center gap-3.5">
           <a
-            href="#cta"
+            href="#contacto"
             className={cn(buttonVariants({ size: "lg" }), "h-11 rounded-full px-6")}
           >
-            Habla con el bot
+            Solicitar una demo
           </a>
           <a
             href="#como-funciona"
             className={cn(
               buttonVariants({ size: "lg" }),
-              "h-11 rounded-full bg-foreground px-6 text-background hover:bg-foreground/90"
+              "h-11 rounded-full bg-forest px-6 text-forest-foreground hover:bg-forest/90"
             )}
           >
             Ver cómo funciona

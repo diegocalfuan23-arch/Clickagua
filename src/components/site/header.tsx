@@ -44,13 +44,13 @@ export function Header() {
               Acceso APR
             </a>
             <a
-              href="#cta"
+              href="#contacto"
               className={cn(
                 buttonVariants(),
-                "rounded-full bg-foreground text-background hover:bg-foreground/90"
+                "rounded-full bg-forest text-forest-foreground hover:bg-forest/90"
               )}
             >
-              Habla con el bot
+              Solicitar una demo
             </a>
           </div>
         </nav>
