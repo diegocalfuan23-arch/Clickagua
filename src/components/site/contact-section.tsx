@@ -14,7 +14,7 @@ export function ContactSection() {
           <span className="font-mono text-[0.72rem] font-semibold tracking-[0.09em] text-primary uppercase">
             Contacto
           </span>
-          <h2 className="mt-3 font-display text-[clamp(1.7rem,2.8vw,2.2rem)] font-semibold text-balance">
+          <h2 className="mt-3 text-[clamp(1.7rem,2.8vw,2.2rem)] font-semibold text-balance">
             Cuéntanos de tu APR y te contactamos.
           </h2>
           <p className="mt-3.5 max-w-[42ch] text-[1.02rem] leading-relaxed text-muted-foreground">

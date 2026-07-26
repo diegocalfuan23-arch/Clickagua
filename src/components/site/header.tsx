@@ -16,7 +16,7 @@ export function Header() {
         <nav className="flex w-full max-w-3xl items-center gap-2 rounded-full border border-border/90 bg-card/85 py-2 pr-2 pl-5 shadow-md backdrop-blur-md">
           <Link
             href="#"
-            className="mr-1.5 flex items-center gap-2 font-display text-base font-semibold"
+            className="mr-1.5 flex items-center gap-2 text-base font-semibold"
           >
             <span className="flex size-6.5 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-primary to-secondary">
               <Droplet className="size-3.5 fill-white text-white" />

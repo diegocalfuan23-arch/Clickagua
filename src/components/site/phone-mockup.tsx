@@ -28,7 +28,7 @@ export function PhoneMockup() {
 
         {/* Cabecera de la conversación */}
         <div className="mb-4 flex shrink-0 items-center gap-2.5 border-b border-border px-5 pt-2.5 pb-4">
-          <div className="flex size-9 items-center justify-center rounded-full bg-linear-to-br from-primary to-primary/70 font-display text-sm font-bold text-primary-foreground">
+          <div className="flex size-9 items-center justify-center rounded-full bg-linear-to-br from-primary to-primary/70 text-sm font-bold text-primary-foreground">
             CA
           </div>
           <div>

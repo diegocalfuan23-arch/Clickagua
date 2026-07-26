@@ -58,7 +58,7 @@ export function PricingSection() {
           <span className="font-mono text-[0.72rem] font-semibold tracking-[0.09em] text-primary uppercase">
             Planes
           </span>
-          <h2 className="mt-3 font-display text-[clamp(1.8rem,3vw,2.4rem)] font-semibold text-balance">
+          <h2 className="mt-3 text-[clamp(1.8rem,3vw,2.4rem)] font-semibold text-balance">
             Un precio que crece con tu comité
           </h2>
           <p className="mt-3.5 text-[1.05rem] leading-relaxed text-muted-foreground">
@@ -82,14 +82,14 @@ export function PricingSection() {
                 </span>
               )}
 
-              <span className="font-display text-[1.15rem] font-semibold">
+              <span className="text-[1.15rem] font-semibold">
                 {plan.nombre}
               </span>
               <p className="mt-1.5 mb-5 text-[0.88rem] text-muted-foreground">
                 {plan.descripcion}
               </p>
 
-              <div className="flex items-baseline gap-1.5 font-display text-[2rem] font-semibold">
+              <div className="flex items-baseline gap-1.5 text-[2rem] font-semibold">
                 {plan.precio}
                 {plan.periodo && (
                   <span className="font-sans text-[0.9rem] font-medium text-muted-foreground">

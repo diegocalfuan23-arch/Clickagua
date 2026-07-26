@@ -32,7 +32,7 @@ export function ProblemSection() {
             <span className="font-mono text-[0.72rem] font-semibold tracking-[0.09em] text-primary uppercase">
               Por qué escribimos ClickAgua
             </span>
-            <h2 className="mt-3 font-display text-[clamp(1.8rem,3vw,2.4rem)] font-semibold text-balance">
+            <h2 className="mt-3 text-[clamp(1.8rem,3vw,2.4rem)] font-semibold text-balance">
               Lo mismo de siempre, en toda oficina de APR
             </h2>
             <p className="mt-3.5 text-[1.05rem] leading-relaxed text-muted-foreground">

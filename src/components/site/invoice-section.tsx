@@ -35,7 +35,7 @@ export function InvoiceSection() {
                 <span className="flex size-6 items-center justify-center rounded-md bg-primary">
                   <Droplet className="size-3.5 fill-white text-white" />
                 </span>
-                <span className="font-display text-[0.98rem] font-semibold">
+                <span className="text-[0.98rem] font-semibold">
                   APR Pitrelahué
                 </span>
               </div>
@@ -46,7 +46,7 @@ export function InvoiceSection() {
             <div className="mt-3.5 font-mono text-[0.72rem] font-semibold tracking-[0.09em] opacity-70 uppercase">
               Boleta N.º 004821 · Período junio 2026
             </div>
-            <div className="mt-1 font-display text-[1.1rem]">
+            <div className="mt-1 text-[1.1rem]">
               María Huenchuñir
             </div>
             <div className="mt-1.5 flex items-center gap-1.5 text-[0.8rem] opacity-75">
@@ -125,7 +125,7 @@ export function InvoiceSection() {
           <span className="font-mono text-[0.72rem] font-semibold tracking-[0.09em] text-primary uppercase">
             La misma boleta, sin la espera
           </span>
-          <h2 className="mt-3 font-display text-[clamp(1.7rem,2.8vw,2.2rem)] font-semibold text-balance">
+          <h2 className="mt-3 text-[clamp(1.7rem,2.8vw,2.2rem)] font-semibold text-balance">
             Lo que hoy vive en una planilla, ahora cabe en un mensaje.
           </h2>
           <ul className="mt-6.5 flex flex-col gap-4">

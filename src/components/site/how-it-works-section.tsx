@@ -29,7 +29,7 @@ export function HowItWorksSection() {
           <span className="font-mono text-[0.72rem] font-semibold tracking-[0.09em] text-primary uppercase">
             Cómo funciona
           </span>
-          <h2 className="mt-3 font-display text-[clamp(1.8rem,3vw,2.4rem)] font-semibold text-balance">
+          <h2 className="mt-3 text-[clamp(1.8rem,3vw,2.4rem)] font-semibold text-balance">
             Tres pasos, ningún trámite para el socio
           </h2>
         </div>

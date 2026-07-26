@@ -11,7 +11,7 @@ export function CtaSection() {
           <span className="relative font-mono text-[0.72rem] font-semibold tracking-[0.09em] text-primary-foreground/80 uppercase">
             Para directivas de APR y SSR
           </span>
-          <h2 className="relative mt-3 font-display text-[clamp(1.8rem,3.4vw,2.5rem)] font-semibold text-balance text-primary-foreground">
+          <h2 className="relative mt-3 text-[clamp(1.8rem,3.4vw,2.5rem)] font-semibold text-balance text-primary-foreground">
             Prueba cómo tu comité respondería solo, hoy mismo.
           </h2>
           <p className="relative mx-auto mt-4 mb-7.5 max-w-[46ch] text-[1.05rem] text-primary-foreground/90">

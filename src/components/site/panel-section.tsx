@@ -35,7 +35,7 @@ export function PanelSection() {
           <span className="font-mono text-[0.72rem] font-semibold tracking-[0.09em] text-primary uppercase">
             El otro pilar de ClickAgua
           </span>
-          <h2 className="mt-3 font-display text-[clamp(1.8rem,3vw,2.4rem)] font-semibold text-balance">
+          <h2 className="mt-3 text-[clamp(1.8rem,3vw,2.4rem)] font-semibold text-balance">
             Un panel para que tu directiva administre todo
           </h2>
           <p className="mt-3.5 text-[1.05rem] leading-relaxed text-muted-foreground">
