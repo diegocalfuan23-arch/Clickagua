@@ -1,5 +1,9 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { signUp } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,25 +24,59 @@ const cargos = [
 ];
 
 export function RegisterForm() {
+  const router = useRouter();
+  const [cargo, setCargo] = useState<string>("");
+  const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+
+    const datos = new FormData(e.currentTarget);
+    const apr = String(datos.get("apr") ?? "");
+    const responsable = String(datos.get("responsable") ?? "");
+
+    if (!cargo) {
+      setError("Selecciona el cargo que ocupas en el comité.");
+      return;
+    }
+
+    setEnviando(true);
+
+    const { error: errorRegistro } = await signUp.email({
+      email: String(datos.get("email") ?? ""),
+      password: String(datos.get("password") ?? ""),
+      name: responsable,
+      apr,
+      rutComite: String(datos.get("rutComite") ?? ""),
+      comuna: String(datos.get("comuna") ?? ""),
+      cargo,
+    });
+
+    if (errorRegistro) {
+      setEnviando(false);
+      setError(
+        errorRegistro.message ??
+          "No pudimos crear la cuenta. Revisa los datos e inténtalo otra vez."
+      );
+      return;
+    }
+
+    router.push("/panel");
+  }
+
   return (
-    <form
-      onSubmit={(e) => e.preventDefault()}
-      className="mt-7 grid gap-4 sm:grid-cols-2"
-    >
+    <form onSubmit={handleSubmit} className="mt-7 grid gap-4 sm:grid-cols-2">
       <div className="flex flex-col gap-1.5 sm:col-span-2">
         <Label htmlFor="apr">Nombre del APR o SSR</Label>
-        <Input
-          id="apr"
-          name="apr"
-          placeholder="Ej: APR Pitrelahué"
-          required
-        />
+        <Input id="apr" name="apr" placeholder="Ej: APR Pitrelahué" required />
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="rut-comite">RUT del comité</Label>
+        <Label htmlFor="rutComite">RUT del comité</Label>
         <Input
-          id="rut-comite"
+          id="rutComite"
           name="rutComite"
           placeholder="76.543.210-9"
           required
@@ -62,14 +100,17 @@ export function RegisterForm() {
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="cargo">Cargo en el comité</Label>
-        <Select name="cargo">
+        <Select
+          value={cargo}
+          onValueChange={(value) => setCargo(value ?? "")}
+        >
           <SelectTrigger id="cargo" className="w-full">
             <SelectValue placeholder="Selecciona un cargo" />
           </SelectTrigger>
           <SelectContent>
-            {cargos.map((cargo) => (
-              <SelectItem key={cargo.value} value={cargo.value}>
-                {cargo.label}
+            {cargos.map((opcion) => (
+              <SelectItem key={opcion.value} value={opcion.value}>
+                {opcion.label}
               </SelectItem>
             ))}
           </SelectContent>
@@ -95,6 +136,7 @@ export function RegisterForm() {
           name="password"
           type="password"
           autoComplete="new-password"
+          minLength={8}
           required
         />
         <span className="text-[0.8rem] text-muted-foreground">
@@ -102,8 +144,22 @@ export function RegisterForm() {
         </span>
       </div>
 
-      <Button type="submit" className="mt-2 h-10 w-full sm:col-span-2">
-        Crear cuenta del comité
+      {error && (
+        <p
+          role="alert"
+          className="rounded-lg bg-destructive/10 px-3.5 py-2.5 text-[0.88rem] text-destructive sm:col-span-2"
+        >
+          {error}
+        </p>
+      )}
+
+      <Button
+        type="submit"
+        disabled={enviando}
+        className="mt-2 h-10 w-full sm:col-span-2"
+      >
+        {enviando && <Loader2 className="animate-spin" />}
+        {enviando ? "Creando cuenta…" : "Crear cuenta del comité"}
       </Button>
 
       <p className="text-center text-[0.8rem] leading-relaxed text-muted-foreground sm:col-span-2">
