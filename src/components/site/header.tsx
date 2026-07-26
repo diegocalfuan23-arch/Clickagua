@@ -37,12 +37,12 @@ export function Header() {
           </div>
 
           <div className="ml-auto flex items-center gap-3.5">
-            <a
-              href="#"
+            <Link
+              href="/login"
               className="hidden text-sm whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground sm:inline"
             >
               Acceso APR
-            </a>
+            </Link>
             <a
               href="#contacto"
               className={cn(
