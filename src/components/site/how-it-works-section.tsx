@@ -1,0 +1,60 @@
+import { cn } from "@/lib/utils";
+
+const pasos = [
+  {
+    numero: "01",
+    titulo: "El socio escribe",
+    detalle:
+      "Al número de WhatsApp de tu APR, en cualquier momento — sin agregar contactos ni instalar nada nuevo.",
+  },
+  {
+    numero: "02",
+    titulo: "ClickAgua identifica y responde",
+    detalle:
+      "Reconoce al socio por su teléfono o RUT y consulta el estado real de su boleta al instante.",
+  },
+  {
+    numero: "03",
+    titulo: "Tu oficina descansa",
+    detalle:
+      "Las consultas repetitivas de deuda quedan resueltas solas; tu equipo se enfoca en lo que sí necesita una persona.",
+  },
+];
+
+export function HowItWorksSection() {
+  return (
+    <section id="como-funciona" className="py-23">
+      <div className="mx-auto max-w-[1180px] px-7">
+        <div className="mx-auto mb-13 max-w-[640px] text-center">
+          <span className="font-mono text-[0.72rem] font-semibold tracking-[0.09em] text-primary uppercase">
+            Cómo funciona
+          </span>
+          <h2 className="mt-3 font-display text-[clamp(1.8rem,3vw,2.4rem)] font-semibold text-balance">
+            Tres pasos, ningún trámite para el socio
+          </h2>
+        </div>
+
+        <div className="grid overflow-hidden rounded-2xl border border-border sm:grid-cols-3">
+          {pasos.map(({ numero, titulo, detalle }, i) => (
+            <div
+              key={numero}
+              className={cn(
+                "bg-card p-8 sm:p-7",
+                i > 0 && "border-t border-border sm:border-t-0 sm:border-l"
+              )}
+            >
+              <span className="mb-4.5 block font-mono text-[0.78rem] font-bold text-primary">
+                {numero}
+              </span>
+              <h3 className="mb-2.5 text-[1.14rem] font-semibold">{titulo}</h3>
+              <p className="text-[0.93rem] leading-relaxed text-muted-foreground">
+                {detalle}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+

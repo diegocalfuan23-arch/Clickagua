@@ -18,7 +18,7 @@ export function Header() {
             href="#"
             className="mr-1.5 flex items-center gap-2 font-display text-base font-semibold"
           >
-            <span className="flex size-6.5 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-secondary">
+            <span className="flex size-6.5 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-primary to-secondary">
               <Droplet className="size-3.5 fill-white text-white" />
             </span>
             ClickAgua
