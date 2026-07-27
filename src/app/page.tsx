@@ -11,6 +11,7 @@ import { CtaSection } from "@/components/site/cta-section";
 import { ContactSection } from "@/components/site/contact-section";
 import { Footer } from "@/components/site/footer";
 import { StructuredData } from "@/components/seo/structured-data";
+import { AssistantWidget } from "@/components/site/assistant-widget";
 
 export default function Home() {
   return (
@@ -30,6 +31,7 @@ export default function Home() {
         <ContactSection />
       </main>
       <Footer />
+      <AssistantWidget />
     </div>
   );
 }
