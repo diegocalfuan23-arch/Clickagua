@@ -35,6 +35,50 @@ const atencion = [
   { href: "/panel/configuracion", label: "Configuración", icon: Settings },
 ];
 
+type Enlace = {
+  href: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+};
+
+/**
+ * El componente base usa `sidebar-accent` tanto para hover como para el ítem
+ * activo. Como el activo va en celeste, dejamos el hover en un gris neutro
+ * para que pasar el mouse no se confunda con estar seleccionado.
+ */
+function GrupoEnlaces({
+  titulo,
+  enlaces,
+  pathname,
+}: {
+  titulo: string;
+  enlaces: Enlace[];
+  pathname: string;
+}) {
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel>{titulo}</SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {enlaces.map(({ href, label, icon: Icon }) => (
+            <SidebarMenuItem key={href}>
+              <SidebarMenuButton
+                render={<Link href={href} />}
+                isActive={pathname === href}
+                tooltip={label}
+                className="hover:bg-muted hover:text-foreground data-active:hover:bg-sidebar-accent data-active:hover:text-sidebar-accent-foreground"
+              >
+                <Icon />
+                <span>{label}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  );
+}
+
 export function PanelSidebar({
   apr,
   comuna,
@@ -69,45 +113,8 @@ export function PanelSidebar({
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Gestión</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {gestion.map(({ href, label, icon: Icon }) => (
-                <SidebarMenuItem key={href}>
-                  <SidebarMenuButton
-                    render={<Link href={href} />}
-                    isActive={pathname === href}
-                    tooltip={label}
-                  >
-                    <Icon />
-                    <span>{label}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Atención</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {atencion.map(({ href, label, icon: Icon }) => (
-                <SidebarMenuItem key={href}>
-                  <SidebarMenuButton
-                    render={<Link href={href} />}
-                    isActive={pathname === href}
-                    tooltip={label}
-                  >
-                    <Icon />
-                    <span>{label}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        <GrupoEnlaces titulo="Gestión" enlaces={gestion} pathname={pathname} />
+        <GrupoEnlaces titulo="Atención" enlaces={atencion} pathname={pathname} />
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
