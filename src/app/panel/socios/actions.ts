@@ -86,6 +86,79 @@ export async function crearSocio(
   return { ok: true };
 }
 
+export async function editarSocio(
+  _prev: ResultadoAccion | null,
+  formData: FormData
+): Promise<ResultadoAccion> {
+  const { apr } = await requireApr();
+
+  const socioId = String(formData.get("socioId") ?? "");
+  if (!socioId) {
+    return { ok: false, error: "No pudimos identificar al socio." };
+  }
+
+  const parsed = socioSchema.safeParse({
+    nombre: formData.get("nombre"),
+    rut: formData.get("rut"),
+    telefono: formData.get("telefono"),
+    direccion: formData.get("direccion") || undefined,
+    numeroCliente: formData.get("numeroCliente") || undefined,
+  });
+
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0].message };
+  }
+
+  const datos = parsed.data;
+
+  try {
+    await db
+      .update(socios)
+      .set({
+        nombre: datos.nombre,
+        rut: normalizarRut(datos.rut),
+        telefono: normalizarTelefono(datos.telefono),
+        direccion: datos.direccion ?? null,
+        numeroCliente: datos.numeroCliente ?? null,
+        updatedAt: new Date(),
+      })
+      // El filtro por aprId impide editar un socio de otro comité.
+      .where(and(eq(socios.id, socioId), eq(socios.aprId, apr.id)));
+  } catch (error) {
+    const mensaje = error instanceof Error ? error.message : "";
+
+    if (mensaje.includes("Socio_apr_rut_key")) {
+      return { ok: false, error: "Ya existe otro socio con ese RUT." };
+    }
+    if (mensaje.includes("Socio_apr_telefono_key")) {
+      return { ok: false, error: "Ya existe otro socio con ese teléfono." };
+    }
+
+    return {
+      ok: false,
+      error: "No pudimos guardar los cambios. Inténtalo otra vez.",
+    };
+  }
+
+  revalidatePath("/panel/socios");
+  return { ok: true };
+}
+
+export async function alternarActivo(
+  socioId: string,
+  activo: boolean
+): Promise<ResultadoAccion> {
+  const { apr } = await requireApr();
+
+  await db
+    .update(socios)
+    .set({ activo, updatedAt: new Date() })
+    .where(and(eq(socios.id, socioId), eq(socios.aprId, apr.id)));
+
+  revalidatePath("/panel/socios");
+  return { ok: true };
+}
+
 export async function eliminarSocio(socioId: string): Promise<ResultadoAccion> {
   const { apr } = await requireApr();
 

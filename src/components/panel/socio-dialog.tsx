@@ -1,8 +1,12 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
-import { Plus, Loader2 } from "lucide-react";
-import { crearSocio, type ResultadoAccion } from "@/app/panel/socios/actions";
+import { useActionState, useEffect } from "react";
+import { Loader2 } from "lucide-react";
+import {
+  crearSocio,
+  editarSocio,
+  type ResultadoAccion,
+} from "@/app/panel/socios/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,47 +17,55 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 
-export function NuevoSocioDialog() {
-  const [abierto, setAbierto] = useState(false);
+export type SocioEditable = {
+  id: string;
+  nombre: string;
+  rut: string;
+  telefono: string;
+  direccion: string | null;
+  numeroCliente: string | null;
+};
+
+export function SocioDialog({
+  abierto,
+  onAbiertoChange,
+  socio,
+}: {
+  abierto: boolean;
+  onAbiertoChange: (abierto: boolean) => void;
+  socio?: SocioEditable;
+}) {
+  const editando = Boolean(socio);
   const [estado, accion, pendiente] = useActionState<
     ResultadoAccion | null,
     FormData
-  >(crearSocio, null);
+  >(editando ? editarSocio : crearSocio, null);
 
   useEffect(() => {
-    if (estado?.ok) {
-      setAbierto(false);
-    }
-  }, [estado]);
+    if (estado?.ok) onAbiertoChange(false);
+  }, [estado, onAbiertoChange]);
 
   return (
-    <Dialog open={abierto} onOpenChange={setAbierto}>
-      <DialogTrigger
-        render={
-          <Button>
-            <Plus />
-            Nuevo socio
-          </Button>
-        }
-      />
-
-      <DialogContent className="sm:max-w-[440px]">
+    <Dialog open={abierto} onOpenChange={onAbiertoChange}>
+      <DialogContent className="sm:max-w-[460px]">
         <DialogHeader>
-          <DialogTitle>Nuevo socio</DialogTitle>
+          <DialogTitle>{editando ? "Editar socio" : "Nuevo socio"}</DialogTitle>
           <DialogDescription>
             El teléfono es el que usará el socio para consultar por WhatsApp.
           </DialogDescription>
         </DialogHeader>
 
         <form action={accion} className="flex flex-col gap-4">
+          {socio && <input type="hidden" name="socioId" value={socio.id} />}
+
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="nombre">Nombre</Label>
             <Input
               id="nombre"
               name="nombre"
+              defaultValue={socio?.nombre}
               placeholder="María Huenchuñir"
               required
             />
@@ -62,7 +74,13 @@ export function NuevoSocioDialog() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="rut">RUT</Label>
-              <Input id="rut" name="rut" placeholder="12.345.678-9" required />
+              <Input
+                id="rut"
+                name="rut"
+                defaultValue={socio?.rut}
+                placeholder="12.345.678-9"
+                required
+              />
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -70,6 +88,7 @@ export function NuevoSocioDialog() {
               <Input
                 id="telefono"
                 name="telefono"
+                defaultValue={socio?.telefono}
                 placeholder="9 1234 5678"
                 required
               />
@@ -82,6 +101,7 @@ export function NuevoSocioDialog() {
               <Input
                 id="numeroCliente"
                 name="numeroCliente"
+                defaultValue={socio?.numeroCliente ?? ""}
                 placeholder="Opcional"
               />
             </div>
@@ -91,6 +111,7 @@ export function NuevoSocioDialog() {
               <Input
                 id="direccion"
                 name="direccion"
+                defaultValue={socio?.direccion ?? ""}
                 placeholder="Opcional"
               />
             </div>
@@ -106,9 +127,20 @@ export function NuevoSocioDialog() {
           )}
 
           <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onAbiertoChange(false)}
+            >
+              Cancelar
+            </Button>
             <Button type="submit" disabled={pendiente}>
               {pendiente && <Loader2 className="animate-spin" />}
-              {pendiente ? "Guardando…" : "Guardar socio"}
+              {pendiente
+                ? "Guardando…"
+                : editando
+                  ? "Guardar cambios"
+                  : "Guardar socio"}
             </Button>
           </DialogFooter>
         </form>
