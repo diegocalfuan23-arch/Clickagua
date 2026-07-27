@@ -10,10 +10,12 @@ import { FaqSection } from "@/components/site/faq-section";
 import { CtaSection } from "@/components/site/cta-section";
 import { ContactSection } from "@/components/site/contact-section";
 import { Footer } from "@/components/site/footer";
+import { StructuredData } from "@/components/seo/structured-data";
 
 export default function Home() {
   return (
     <div className="flex flex-1 flex-col">
+      <StructuredData />
       <Header />
       <main>
         <Hero />

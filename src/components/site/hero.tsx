@@ -11,14 +11,14 @@ export function Hero() {
           Gestión de socios y boletas para APR y SSR · Chile
         </span>
         <h1 className="mt-5.5 mb-5 text-[clamp(2.6rem,5.2vw,4.1rem)] leading-[1.05] font-semibold text-balance">
-          Que tu comité de agua
+          El software para tu APR que además
           <br />
-          conteste solo, por <em className="text-primary italic">WhatsApp</em>.
+          contesta solo, por <em className="text-primary italic">WhatsApp</em>.
         </h1>
-        <p className="mb-8 max-w-[46ch] text-[1.16rem] leading-relaxed text-muted-foreground">
-          ClickAgua responde automáticamente cuánto debe cada socio de tu APR
-          o SSR, a cualquier hora, por el mismo WhatsApp que la gente ya usa
-          todos los días.
+        <p className="mb-8 max-w-[48ch] text-[1.16rem] leading-relaxed text-muted-foreground">
+          Administra los socios, boletas y pagos de tu comité de Agua Potable
+          Rural desde un solo panel — y deja que ClickAgua responda por
+          WhatsApp cuánto debe cada socio, a cualquier hora.
         </p>
         <div className="mb-2 flex flex-wrap justify-center gap-3.5">
           <a
