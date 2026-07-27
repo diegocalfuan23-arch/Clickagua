@@ -14,11 +14,14 @@ export const user = pgTable("user", {
   updatedAt: timestamp("updatedAt")
     .$defaultFn(() => new Date())
     .notNull(),
-  // Campos propios de ClickAgua: identifican al comité dueño de la cuenta.
+  // Datos que el usuario declara al registrarse. Better Auth los escribe
+  // directamente, y a partir de ellos se crea el APR asociado.
   apr: text("apr").notNull(),
   rutComite: text("rutComite").notNull(),
   comuna: text("comuna").notNull(),
   cargo: text("cargo").notNull(),
+  // Comité al que pertenece el usuario. Determina qué datos puede ver.
+  aprId: text("aprId"),
 });
 
 export const session = pgTable("session", {

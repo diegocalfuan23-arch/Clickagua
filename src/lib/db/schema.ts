@@ -24,27 +24,62 @@ export const direccionMensajeEnum = pgEnum("DireccionMensaje", [
   "SALIENTE",
 ]);
 
+/**
+ * Un APR/SSR: el comité dueño de los datos. Todo lo demás cuelga de aquí,
+ * de modo que un comité nunca vea los socios ni boletas de otro.
+ */
+export const aprs = pgTable(
+  "Apr",
+  {
+    id: text("id").primaryKey().$defaultFn(() => createId()),
+    nombre: text("nombre").notNull(),
+    rut: text("rut").notNull(),
+    comuna: text("comuna").notNull(),
+    region: text("region"),
+    direccion: text("direccion"),
+    telefono: text("telefono"),
+    email: text("email"),
+    activo: boolean("activo").notNull().default(true),
+    createdAt: timestamp("createdAt", { precision: 3 }).notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt", { precision: 3 }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("Apr_rut_key").on(table.rut)]
+);
+
+export const aprsRelations = relations(aprs, ({ many }) => ({
+  socios: many(socios),
+}));
+
 export const socios = pgTable(
   "Socio",
   {
     id: text("id").primaryKey().$defaultFn(() => createId()),
-    tenantId: text("tenantId").notNull().default("default"),
+    aprId: text("aprId")
+      .notNull()
+      .references(() => aprs.id, { onDelete: "cascade" }),
     nombre: text("nombre").notNull(),
     rut: text("rut").notNull(),
     telefono: text("telefono").notNull(),
     direccion: text("direccion"),
+    numeroCliente: text("numeroCliente"),
     activo: boolean("activo").notNull().default(true),
     createdAt: timestamp("createdAt", { precision: 3 }).notNull().defaultNow(),
     updatedAt: timestamp("updatedAt", { precision: 3 }).notNull().defaultNow(),
   },
   (table) => [
-    uniqueIndex("Socio_rut_key").on(table.rut),
-    uniqueIndex("Socio_telefono_key").on(table.telefono),
-    index("Socio_tenantId_idx").on(table.tenantId),
+    // Únicos por APR, no globalmente: dos comités pueden tener socios
+    // distintos con el mismo RUT o teléfono sin colisionar.
+    uniqueIndex("Socio_apr_rut_key").on(table.aprId, table.rut),
+    uniqueIndex("Socio_apr_telefono_key").on(table.aprId, table.telefono),
+    index("Socio_aprId_idx").on(table.aprId),
   ]
 );
 
 export const sociosRelations = relations(socios, ({ many, one }) => ({
+  apr: one(aprs, {
+    fields: [socios.aprId],
+    references: [aprs.id],
+  }),
   boletas: many(boletas),
   conversacion: one(conversaciones, {
     fields: [socios.id],

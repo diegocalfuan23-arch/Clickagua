@@ -1,6 +1,4 @@
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { requireApr } from "@/lib/apr-session";
 import { PanelSidebar } from "@/components/panel/panel-sidebar";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import {
@@ -16,26 +14,18 @@ export default async function PanelLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session) {
-    redirect("/login");
-  }
-
-  const { user } = session;
+  const { apr } = await requireApr();
 
   return (
     <TooltipProvider>
       <SidebarProvider>
-        <PanelSidebar apr={user.apr} comuna={user.comuna} />
+        <PanelSidebar apr={apr.nombre} comuna={apr.comuna} />
 
         <SidebarInset>
           <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-4">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-1 h-4" />
-            <span className="text-sm font-medium">{user.apr}</span>
+            <span className="text-sm font-medium">{apr.nombre}</span>
             <div className="ml-auto">
               <SignOutButton />
             </div>
