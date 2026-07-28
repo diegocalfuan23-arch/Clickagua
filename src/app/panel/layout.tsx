@@ -31,7 +31,10 @@ export default async function PanelLayout({
             </div>
           </header>
 
-          <div className="flex flex-1 flex-col gap-4 p-6">{children}</div>
+          {/* Fondo gris tenue: es lo que hace que las tarjetas blancas destaquen. */}
+          <div className="flex flex-1 flex-col gap-5 bg-muted/40 p-6">
+            {children}
+          </div>
         </SidebarInset>
       </SidebarProvider>
     </TooltipProvider>
