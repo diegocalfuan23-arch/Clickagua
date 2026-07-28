@@ -181,12 +181,32 @@ export const boletas = pgTable(
     fechaVencimiento: timestamp("fechaVencimiento", {
       precision: 3,
     }).notNull(),
+
+    /**
+     * Lecturas del medidor. Opcionales: un comité puede seguir calculando en
+     * su planilla y cargar solo el monto. Si vienen las dos, guardamos también
+     * el desglose para poder mostrarlo en la boleta y explicárselo al socio.
+     */
+    lecturaAnterior: integer("lecturaAnterior"),
+    lecturaActual: integer("lecturaActual"),
+    consumoM3: integer("consumoM3"),
+    /** Tarifas con las que se calculó, congeladas: si suben, la boleta vieja
+        no debe cambiar de monto. */
+    cargoFijo: integer("cargoFijo"),
+    valorM3: integer("valorM3"),
+
+    observacion: text("observacion"),
+
     createdAt: timestamp("createdAt", { precision: 3 }).notNull().defaultNow(),
     updatedAt: timestamp("updatedAt", { precision: 3 }).notNull().defaultNow(),
   },
   (table) => [
     index("Boleta_socioId_idx").on(table.socioId),
     index("Boleta_socioId_estado_idx").on(table.socioId, table.estado),
+    // Un socio no puede tener dos boletas del mismo período: es lo que evita
+    // que reimportar un CSV duplique el mes completo.
+    uniqueIndex("Boleta_socio_periodo_key").on(table.socioId, table.periodo),
+    index("Boleta_periodo_idx").on(table.periodo),
   ]
 );
 

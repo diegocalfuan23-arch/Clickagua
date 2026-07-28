@@ -39,7 +39,7 @@ export function planMinimoPara(capacidad: Capacidad): Plan {
 export function generarSlug(nombre: string): string {
   return nombre
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "") // quita tildes
+    .replace(/[\u0300-\u036f]/g, "") // quita tildes
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
