@@ -12,7 +12,7 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.21 0.006 250);
 
-  --primary: oklch(0.45 0.13 230);
+  --primary: oklch(0.557 0.227 273);
   --primary-foreground: oklch(0.99 0 0);
 
   --secondary: oklch(0.55 0.2 355);
@@ -35,18 +35,18 @@
 
   --border: oklch(0.922 0.004 250);
   --input: oklch(0.922 0.004 250);
-  --ring: oklch(0.45 0.13 230);
+  --ring: oklch(0.557 0.227 273);
 
   --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.21 0.006 250);
-  --sidebar-primary: oklch(0.45 0.13 230);
+  --sidebar-primary: oklch(0.557 0.227 273);
   --sidebar-primary-foreground: oklch(0.99 0 0);
-  /* Celeste claro para el ítem activo: mismo matiz que el primario, mucho
+  /* Índigo muy claro para el ítem activo: mismo matiz que el primario, mucho
      más claro, para que se lea como "seleccionado" sin competir con los botones. */
-  --sidebar-accent: oklch(0.945 0.032 230);
-  --sidebar-accent-foreground: oklch(0.42 0.11 230);
+  --sidebar-accent: oklch(0.945 0.038 273);
+  --sidebar-accent-foreground: oklch(0.48 0.19 273);
   --sidebar-border: oklch(0.922 0.004 250);
-  --sidebar-ring: oklch(0.45 0.13 230);
+  --sidebar-ring: oklch(0.557 0.227 273);
 }
 
 .dark {
@@ -59,7 +59,7 @@
   --popover: oklch(0.196 0.005 250);
   --popover-foreground: oklch(0.96 0.002 250);
 
-  --primary: oklch(0.62 0.13 230);
+  --primary: oklch(0.668 0.178 277);
   --primary-foreground: oklch(0.145 0.004 250);
 
   --secondary: oklch(0.62 0.2 355);
@@ -82,17 +82,17 @@
 
   --border: oklch(0.3 0.006 250);
   --input: oklch(0.3 0.006 250);
-  --ring: oklch(0.62 0.13 230);
+  --ring: oklch(0.668 0.178 277);
 
   --sidebar: oklch(0.176 0.005 250);
   --sidebar-foreground: oklch(0.96 0.002 250);
-  --sidebar-primary: oklch(0.62 0.13 230);
+  --sidebar-primary: oklch(0.668 0.178 277);
   --sidebar-primary-foreground: oklch(0.145 0.004 250);
-  /* En oscuro el celeste va al revés: fondo profundo, texto claro. */
-  --sidebar-accent: oklch(0.32 0.055 230);
-  --sidebar-accent-foreground: oklch(0.93 0.03 230);
+  /* En oscuro el índigo va al revés: fondo profundo, texto claro. */
+  --sidebar-accent: oklch(0.33 0.075 273);
+  --sidebar-accent-foreground: oklch(0.93 0.04 277);
   --sidebar-border: oklch(0.3 0.006 250);
-  --sidebar-ring: oklch(0.62 0.13 230);
+  --sidebar-ring: oklch(0.668 0.178 277);
 }
 
 @theme inline {

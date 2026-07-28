@@ -8,12 +8,9 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // La sombra va teñida con el color del botón: una sombra gris sobre
-        // un botón de color se ve sucia.
-        default:
-          "bg-primary text-primary-foreground shadow-[0_1px_2px_oklch(from_var(--primary)_l_c_h/0.3),0_4px_12px_-2px_oklch(from_var(--primary)_l_c_h/0.35)] hover:bg-primary/90 hover:shadow-[0_1px_2px_oklch(from_var(--primary)_l_c_h/0.35),0_8px_18px_-3px_oklch(from_var(--primary)_l_c_h/0.45)] active:shadow-[0_1px_2px_oklch(from_var(--primary)_l_c_h/0.3)]",
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
         outline:
-          "border-border bg-background shadow-xs hover:bg-muted hover:text-foreground hover:shadow-sm aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+          "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
         ghost:
