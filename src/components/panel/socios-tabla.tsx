@@ -1,10 +1,15 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useActionState, useMemo, useState, useTransition } from "react";
 import {
+  ArrowUpDown,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   ChevronsUpDown,
+  Download,
+  FilterX,
+  Loader2,
   MapPinOff,
   MessageCircle,
   MoreHorizontal,
@@ -12,24 +17,34 @@ import {
   Pencil,
   Plus,
   Search,
+  SlidersHorizontal,
   Trash2,
+  Upload,
   UserCheck,
   UserRound,
   UserX,
   Users,
 } from "lucide-react";
-import { alternarActivo, eliminarSocio } from "@/app/panel/socios/actions";
+import {
+  alternarActivo,
+  eliminarSocio,
+  importarSocios,
+  type ResultadoImportacion,
+} from "@/app/panel/socios/actions";
 import { SocioDialog, type SocioEditable } from "./socio-dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -156,6 +171,10 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
   });
   const [pagina, setPagina] = useState(1);
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
+  const [soloConTelefono, setSoloConTelefono] = useState(false);
+  const [soloSinDireccion, setSoloSinDireccion] = useState(false);
+  const [soloSinNumero, setSoloSinNumero] = useState(false);
+  const [importando, setImportando] = useState(false);
   const [creando, setCreando] = useState(false);
   const [editando, setEditando] = useState<SocioFila | null>(null);
   const [porEliminar, setPorEliminar] = useState<SocioFila | null>(null);
@@ -170,12 +189,20 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
   /** La dirección es opcional y suele faltar: es la ficha incompleta. */
   const listaSinDireccion = socios.filter((s) => !s.direccion);
 
+  const filtrosActivos =
+    Number(soloConTelefono) + Number(soloSinDireccion) + Number(soloSinNumero);
+
   const filtrados = useMemo(() => {
     const termino = busqueda.trim().toLowerCase();
 
     const base = socios.filter((socio) => {
       if (pestana === "activos" && !socio.activo) return false;
       if (pestana === "inactivos" && socio.activo) return false;
+
+      if (soloConTelefono && !socio.telefono) return false;
+      if (soloSinDireccion && socio.direccion) return false;
+      if (soloSinNumero && socio.numeroCliente) return false;
+
       if (!termino) return true;
 
       return [socio.nombre, socio.rut, socio.telefono, socio.numeroCliente ?? ""]
@@ -190,7 +217,45 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
       });
       return orden.asc ? cmp : -cmp;
     });
-  }, [socios, busqueda, pestana, orden]);
+  }, [
+    socios,
+    busqueda,
+    pestana,
+    orden,
+    soloConTelefono,
+    soloSinDireccion,
+    soloSinNumero,
+  ]);
+
+  /** Exporta lo que está filtrado, no todo: es lo que el usuario está viendo. */
+  function exportarCsv() {
+    const escapar = (v: string) =>
+      /[",;\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+
+    const filas = [
+      ["nombre", "rut", "telefono", "direccion", "numeroCliente", "activo"],
+      ...filtrados.map((s) => [
+        s.nombre,
+        s.rut,
+        s.telefono,
+        s.direccion ?? "",
+        s.numeroCliente ?? "",
+        s.activo ? "si" : "no",
+      ]),
+    ];
+
+    // El BOM hace que Excel en español abra los acentos correctamente.
+    const csv = "﻿" + filas.map((f) => f.map(escapar).join(";")).join("\n");
+    const url = URL.createObjectURL(
+      new Blob([csv], { type: "text/csv;charset=utf-8;" })
+    );
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `socios-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   // Si un filtro deja la página actual fuera de rango, volvemos a la primera.
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / POR_PAGINA));
@@ -230,8 +295,8 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
   }
 
   /** Cualquier cambio de filtro reinicia la paginación. */
-  function cambiarPestana(siguiente: Pestana) {
-    setPestana(siguiente);
+  function cambiarFiltro(fn: () => void) {
+    fn();
     setPagina(1);
   }
 
@@ -307,7 +372,7 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
               <button
                 key={p.id}
                 type="button"
-                onClick={() => cambiarPestana(p.id)}
+                onClick={() => cambiarFiltro(() => setPestana(p.id))}
                 className={cn(
                   "-mb-px border-b-2 py-3.5 text-[0.9rem] font-medium transition-colors",
                   pestana === p.id
@@ -325,8 +390,10 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
             ))}
           </div>
 
-          <div className="p-5">
-            <div className="relative">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-5">
+            {/* El buscador no necesita todo el ancho: deja sitio a la derecha
+                para importar y filtrar, que es donde el ojo los busca. */}
+            <div className="relative w-full max-w-md min-w-52 flex-1">
               <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={busqueda}
@@ -338,6 +405,87 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
                 aria-label="Buscar socios"
                 className="h-10 border-transparent bg-muted/60 pl-10"
               />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button variant="outline" className="h-10">
+                      <ArrowUpDown />
+                      Importar / Exportar
+                      <ChevronDown />
+                    </Button>
+                  }
+                />
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setImportando(true)}>
+                    <Upload />
+                    Importar desde CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={exportarCsv}>
+                    <Download />
+                    Exportar a CSV
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button variant="outline" className="h-10">
+                      <SlidersHorizontal />
+                      Filtros
+                      {filtrosActivos > 0 && (
+                        <span className="ml-0.5 flex size-5 items-center justify-center rounded-full bg-primary text-[0.7rem] font-semibold text-primary-foreground tabular-nums">
+                          {filtrosActivos}
+                        </span>
+                      )}
+                    </Button>
+                  }
+                />
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>Mostrar solo</DropdownMenuLabel>
+                  <DropdownMenuCheckboxItem
+                    checked={soloConTelefono}
+                    onCheckedChange={(v) =>
+                      cambiarFiltro(() => setSoloConTelefono(Boolean(v)))
+                    }
+                  >
+                    Con WhatsApp registrado
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={soloSinDireccion}
+                    onCheckedChange={(v) =>
+                      cambiarFiltro(() => setSoloSinDireccion(Boolean(v)))
+                    }
+                  >
+                    Sin dirección
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={soloSinNumero}
+                    onCheckedChange={(v) =>
+                      cambiarFiltro(() => setSoloSinNumero(Boolean(v)))
+                    }
+                  >
+                    Sin número de cliente
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    disabled={filtrosActivos === 0}
+                    onClick={() =>
+                      cambiarFiltro(() => {
+                        setSoloConTelefono(false);
+                        setSoloSinDireccion(false);
+                        setSoloSinNumero(false);
+                      })
+                    }
+                  >
+                    <FilterX />
+                    Limpiar filtros
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
@@ -544,6 +692,11 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
         </div>
       )}
 
+      <ImportarSociosDialog
+        abierto={importando}
+        onAbiertoChange={setImportando}
+      />
+
       <SocioDialog abierto={creando} onAbiertoChange={setCreando} />
 
       {editando && (
@@ -586,5 +739,102 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function ImportarSociosDialog({
+  abierto,
+  onAbiertoChange,
+}: {
+  abierto: boolean;
+  onAbiertoChange: (v: boolean) => void;
+}) {
+  const [estado, accion, pendiente] = useActionState<
+    ResultadoImportacion | null,
+    FormData
+  >(importarSocios, null);
+
+  return (
+    <Dialog open={abierto} onOpenChange={onAbiertoChange}>
+      <DialogContent className="sm:max-w-[520px]">
+        <DialogHeader>
+          <DialogTitle>Importar socios</DialogTitle>
+          <DialogDescription>
+            Sube el padrón de tu comité en formato CSV.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form action={accion} className="flex flex-col gap-4">
+          <div className="rounded-lg border border-border/60 bg-muted/40 p-4 text-[0.85rem]">
+            <p className="font-medium">Columnas del archivo</p>
+            <p className="mt-1.5 text-muted-foreground">
+              Obligatorias: <code className="font-mono">nombre</code>,{" "}
+              <code className="font-mono">rut</code>,{" "}
+              <code className="font-mono">telefono</code>
+            </p>
+            <p className="mt-1 text-muted-foreground">
+              Opcionales: <code className="font-mono">direccion</code>,{" "}
+              <code className="font-mono">numeroCliente</code>
+            </p>
+            <p className="mt-2.5 text-muted-foreground">
+              El teléfono es con el que el socio escribe por WhatsApp. Si vuelves
+              a subir el archivo, los socios que ya existen se actualizan en vez
+              de duplicarse.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="archivoSocios">Archivo CSV</Label>
+            <Input
+              id="archivoSocios"
+              name="archivo"
+              type="file"
+              accept=".csv,text/csv"
+              required
+            />
+          </div>
+
+          {estado && !estado.ok && (
+            <p className="text-[0.88rem] text-destructive">{estado.error}</p>
+          )}
+
+          {estado?.ok && (
+            <div className="rounded-lg border border-forest/30 bg-forest/5 p-4 text-[0.88rem]">
+              <p className="font-medium text-forest">
+                {estado.creados} creados · {estado.actualizados} actualizados
+              </p>
+              {estado.omitidos.length > 0 && (
+                <details className="mt-2">
+                  <summary className="cursor-pointer text-muted-foreground">
+                    {estado.omitidos.length} filas omitidas
+                  </summary>
+                  <ul className="mt-2 flex max-h-40 flex-col gap-1 overflow-y-auto text-[0.82rem] text-muted-foreground">
+                    {estado.omitidos.map((o) => (
+                      <li key={o.linea}>
+                        Línea {o.linea}: {o.motivo}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onAbiertoChange(false)}
+            >
+              {estado?.ok ? "Cerrar" : "Cancelar"}
+            </Button>
+            <Button type="submit" disabled={pendiente}>
+              {pendiente && <Loader2 className="animate-spin" />}
+              Importar
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
