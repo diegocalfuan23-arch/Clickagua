@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Droplet,
+  Globe,
   LayoutDashboard,
   Users,
   ReceiptText,
@@ -32,6 +33,7 @@ const gestion = [
 
 const atencion = [
   { href: "/panel/conversaciones", label: "Conversaciones", icon: MessageSquare },
+  { href: "/panel/sitio", label: "Sitio público", icon: Globe },
   { href: "/panel/configuracion", label: "Configuración", icon: Settings },
 ];
 

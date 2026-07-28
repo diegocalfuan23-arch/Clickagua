@@ -9,7 +9,7 @@ import {
   uniqueIndex,
   index,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import { createId } from "@paralleldrive/cuid2";
 
 export const estadoBoletaEnum = pgEnum("EstadoBoleta", [
@@ -22,6 +22,20 @@ export const estadoBoletaEnum = pgEnum("EstadoBoleta", [
 export const direccionMensajeEnum = pgEnum("DireccionMensaje", [
   "ENTRANTE",
   "SALIENTE",
+]);
+
+/**
+ * Plan contratado. Define qué puede hacer el comité:
+ * BASICO   → panel + bot de WhatsApp
+ * ESTANDAR → + landing pública en subdominio
+ * PREMIUM  → + dominio propio
+ */
+export const planEnum = pgEnum("Plan", ["BASICO", "ESTANDAR", "PREMIUM"]);
+
+export const tipoAvisoEnum = pgEnum("TipoAviso", [
+  "CORTE",
+  "MANTENCION",
+  "NOTICIA",
 ]);
 
 /**
@@ -40,14 +54,79 @@ export const aprs = pgTable(
     telefono: text("telefono"),
     email: text("email"),
     activo: boolean("activo").notNull().default(true),
+
+    plan: planEnum("plan").notNull().default("BASICO"),
+
+    // --- Landing pública (planes ESTANDAR y PREMIUM) ---
+    /** Subdominio: pitrelahue → pitrelahue.clickagua.com */
+    slug: text("slug"),
+    /** Dominio propio, solo PREMIUM. Null hasta que se verifique. */
+    dominioPropio: text("dominioPropio"),
+    /** El comité decide cuándo publicarla; se genera antes de estar visible. */
+    sitioPublicado: boolean("sitioPublicado").notNull().default(false),
+    /** Texto libre de presentación. Si va vacío usamos uno por defecto. */
+    sitioDescripcion: text("sitioDescripcion"),
+    horarioAtencion: text("horarioAtencion"),
+    /** Tarifas en CLP. Enteros: en Chile no se usan decimales. */
+    tarifaCargoFijo: integer("tarifaCargoFijo"),
+    tarifaMetroCubico: integer("tarifaMetroCubico"),
+    /** Dónde y cómo pagar, en texto libre: varía mucho entre comités. */
+    infoPago: text("infoPago"),
+
     createdAt: timestamp("createdAt", { precision: 3 }).notNull().defaultNow(),
     updatedAt: timestamp("updatedAt", { precision: 3 }).notNull().defaultNow(),
   },
-  (table) => [uniqueIndex("Apr_rut_key").on(table.rut)]
+  (table) => [
+    uniqueIndex("Apr_rut_key").on(table.rut),
+    // Parciales: varios comités pueden tener slug/dominio en null sin chocar.
+    uniqueIndex("Apr_slug_key")
+      .on(table.slug)
+      .where(sql`${table.slug} IS NOT NULL`),
+    uniqueIndex("Apr_dominioPropio_key")
+      .on(table.dominioPropio)
+      .where(sql`${table.dominioPropio} IS NOT NULL`),
+  ]
 );
 
 export const aprsRelations = relations(aprs, ({ many }) => ({
   socios: many(socios),
+  avisos: many(avisos),
+}));
+
+/**
+ * Avisos de corte, mantención y noticias. Se publican en la landing y son
+ * la misma fuente que responde el bot cuando preguntan por un corte.
+ */
+export const avisos = pgTable(
+  "Aviso",
+  {
+    id: text("id").primaryKey().$defaultFn(() => createId()),
+    aprId: text("aprId")
+      .notNull()
+      .references(() => aprs.id, { onDelete: "cascade" }),
+    tipo: tipoAvisoEnum("tipo").notNull().default("CORTE"),
+    titulo: text("titulo").notNull(),
+    cuerpo: text("cuerpo"),
+    /** Sectores afectados, en texto libre. */
+    sectores: text("sectores"),
+    /** Null en noticias: solo los cortes tienen ventana horaria. */
+    inicia: timestamp("inicia", { precision: 3 }),
+    termina: timestamp("termina", { precision: 3 }),
+    publicado: boolean("publicado").notNull().default(true),
+    createdAt: timestamp("createdAt", { precision: 3 }).notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt", { precision: 3 }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("Aviso_aprId_idx").on(table.aprId),
+    index("Aviso_aprId_publicado_idx").on(table.aprId, table.publicado),
+  ]
+);
+
+export const avisosRelations = relations(avisos, ({ one }) => ({
+  apr: one(aprs, {
+    fields: [avisos.aprId],
+    references: [aprs.id],
+  }),
 }));
 
 export const socios = pgTable(
