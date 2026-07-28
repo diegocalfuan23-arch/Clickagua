@@ -489,12 +489,13 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
             </div>
           </div>
 
-          {/* Sin border-y: TableHeader ya trae su propia línea inferior, y las
-              dos juntas se veían como un borde grueso. */}
+          {/* TableHeader fuerza [&_tr]:border-b y TableRow trae el suyo: las
+              dos se apilan en la misma fila y se ven como una línea gruesa.
+              Un solo borde suave, declarado aquí, gana a ambas. */}
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="hover:bg-transparent">
+                <TableRow className="border-b-border/50 hover:bg-transparent">
                   <TableHead className="h-11 w-11 pl-5">
                     <Checkbox
                       checked={todasMarcadas}

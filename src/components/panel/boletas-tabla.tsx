@@ -348,11 +348,12 @@ export function BoletasTabla({
             </select>
           </div>
 
-          {/* Sin border-y: TableHeader ya trae su propia línea inferior. */}
+          {/* TableHeader y TableRow apilan sus bordes en la misma fila: un
+              solo borde suave declarado aquí gana a ambos. */}
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="hover:bg-transparent">
+                <TableRow className="border-b-border/50 hover:bg-transparent">
                   {[
                     "Socio",
                     "Período",
