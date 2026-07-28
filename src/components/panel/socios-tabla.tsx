@@ -100,7 +100,7 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
         </div>
       ) : (
         <>
-          <div className="relative max-w-[380px]">
+          <div className="relative max-w-95">
             <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={busqueda}
@@ -111,7 +111,7 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
             />
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-border bg-card">
+          <div className="overflow-x-auto rounded-xl border border-border/50 bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04),0_4px_12px_-4px_rgba(15,23,42,0.08)]">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -244,7 +244,7 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
         open={Boolean(porEliminar)}
         onOpenChange={(v) => !v && setPorEliminar(null)}
       >
-        <DialogContent className="sm:max-w-[400px]">
+        <DialogContent className="sm:max-w-100">
           <DialogHeader>
             <DialogTitle>Eliminar a {porEliminar?.nombre}</DialogTitle>
             <DialogDescription>

@@ -45,13 +45,15 @@ export default async function PanelPage() {
         {metricas.map(({ label, valor, icon: Icon }) => (
           <div
             key={label}
-            className="rounded-xl border border-border bg-card p-5"
+            className="rounded-xl border border-border/50 bg-card p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_4px_12px_-4px_rgba(15,23,42,0.08)] transition-shadow hover:shadow-[0_1px_2px_rgba(15,23,42,0.05),0_8px_20px_-6px_rgba(15,23,42,0.12)]"
           >
             <div className="flex items-center justify-between">
               <span className="text-[0.85rem] text-muted-foreground">
                 {label}
               </span>
-              <Icon className="size-4 text-muted-foreground" />
+              <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
+                <Icon className="size-4 text-primary" />
+              </span>
             </div>
             <div className="mt-2 text-[1.75rem] font-semibold tabular-nums">
               {valor}
@@ -61,7 +63,7 @@ export default async function PanelPage() {
       </div>
 
       {totalSocios === 0 && (
-        <div className="rounded-xl border border-border bg-card p-6">
+        <div className="rounded-xl border border-border/50 bg-card p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_4px_12px_-4px_rgba(15,23,42,0.08)]">
           <h2 className="text-[1rem] font-semibold">
             Empieza cargando a tus socios
           </h2>
