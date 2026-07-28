@@ -9,6 +9,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { formatearTelefono } from "@/lib/formato";
+import { AsistenteComite } from "@/components/sitio/asistente-comite";
 
 export type DatosSitio = {
   nombre: string;
@@ -77,9 +78,13 @@ function rangoFechas(inicia: Date | null, termina: Date | null) {
 export function SitioApr({
   apr,
   avisos,
+  slug,
+  dominio,
 }: {
   apr: DatosSitio;
   avisos: AvisoSitio[];
+  slug?: string;
+  dominio?: string;
 }) {
   const whatsapp = apr.telefono?.replace(/[^0-9]/g, "");
   const hayTarifas =
@@ -258,6 +263,13 @@ export function SitioApr({
           </span>
         </div>
       </footer>
+
+      <AsistenteComite
+        nombreApr={apr.nombre}
+        slug={slug}
+        dominio={dominio}
+        telefono={apr.telefono}
+      />
     </div>
   );
 }

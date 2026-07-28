@@ -31,8 +31,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function SitioDominioPage({ params }: Props) {
   const { host } = await params;
-  const datos = await cargarSitio({ dominio: decodeURIComponent(host) });
+  const dominio = decodeURIComponent(host);
+  const datos = await cargarSitio({ dominio });
   if (!datos) notFound();
 
-  return <SitioApr apr={datos.apr} avisos={datos.avisos} />;
+  return <SitioApr apr={datos.apr} avisos={datos.avisos} dominio={dominio} />;
 }
