@@ -21,7 +21,10 @@ export default async function PanelLayout({
       <SidebarProvider>
         <PanelSidebar apr={apr.nombre} comuna={apr.comuna} />
 
-        <SidebarInset>
+        {/* El gradiente va en el contenedor, no en el área de contenido: así
+            cubre también el header. Centrado en 50% 50% para que el velo quede
+            al medio de la pantalla y se desvanezca hacia los bordes. */}
+        <SidebarInset className="bg-[radial-gradient(90%_70%_at_50%_50%,color-mix(in_oklch,var(--primary),transparent_90%),transparent_75%)]">
           <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-4">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-1 h-4" />
@@ -31,11 +34,7 @@ export default async function PanelLayout({
             </div>
           </header>
 
-          {/* Blanco con un velo del primario arriba: da color sin ensuciar el
-              fondo, y las tarjetas blancas siguen leyéndose. */}
-          <div className="flex flex-1 flex-col gap-5 bg-background bg-[radial-gradient(120%_60%_at_50%_0%,color-mix(in_oklch,var(--primary),transparent_92%),transparent_70%)] p-6">
-            {children}
-          </div>
+          <div className="flex flex-1 flex-col gap-5 p-6">{children}</div>
         </SidebarInset>
       </SidebarProvider>
     </TooltipProvider>
