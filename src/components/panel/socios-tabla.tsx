@@ -5,8 +5,10 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronsUpDown,
+  MapPinOff,
   MessageCircle,
   MoreHorizontal,
+  MoreVertical,
   Pencil,
   Plus,
   Search,
@@ -54,31 +56,63 @@ type Columna = "nombre" | "rut" | "telefono";
 
 const POR_PAGINA = 12;
 
-/** Tarjeta de métrica del encabezado: ícono en recuadro, etiqueta y cifra. */
+/**
+ * Avatares apilados: muestra hasta 3 socios reales de los que cuenta la
+ * métrica, para que la cifra tenga cara y no sea un número abstracto.
+ */
+function AvataresApilados({ nombres }: { nombres: string[] }) {
+  if (nombres.length === 0) return null;
+
+  return (
+    <div className="flex -space-x-2">
+      {nombres.slice(0, 3).map((nombre) => (
+        <span
+          key={nombre}
+          title={nombre}
+          className="flex size-7 items-center justify-center rounded-full border-2 border-card bg-muted text-[0.65rem] font-semibold text-muted-foreground"
+        >
+          {iniciales(nombre)}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** Tarjeta de métrica: ícono en recuadro, etiqueta, cifra y avatares. */
 function TarjetaResumen({
   icono,
   color,
   etiqueta,
   valor,
+  nombres,
 }: {
   icono: React.ReactNode;
   color: string;
   etiqueta: string;
   valor: number;
+  nombres: string[];
 }) {
   return (
-    <div className="rounded-xl border border-border/60 bg-card p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-      <span
-        className={cn(
-          "flex size-10 items-center justify-center rounded-lg [&_svg]:size-5",
-          color
-        )}
-      >
-        {icono}
-      </span>
-      <div className="mt-8 text-[0.9rem] text-muted-foreground">{etiqueta}</div>
-      <div className="mt-1 text-[1.75rem] leading-none font-semibold tabular-nums">
-        {valor}
+    <div className="rounded-xl border border-border/60 bg-card p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+      <div className="flex items-start justify-between">
+        <span
+          className={cn(
+            "flex size-9 items-center justify-center rounded-lg [&_svg]:size-4.5",
+            color
+          )}
+        >
+          {icono}
+        </span>
+        <MoreVertical className="size-4 text-muted-foreground/60" />
+      </div>
+
+      <div className="mt-4 text-[0.87rem] text-muted-foreground">{etiqueta}</div>
+
+      <div className="mt-1 flex items-end justify-between gap-2">
+        <span className="text-[1.6rem] leading-none font-semibold tabular-nums">
+          {valor}
+        </span>
+        <AvataresApilados nombres={nombres} />
       </div>
     </div>
   );
@@ -127,9 +161,14 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
   const [porEliminar, setPorEliminar] = useState<SocioFila | null>(null);
   const [pendiente, startTransition] = useTransition();
 
-  const activos = socios.filter((s) => s.activo).length;
-  const inactivos = socios.length - activos;
-  const conTelefono = socios.filter((s) => s.telefono).length;
+  const listaActivos = socios.filter((s) => s.activo);
+  const listaInactivos = socios.filter((s) => !s.activo);
+  const listaConTelefono = socios.filter((s) => s.telefono);
+  const activos = listaActivos.length;
+  const inactivos = listaInactivos.length;
+  const conTelefono = listaConTelefono.length;
+  /** La dirección es opcional y suele faltar: es la ficha incompleta. */
+  const listaSinDireccion = socios.filter((s) => !s.direccion);
 
   const filtrados = useMemo(() => {
     const termino = busqueda.trim().toLowerCase();
@@ -212,24 +251,34 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
         </Button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <TarjetaResumen
           icono={<Users />}
           color="bg-primary/10 text-primary"
           etiqueta="Total de socios"
           valor={socios.length}
+          nombres={socios.map((s) => s.nombre)}
         />
         <TarjetaResumen
           icono={<UserCheck />}
           color="bg-forest/10 text-forest"
           etiqueta="Socios activos"
           valor={activos}
+          nombres={listaActivos.map((s) => s.nombre)}
         />
         <TarjetaResumen
           icono={<MessageCircle />}
           color="bg-tertiary/15 text-tertiary"
-          etiqueta="Con WhatsApp registrado"
+          etiqueta="Con WhatsApp"
           valor={conTelefono}
+          nombres={listaConTelefono.map((s) => s.nombre)}
+        />
+        <TarjetaResumen
+          icono={<MapPinOff />}
+          color="bg-secondary/10 text-secondary"
+          etiqueta="Sin dirección"
+          valor={listaSinDireccion.length}
+          nombres={listaSinDireccion.map((s) => s.nombre)}
         />
       </div>
 
