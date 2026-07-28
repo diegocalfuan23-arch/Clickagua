@@ -132,7 +132,7 @@ function TarjetaResumen({
   valor: string;
 }) {
   return (
-    <div className="rounded-xl border border-border/60 bg-card p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+    <div className="rounded-xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
       <span
         className={cn(
           "flex size-9 items-center justify-center rounded-lg [&_svg]:size-4.5",
@@ -301,7 +301,7 @@ export function BoletasTabla({
           </div>
         </div>
       ) : (
-        <div className="rounded-xl border border-border/60 bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+        <div className="rounded-xl border border-border bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           <div className="flex gap-6 overflow-x-auto border-b border-border/60 px-5">
             {pestanas.map((p) => (
               <button
@@ -348,10 +348,11 @@ export function BoletasTabla({
             </select>
           </div>
 
-          <div className="overflow-x-auto border-y border-border/60">
+          {/* Sin border-y: TableHeader ya trae su propia línea inferior. */}
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/40 hover:bg-muted/40">
+                <TableRow className="hover:bg-transparent">
                   {[
                     "Socio",
                     "Período",

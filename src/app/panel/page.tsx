@@ -69,7 +69,7 @@ function Tarjeta({
 }) {
   return (
     <div
-      className={`rounded-xl border border-border/60 bg-card p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] ${className}`}
+      className={`rounded-xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] ${className}`}
     >
       {children}
     </div>

@@ -108,7 +108,7 @@ function TarjetaResumen({
   nombres: string[];
 }) {
   return (
-    <div className="rounded-xl border border-border/60 bg-card p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+    <div className="rounded-xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
       <div className="flex items-start justify-between">
         <span
           className={cn(
@@ -365,7 +365,7 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
           </Button>
         </div>
       ) : (
-        <div className="rounded-xl border border-border/60 bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+        <div className="rounded-xl border border-border bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           {/* Pestañas: filtran por estado sin sacar al usuario de la página. */}
           <div className="flex gap-6 border-b border-border/60 px-5">
             {pestanas.map((p) => (
@@ -489,10 +489,12 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
             </div>
           </div>
 
-          <div className="overflow-x-auto border-y border-border/60">
+          {/* Sin border-y: TableHeader ya trae su propia línea inferior, y las
+              dos juntas se veían como un borde grueso. */}
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/40 hover:bg-muted/40">
+                <TableRow className="hover:bg-transparent">
                   <TableHead className="h-11 w-11 pl-5">
                     <Checkbox
                       checked={todasMarcadas}

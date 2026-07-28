@@ -31,8 +31,9 @@ export default async function PanelLayout({
             </div>
           </header>
 
-          {/* Fondo gris tenue: es lo que hace que las tarjetas blancas destaquen. */}
-          <div className="flex flex-1 flex-col gap-5 bg-muted/40 p-6">
+          {/* Blanco con un velo del primario arriba: da color sin ensuciar el
+              fondo, y las tarjetas blancas siguen leyéndose. */}
+          <div className="flex flex-1 flex-col gap-5 bg-background bg-[radial-gradient(120%_60%_at_50%_0%,color-mix(in_oklch,var(--primary),transparent_92%),transparent_70%)] p-6">
             {children}
           </div>
         </SidebarInset>
