@@ -607,8 +607,11 @@ function BoletaDialog({
   }, null);
 
   const paraInput = (d: Date) => new Date(d).toISOString().slice(0, 10);
-  const hoy = new Date();
-  const en30 = new Date(Date.now() + 30 * 86_400_000);
+
+  // El reloj se lee una vez al montar, no en cada render: leerlo durante el
+  // render hace que los valores por defecto del formulario cambien solos.
+  const [hoy] = useState(() => new Date());
+  const en30 = new Date(hoy.getTime() + 30 * 86_400_000);
 
   return (
     <Dialog open={abierto} onOpenChange={onAbiertoChange}>

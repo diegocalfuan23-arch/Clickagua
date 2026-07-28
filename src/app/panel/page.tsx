@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { and, count, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, inArray } from "drizzle-orm";
 import {
   ArrowUpRight,
   BadgeCheck,
@@ -13,7 +13,7 @@ import {
 import { db } from "@/lib/db";
 import { socios, boletas } from "@/lib/db/schema";
 import { requireApr } from "@/lib/apr-session";
-import { GraficoArea } from "@/components/panel/graficos";
+import { GraficoArea, GraficoLineas } from "@/components/panel/graficos";
 import { iniciales } from "@/lib/formato";
 
 export const metadata: Metadata = {
@@ -36,6 +36,9 @@ const MUESTRA = {
   atendidasSolo: 0.94,
   consultasPorMes: [95, 130, 118, 176, 210, 265, 310, 412],
   meses: ["Dic", "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul"],
+  // Las dos series de la tarjeta de Atención, últimos 4 meses.
+  resueltasPorMes: [198, 249, 291, 387],
+  derivadasPorMes: [12, 16, 19, 25],
   recientes: [
     { nombre: "María Huenchuñir", texto: "cuánto debo", hace: "hace 5 min" },
     { nombre: "Pedro Curihual", texto: "ya pagué la de junio?", hace: "hace 22 min" },
@@ -76,9 +79,17 @@ function Tarjeta({
   );
 }
 
-/** Barra segmentada: una franja por segmento, proporcional a su peso. */
+/**
+ * Barra segmentada: una franja por segmento, proporcional a su peso.
+ * Con todo en cero muestra una barra vacía en vez de repartir el ancho por
+ * igual, que sugeriría una proporción que no existe.
+ */
 function BarraProporcion({ segmentos }: { segmentos: Segmento[] }) {
-  const total = segmentos.reduce((suma, s) => suma + s.peso, 0) || 1;
+  const total = segmentos.reduce((suma, s) => suma + s.peso, 0);
+
+  if (total === 0) {
+    return <div className="h-2 rounded-full bg-muted" />;
+  }
 
   return (
     <div className="flex gap-1.5">
@@ -89,6 +100,31 @@ function BarraProporcion({ segmentos }: { segmentos: Segmento[] }) {
           style={{ width: `${(s.peso / total) * 100}%` }}
         />
       ))}
+    </div>
+  );
+}
+
+/** Avatares con iniciales. No guardamos fotos de socios: no hay campo para
+    ellas y un comité rural difícilmente las tendría. */
+function Avatares({ nombres }: { nombres: string[] }) {
+  if (nombres.length === 0) return null;
+
+  return (
+    <div className="flex -space-x-2">
+      {nombres.slice(0, 4).map((nombre) => (
+        <span
+          key={nombre}
+          title={nombre}
+          className="flex size-7 items-center justify-center rounded-full border-2 border-card bg-secondary/15 text-[0.65rem] font-semibold text-secondary"
+        >
+          {iniciales(nombre)}
+        </span>
+      ))}
+      {nombres.length > 4 && (
+        <span className="flex size-7 items-center justify-center rounded-full border-2 border-card bg-muted text-[0.62rem] font-semibold text-muted-foreground">
+          +{nombres.length - 4}
+        </span>
+      )}
     </div>
   );
 }
@@ -148,17 +184,32 @@ export default async function PanelPage() {
     columns: { id: true, nombre: true, createdAt: true },
   });
 
+  // Socios con boletas por pagar: son las caras detrás de "por cobrar".
+  const conDeuda = await db
+    .selectDistinct({ id: socios.id, nombre: socios.nombre })
+    .from(boletas)
+    .innerJoin(socios, eq(boletas.socioId, socios.id))
+    .where(
+      and(
+        eq(socios.aprId, apr.id),
+        inArray(boletas.estado, ["PENDIENTE", "VENCIDA"])
+      )
+    )
+    .limit(5);
+
   const sinDatos = totalSocios === 0;
   const activos = sinDatos ? MUESTRA.activos : sociosActivos;
   const inactivos = sinDatos ? MUESTRA.inactivos : totalSocios - sociosActivos;
   const total = sinDatos ? MUESTRA.socios : totalSocios;
   const pendientes = sinDatos ? MUESTRA.pendientes : boletasPendientes;
-  const cobertura = total > 0 ? Math.round((activos / total) * 100) : 0;
 
   const resueltas = sinDatos
     ? Math.round(MUESTRA.consultas * MUESTRA.atendidasSolo)
     : 0;
   const derivadas = sinDatos ? MUESTRA.consultas - resueltas : 0;
+
+  const montoCobrado = sinDatos ? MUESTRA.cobrado : 0;
+  const montoPorCobrar = sinDatos ? MUESTRA.montoPendiente : 0;
 
   const padron: Segmento[] = [
     {
@@ -170,7 +221,7 @@ export default async function PanelPage() {
     {
       label: "Inactivos",
       valor: String(inactivos),
-      peso: inactivos || 1,
+      peso: inactivos,
       color: "bg-muted-foreground/25",
     },
   ];
@@ -178,19 +229,15 @@ export default async function PanelPage() {
   const cobranza: Segmento[] = [
     {
       label: "Cobrado",
-      valor: clp.format(sinDatos ? MUESTRA.cobrado : 0),
-      peso: sinDatos ? MUESTRA.cobrado : 1,
+      valor: clp.format(montoCobrado),
+      peso: montoCobrado,
       color: "bg-primary",
-      variacion: sinDatos ? "12.4%" : undefined,
-      sube: true,
     },
     {
       label: "Por cobrar",
-      valor: clp.format(sinDatos ? MUESTRA.montoPendiente : 0),
-      peso: sinDatos ? MUESTRA.montoPendiente : 1,
+      valor: clp.format(montoPorCobrar),
+      peso: montoPorCobrar,
       color: "bg-secondary",
-      variacion: sinDatos ? "8.2%" : undefined,
-      sube: false,
     },
   ];
 
@@ -198,16 +245,20 @@ export default async function PanelPage() {
     {
       label: "Resueltas por el bot",
       valor: String(resueltas),
-      peso: resueltas || 1,
+      peso: resueltas,
       color: "bg-primary",
     },
     {
       label: "Derivadas a la oficina",
       valor: String(derivadas),
-      peso: derivadas || 1,
+      peso: derivadas,
       color: "bg-tertiary",
     },
   ];
+
+  const avataresDeuda = sinDatos
+    ? MUESTRA.recientes.map((r) => r.nombre)
+    : conDeuda.map((s) => s.nombre);
 
   return (
     <>
@@ -246,9 +297,11 @@ export default async function PanelPage() {
         <Tarjeta className="flex flex-col">
           <div className="flex items-start justify-between gap-2">
             <h2 className="text-[1.05rem] font-semibold">Padrón</h2>
+            {/* Antes decía "% al día", que se leía como socios al día con sus
+                pagos cuando en realidad era activos/total. */}
             <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 px-2.5 py-1 text-[0.78rem] font-medium">
               <BadgeCheck className="size-3.5 text-forest" />
-              {cobertura}% al día
+              {activos} {activos === 1 ? "activo" : "activos"}
             </span>
           </div>
 
@@ -273,9 +326,7 @@ export default async function PanelPage() {
         <Tarjeta className="flex flex-col">
           <div className="flex items-start justify-between gap-2">
             <h2 className="text-[1.05rem] font-semibold">Cobranza</h2>
-            <span className="text-[0.8rem] text-muted-foreground">
-              Período actual
-            </span>
+            <Avatares nombres={avataresDeuda} />
           </div>
 
           <div className="mt-5">
@@ -288,10 +339,12 @@ export default async function PanelPage() {
 
           <div className="mt-auto border-t border-border/60 pt-4 text-center">
             <Link
-              href="/panel/socios"
+              href="/panel/boletas"
               className="text-[0.9rem] font-medium text-primary hover:underline"
             >
-              {pendientes} boletas pendientes
+              {pendientes === 0
+                ? "Ver boletas"
+                : `${pendientes} ${pendientes === 1 ? "boleta pendiente" : "boletas pendientes"}`}
             </Link>
           </div>
         </Tarjeta>
@@ -300,10 +353,8 @@ export default async function PanelPage() {
         <Tarjeta className="flex flex-col">
           <div className="flex items-start justify-between gap-2">
             <h2 className="text-[1.05rem] font-semibold">Atención</h2>
-            <span className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 px-2.5 py-1.5 text-[0.8rem] font-medium">
-              <CalendarDays className="size-3.5 text-muted-foreground" />
+            <span className="text-[0.8rem] text-muted-foreground">
               Este mes
-              <ChevronDown className="size-3.5 text-muted-foreground" />
             </span>
           </div>
 
@@ -319,7 +370,21 @@ export default async function PanelPage() {
           </div>
 
           <div className="mt-auto pt-5">
-            <BarraProporcion segmentos={atencion} />
+            <GraficoLineas
+              series={[
+                {
+                  nombre: "Resueltas por el bot",
+                  valores: MUESTRA.resueltasPorMes,
+                  color: "var(--primary)",
+                },
+                {
+                  nombre: "Derivadas a la oficina",
+                  valores: MUESTRA.derivadasPorMes,
+                  color: "var(--tertiary)",
+                },
+              ]}
+              etiquetas={MUESTRA.meses.slice(-4)}
+            />
           </div>
         </Tarjeta>
       </div>

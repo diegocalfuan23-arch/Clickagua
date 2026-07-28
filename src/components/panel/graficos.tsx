@@ -126,3 +126,79 @@ export function GraficoArea({
     </div>
   );
 }
+
+/**
+ * Dos líneas comparadas en un espacio chico, para una tarjeta.
+ * Comparte escala entre ambas series: si cada una usara la suya, dos
+ * cantidades muy distintas se verían del mismo tamaño y engañarían.
+ */
+export function GraficoLineas({
+  series,
+  etiquetas,
+}: {
+  series: { nombre: string; valores: number[]; color: string }[];
+  etiquetas: string[];
+}) {
+  const ancho = 300;
+  const alto = 90;
+
+  const todos = series.flatMap((s) => s.valores);
+  if (todos.length === 0) return null;
+
+  const max = Math.max(...todos, 1);
+  const largo = Math.max(...series.map((s) => s.valores.length));
+  if (largo < 2) return null;
+
+  const paso = ancho / (largo - 1);
+  const aPuntos = (valores: number[]) =>
+    valores.map((v, i) => ({
+      x: i * paso,
+      // Dejamos 6px arriba para que el punto más alto no toque el borde.
+      y: alto - 6 - (v / max) * (alto - 12),
+    }));
+
+  return (
+    <div>
+      <svg
+        viewBox={`0 0 ${ancho} ${alto}`}
+        preserveAspectRatio="none"
+        className="h-22 w-full"
+        role="img"
+        aria-label={series
+          .map((s) => `${s.nombre}: máximo ${Math.max(...s.valores)}`)
+          .join(". ")}
+      >
+        {[0.5, 1].map((f) => (
+          <line
+            key={f}
+            x1="0"
+            y1={(alto - 12) * f + 6}
+            x2={ancho}
+            y2={(alto - 12) * f + 6}
+            stroke="var(--border)"
+            strokeWidth="1"
+            vectorEffect="non-scaling-stroke"
+          />
+        ))}
+
+        {series.map((s) => (
+          <path
+            key={s.nombre}
+            d={rutaSuave(aPuntos(s.valores))}
+            fill="none"
+            stroke={s.color}
+            strokeWidth="2"
+            strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
+          />
+        ))}
+      </svg>
+
+      <div className="mt-1.5 flex justify-between text-[0.7rem] text-muted-foreground">
+        {etiquetas.map((e) => (
+          <span key={e}>{e}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
