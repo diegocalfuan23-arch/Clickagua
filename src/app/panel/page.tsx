@@ -200,8 +200,23 @@ export default async function PanelPage({
     .groupBy(boletas.periodo);
 
   const deP = new Map(porPeriodo.map((p) => [p.periodo, p]));
+
+  /** Etiqueta corta del período: "Jul" a partir de "2026-07". */
+  const etiqueta = (p: string) => formatearPeriodo(p).slice(0, 3);
+
   const serie = (campo: "pagadas" | "pendientes" | "vencidas" | "consumo") =>
-    periodos.map((p) => deP.get(p)?.[campo] ?? 0);
+    periodos.map((p) => ({
+      periodo: etiqueta(p),
+      valor: deP.get(p)?.[campo] ?? 0,
+    }));
+
+  // Recharts espera una fila por columna con todas las series como campos.
+  const datosCobranza = periodos.map((p) => ({
+    periodo: etiqueta(p),
+    pagadas: deP.get(p)?.pagadas ?? 0,
+    pendientes: deP.get(p)?.pendientes ?? 0,
+    vencidas: deP.get(p)?.vencidas ?? 0,
+  }));
 
   // Recaudación acumulada por período, para el sparkline de tendencia.
   const recaudadoPorPeriodo = await db
@@ -215,7 +230,10 @@ export default async function PanelPage({
     .groupBy(boletas.periodo);
 
   const deR = new Map(recaudadoPorPeriodo.map((p) => [p.periodo, p.monto]));
-  const serieRecaudado = periodos.map((p) => deR.get(p) ?? 0);
+  const serieRecaudado = periodos.map((p) => ({
+    periodo: etiqueta(p),
+    valor: deR.get(p) ?? 0,
+  }));
 
   const ultimasBoletas = await db
     .select({
@@ -389,8 +407,13 @@ export default async function PanelPage({
                 {morosidad.socios} de {padron.total || 0} socios
               </p>
             </div>
-            <div className="w-32 text-destructive">
-              <SparklineArea valores={serie("vencidas")} />
+            <div className="w-32">
+              <SparklineArea
+                datos={serie("vencidas")}
+                nombre="Boletas vencidas"
+                color="var(--destructive)"
+                id="spark-morosidad"
+              />
             </div>
           </div>
         </Tarjeta>
@@ -418,8 +441,13 @@ export default async function PanelPage({
                 </span>
               </div>
             </div>
-            <div className="w-32 text-forest">
-              <SparklineArea valores={serieRecaudado} />
+            <div className="w-32">
+              <SparklineArea
+                datos={serieRecaudado}
+                nombre="Recaudado"
+                color="var(--forest)"
+                id="spark-recaudacion"
+              />
             </div>
           </div>
         </Tarjeta>
@@ -435,8 +463,9 @@ export default async function PanelPage({
 
           <div className="mt-6">
             <GraficoBarras
-              valores={serie("consumo")}
-              etiquetas={periodos.map((p) => formatearPeriodo(p).slice(0, 3))}
+              datos={serie("consumo")}
+              nombre="Consumo (m³)"
+              color="var(--primary)"
             />
           </div>
 
@@ -496,12 +525,12 @@ export default async function PanelPage({
 
           <div className="mt-5">
             <GraficoBarrasApiladas
+              datos={datosCobranza}
               series={[
-                { nombre: "Pagadas", valores: serie("pagadas"), color: "bg-forest" },
-                { nombre: "Pendientes", valores: serie("pendientes"), color: "bg-primary" },
-                { nombre: "Vencidas", valores: serie("vencidas"), color: "bg-destructive" },
+                { clave: "pagadas", nombre: "Pagadas", color: "var(--forest)" },
+                { clave: "pendientes", nombre: "Pendientes", color: "var(--primary)" },
+                { clave: "vencidas", nombre: "Vencidas", color: "var(--destructive)" },
               ]}
-              etiquetas={periodos.map((p) => formatearPeriodo(p).slice(0, 3))}
             />
           </div>
         </Tarjeta>
