@@ -609,11 +609,10 @@ export default async function PanelPage({
         </Tarjeta>
       </div>
 
-      {/* items-start evita que la tabla se estire para igualar a la tarjeta
-          de al lado, que es más alta: dejaba un hueco grande bajo la última
-          fila. */}
-      <div className="grid items-start gap-4 lg:grid-cols-3">
-        <Tarjeta className="lg:col-span-2">
+      {/* Ambas tarjetas terminan a la misma altura: la tabla reparte el
+          espacio sobrante entre sus filas en vez de dejar un hueco al pie. */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Tarjeta className="flex flex-col lg:col-span-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-[1rem] font-semibold">Boletas recientes</h3>
             <Link
@@ -630,8 +629,10 @@ export default async function PanelPage({
               Todavía no hay boletas emitidas.
             </p>
           ) : (
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full text-[0.87rem]">
+            /* h-full + la tabla al 100%: las filas se estiran para llenar el
+               alto en vez de amontonarse arriba y dejar el resto vacío. */
+            <div className="mt-4 h-full overflow-x-auto">
+              <table className="h-full w-full text-[0.87rem]">
                 <thead>
                   <tr className="border-b border-border/50 text-left text-muted-foreground">
                     <th className="pb-2.5 font-medium">Socio</th>
