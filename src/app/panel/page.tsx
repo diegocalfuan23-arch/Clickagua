@@ -7,6 +7,7 @@ import {
   ArrowRight,
   ArrowUp,
   Droplets,
+  FlaskConical,
   MessageSquare,
   ReceiptText,
   Users,
@@ -21,6 +22,7 @@ import {
   SparklineArea,
 } from "@/components/panel/graficos";
 import { formatearPeriodo } from "@/lib/boletas";
+import { DEMO, type DatosDashboard } from "@/lib/demo-dashboard";
 import { iniciales } from "@/lib/formato";
 import { cn } from "@/lib/utils";
 
@@ -108,11 +110,12 @@ function Delta({ valor, invertido }: { valor: number | null; invertido?: boolean
 export default async function PanelPage({
   searchParams,
 }: {
-  searchParams: Promise<{ rango?: string }>;
+  searchParams: Promise<{ rango?: string; demo?: string }>;
 }) {
   const { apr } = await requireApr();
-  const { rango: rangoParam } = await searchParams;
+  const { rango: rangoParam, demo: demoParam } = await searchParams;
 
+  const demo = demoParam === "1";
   const rango = RANGOS.find((r) => r.id === rangoParam) ?? RANGOS[1];
   const desde = new Date(Date.now() - rango.dias * 86_400_000);
   // El período anterior de igual largo, para calcular la variación.
@@ -257,13 +260,39 @@ export default async function PanelPage({
     columns: { id: true, nombre: true, createdAt: true, activo: true },
   });
 
+  // A partir de aquí se usa `d`, que es lo real o la muestra según ?demo=1.
+  // Nunca por defecto: un panel con cifras inventadas y sin avisarlo haría
+  // que un dirigente las tomara por suyas.
+  const d: DatosDashboard = demo
+    ? DEMO
+    : {
+        padron,
+        morosidad,
+        facturacion,
+        variacionRecaudado: variacion(
+          recienteActual.recaudado,
+          recienteAnterior.recaudado
+        ),
+        variacionEmitidas: variacion(
+          recienteActual.emitidas,
+          recienteAnterior.emitidas
+        ),
+        cobranza: datosCobranza,
+        consumo: serie("consumo"),
+        recaudado: serieRecaudado,
+        vencidas: serie("vencidas"),
+        boletas: ultimasBoletas,
+        socios: ultimosSocios,
+        atencion: null,
+      };
+
   const cobertura =
-    facturacion.facturado > 0
-      ? Math.round((facturacion.recaudado / facturacion.facturado) * 100)
+    d.facturacion.facturado > 0
+      ? Math.round((d.facturacion.recaudado / d.facturacion.facturado) * 100)
       : 0;
 
   const tasaMorosidad =
-    padron.total > 0 ? (morosidad.socios / padron.total) * 100 : 0;
+    d.padron.total > 0 ? (d.morosidad.socios / d.padron.total) * 100 : 0;
 
   const kpis = [
     {
@@ -271,9 +300,9 @@ export default async function PanelPage({
       fondo: "bg-primary/10",
       texto: "text-primary",
       etiqueta: "Socios",
-      valor: String(padron.total),
+      valor: String(d.padron.total),
       delta: null,
-      detalle: `${padron.activos} ${padron.activos === 1 ? "activo" : "activos"}`,
+      detalle: `${d.padron.activos} ${d.padron.activos === 1 ? "activo" : "activos"}`,
       href: "/panel/socios",
     },
     {
@@ -281,12 +310,12 @@ export default async function PanelPage({
       fondo: "bg-destructive/10",
       texto: "text-destructive",
       etiqueta: "Morosos",
-      valor: String(morosidad.socios),
+      valor: String(d.morosidad.socios),
       delta: null,
       detalle:
-        morosidad.socios === 0
+        d.morosidad.socios === 0
           ? "Sin boletas vencidas"
-          : `${clp.format(morosidad.monto)} por cobrar`,
+          : `${clp.format(d.morosidad.monto)} por cobrar`,
       href: "/panel/boletas",
     },
     {
@@ -294,10 +323,10 @@ export default async function PanelPage({
       fondo: "bg-forest/10",
       texto: "text-forest",
       etiqueta: "Recaudado",
-      valor: clp.format(facturacion.recaudado),
+      valor: clp.format(d.facturacion.recaudado),
       delta: variacion(recienteActual.recaudado, recienteAnterior.recaudado),
       detalle:
-        facturacion.facturado === 0
+        d.facturacion.facturado === 0
           ? "Aún no emites boletas"
           : `${cobertura}% de lo facturado`,
       href: "/panel/boletas",
@@ -307,18 +336,34 @@ export default async function PanelPage({
       fondo: "bg-tertiary/15",
       texto: "text-tertiary-texto",
       etiqueta: "Facturas emitidas",
-      valor: String(facturacion.emitidas),
+      valor: String(d.facturacion.emitidas),
       delta: variacion(recienteActual.emitidas, recienteAnterior.emitidas),
       detalle:
-        facturacion.emitidas === 0
+        d.facturacion.emitidas === 0
           ? "Sin boletas emitidas"
-          : `${clp.format(facturacion.facturado)} facturados`,
+          : `${clp.format(d.facturacion.facturado)} facturados`,
       href: "/panel/boletas",
     },
   ];
 
   return (
     <>
+      {demo && (
+        <div className="flex flex-wrap items-center gap-2.5 rounded-xl border border-tertiary/40 bg-tertiary/10 px-4 py-3">
+          <FlaskConical className="size-4 shrink-0 text-tertiary-texto" />
+          <p className="flex-1 text-[0.88rem] leading-relaxed">
+            <strong>Vista de demostración.</strong> Ninguna de estas cifras es
+            de tu comité: son datos inventados para ver cómo se verá el panel.
+          </p>
+          <Link
+            href="/panel"
+            className="text-[0.85rem] font-medium text-primary hover:underline"
+          >
+            Salir de la demo
+          </Link>
+        </div>
+      )}
+
       {/* Resumen: los cuatro KPI con un filtro de período único para toda la
           vista, en vez de un selector por tarjeta. */}
       <Tarjeta className="p-0">
@@ -329,7 +374,7 @@ export default async function PanelPage({
             {RANGOS.map((r) => (
               <Link
                 key={r.id}
-                href={`/panel?rango=${r.id}`}
+                href={`/panel?rango=${r.id}${demo ? "&demo=1" : ""}`}
                 className={cn(
                   "rounded-md px-3 py-1.5 text-[0.85rem] font-medium transition-colors",
                   r.id === rango.id
@@ -404,12 +449,12 @@ export default async function PanelPage({
                 {tasaMorosidad.toFixed(2)}%
               </div>
               <p className="mt-1.5 text-[0.83rem] text-muted-foreground">
-                {morosidad.socios} de {padron.total || 0} socios
+                {d.morosidad.socios} de {d.padron.total || 0} socios
               </p>
             </div>
             <div className="w-32">
               <SparklineArea
-                datos={serie("vencidas")}
+                datos={d.vencidas}
                 nombre="Boletas vencidas"
                 color="var(--destructive)"
                 id="spark-morosidad"
@@ -427,7 +472,7 @@ export default async function PanelPage({
           <div className="mt-5 flex items-end justify-between gap-3">
             <div>
               <div className="text-[1.8rem] leading-none font-semibold tabular-nums">
-                {clp.format(facturacion.recaudado)}
+                {clp.format(d.facturacion.recaudado)}
               </div>
               <div className="mt-1.5 flex items-center gap-1.5">
                 <Delta
@@ -443,7 +488,7 @@ export default async function PanelPage({
             </div>
             <div className="w-32">
               <SparklineArea
-                datos={serieRecaudado}
+                datos={d.recaudado}
                 nombre="Recaudado"
                 color="var(--forest)"
                 id="spark-recaudacion"
@@ -463,7 +508,7 @@ export default async function PanelPage({
 
           <div className="mt-6">
             <GraficoBarras
-              datos={serie("consumo")}
+              datos={d.consumo}
               nombre="Consumo (m³)"
               color="var(--primary)"
             />
@@ -472,12 +517,12 @@ export default async function PanelPage({
           <div className="mt-6 border-t border-border pt-4">
             <h4 className="text-[0.9rem] font-medium">Últimos socios</h4>
             <div className="mt-3 flex flex-col gap-3">
-              {ultimosSocios.length === 0 ? (
+              {d.socios.length === 0 ? (
                 <p className="text-[0.85rem] text-muted-foreground">
                   Aún no cargas el padrón.
                 </p>
               ) : (
-                ultimosSocios.map((s) => (
+                d.socios.map((s) => (
                   <div key={s.id} className="flex items-center gap-2.5">
                     <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-[0.7rem] font-semibold text-muted-foreground">
                       {iniciales(s.nombre)}
@@ -525,7 +570,7 @@ export default async function PanelPage({
 
           <div className="mt-5">
             <GraficoBarrasApiladas
-              datos={datosCobranza}
+              datos={d.cobranza}
               series={[
                 { clave: "pagadas", nombre: "Pagadas", color: "var(--forest)" },
                 { clave: "pendientes", nombre: "Pendientes", color: "var(--primary)" },
@@ -550,7 +595,7 @@ export default async function PanelPage({
             </Link>
           </div>
 
-          {ultimasBoletas.length === 0 ? (
+          {d.boletas.length === 0 ? (
             <p className="mt-8 mb-4 text-center text-[0.88rem] text-muted-foreground">
               Todavía no hay boletas emitidas.
             </p>
@@ -567,7 +612,7 @@ export default async function PanelPage({
                   </tr>
                 </thead>
                 <tbody>
-                  {ultimasBoletas.map((b) => {
+                  {d.boletas.map((b) => {
                     const pagada = b.montoPagado >= b.montoTotal;
                     const atrasada = !pagada && b.fechaVencimiento < new Date();
 
@@ -612,19 +657,81 @@ export default async function PanelPage({
             <MessageSquare className="size-4 text-primary" />
           </div>
 
-          {/* Honesto sobre el estado real: el bot todavía no está conectado. */}
-          <div className="mt-8 mb-6 flex flex-col items-center text-center">
-            <span className="flex size-11 items-center justify-center rounded-full bg-muted">
-              <MessageSquare className="size-5 text-muted-foreground" />
-            </span>
-            <p className="mt-4 text-[0.88rem] font-medium">
-              WhatsApp aún no está conectado
-            </p>
-            <p className="mt-1.5 text-[0.83rem] leading-relaxed text-muted-foreground">
-              Cuando lo actives, aquí verás las consultas de tus socios y
-              cuántas respondió el bot sin que nadie interviniera.
-            </p>
-          </div>
+          {d.atencion ? (
+            <>
+              <div className="mt-4 text-[1.8rem] leading-none font-semibold tabular-nums">
+                {d.atencion.total}
+                <span className="ml-2 text-[0.85rem] font-normal text-muted-foreground">
+                  consultas
+                </span>
+              </div>
+
+              <div className="mt-4">
+                <SparklineArea
+                  datos={d.atencion.serie}
+                  nombre="Consultas"
+                  color="var(--primary)"
+                  id="spark-atencion"
+                />
+              </div>
+
+              <div className="mt-4 flex flex-col gap-2 border-t border-border pt-3.5 text-[0.87rem]">
+                <div className="flex items-center gap-2.5">
+                  <span className="size-2.5 rounded-[3px] bg-primary" />
+                  <span className="flex-1 text-muted-foreground">
+                    Resueltas por el bot
+                  </span>
+                  <span className="font-medium tabular-nums">
+                    {d.atencion.resueltas}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <span className="size-2.5 rounded-[3px] bg-tertiary" />
+                  <span className="flex-1 text-muted-foreground">
+                    Derivadas a la oficina
+                  </span>
+                  <span className="font-medium tabular-nums">
+                    {d.atencion.derivadas}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-col divide-y divide-border/60 border-t border-border pt-1">
+                {d.atencion.recientes.map((r) => (
+                  <div key={r.nombre} className="flex items-center gap-2.5 py-2.5">
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-[0.7rem] font-semibold text-muted-foreground">
+                      {iniciales(r.nombre)}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[0.85rem] font-medium">
+                        {r.nombre}
+                      </div>
+                      <div className="truncate text-[0.8rem] text-muted-foreground">
+                        «{r.texto}»
+                      </div>
+                    </div>
+                    <span className="shrink-0 text-[0.75rem] text-muted-foreground">
+                      {r.hace}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            /* Honesto sobre el estado real: el bot todavía no está conectado. */
+            <div className="mt-8 mb-6 flex flex-col items-center text-center">
+              <span className="flex size-11 items-center justify-center rounded-full bg-muted">
+                <MessageSquare className="size-5 text-muted-foreground" />
+              </span>
+              <p className="mt-4 text-[0.88rem] font-medium">
+                WhatsApp aún no está conectado
+              </p>
+              <p className="mt-1.5 text-[0.83rem] leading-relaxed text-muted-foreground">
+                Cuando lo actives, aquí verás las consultas de tus socios y
+                cuántas respondió el bot sin que nadie interviniera.
+              </p>
+            </div>
+          )}
         </Tarjeta>
       </div>
     </>
