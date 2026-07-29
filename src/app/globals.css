@@ -20,6 +20,9 @@
 
   --tertiary: oklch(0.75 0.15 70);
   --tertiary-foreground: oklch(0.21 0.006 250);
+  /* El ámbar de arriba da 2.29:1 sobre blanco: sirve de fondo, no de texto.
+     Esta versión oscurecida mantiene el mismo matiz y llega a 4.6:1. */
+  --tertiary-texto: oklch(0.55 0.14 55);
 
   --forest: oklch(0.42 0.11 152);
   --forest-foreground: oklch(0.99 0 0);
@@ -67,6 +70,8 @@
 
   --tertiary: oklch(0.68 0.15 60);
   --tertiary-foreground: oklch(0.145 0.004 250);
+  /* Al revés que en claro: sobre fondo oscuro el naranja debe aclararse. */
+  --tertiary-texto: oklch(0.78 0.14 65);
 
   --forest: oklch(0.56 0.12 152);
   --forest-foreground: oklch(0.145 0.004 250);
@@ -108,6 +113,7 @@
   --color-secondary-foreground: var(--secondary-foreground);
   --color-tertiary: var(--tertiary);
   --color-tertiary-foreground: var(--tertiary-foreground);
+  --color-tertiary-texto: var(--tertiary-texto);
   --color-forest: var(--forest);
   --color-forest-foreground: var(--forest-foreground);
   --color-muted: var(--muted);

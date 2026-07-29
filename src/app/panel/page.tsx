@@ -18,14 +18,18 @@ const clp = new Intl.NumberFormat("es-CL", {
 
 function Kpi({
   icono,
-  color,
+  fondo,
+  texto,
   etiqueta,
   valor,
   detalle,
   href,
 }: {
   icono: React.ReactNode;
-  color: string;
+  /** Tinte del recuadro del ícono. */
+  fondo: string;
+  /** Color de la cifra: es lo que identifica al indicador de un vistazo. */
+  texto: string;
   etiqueta: string;
   valor: string;
   detalle: string;
@@ -38,14 +42,16 @@ function Kpi({
     >
       <div className="flex items-center gap-2.5">
         <span
-          className={`flex size-9 items-center justify-center rounded-lg [&_svg]:size-4.5 ${color}`}
+          className={`flex size-9 items-center justify-center rounded-lg [&_svg]:size-4.5 ${fondo} ${texto}`}
         >
           {icono}
         </span>
         <span className="text-[0.9rem] text-muted-foreground">{etiqueta}</span>
       </div>
 
-      <div className="mt-4 text-[1.9rem] leading-none font-semibold tabular-nums">
+      <div
+        className={`mt-4 text-[1.9rem] leading-none font-semibold tabular-nums ${texto}`}
+      >
         {valor}
       </div>
       <p className="mt-1.5 text-[0.83rem] text-muted-foreground">{detalle}</p>
@@ -110,7 +116,8 @@ export default async function PanelPage() {
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <Kpi
         icono={<Users />}
-        color="bg-primary/10 text-primary"
+        fondo="bg-primary/10"
+        texto="text-primary"
         etiqueta="Socios"
         valor={String(padron.total)}
         detalle={
@@ -123,7 +130,8 @@ export default async function PanelPage() {
 
       <Kpi
         icono={<AlertTriangle />}
-        color="bg-destructive/10 text-destructive"
+        fondo="bg-destructive/10"
+        texto="text-destructive"
         etiqueta="Morosos"
         valor={String(morosidad.socios)}
         detalle={
@@ -136,7 +144,8 @@ export default async function PanelPage() {
 
       <Kpi
         icono={<Wallet />}
-        color="bg-forest/10 text-forest"
+        fondo="bg-forest/10"
+        texto="text-forest"
         etiqueta="Recaudado"
         valor={clp.format(facturacion.recaudado)}
         detalle={
@@ -149,7 +158,8 @@ export default async function PanelPage() {
 
       <Kpi
         icono={<ReceiptText />}
-        color="bg-tertiary/15 text-tertiary"
+        fondo="bg-tertiary/15"
+        texto="text-tertiary-texto"
         etiqueta="Facturas emitidas"
         valor={String(facturacion.emitidas)}
         detalle={
