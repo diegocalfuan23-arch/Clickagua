@@ -116,6 +116,9 @@ export default async function PanelPage({
   const { rango: rangoParam, demo: demoParam } = await searchParams;
 
   const demo = demoParam === "1";
+  // Una sola lectura del reloj para toda la página: si cada fila leyera la
+  // suya, dos boletas del mismo vencimiento podrían mostrar estados distintos.
+  const ahora = new Date();
   const rango = RANGOS.find((r) => r.id === rangoParam) ?? RANGOS[1];
   const desde = new Date(Date.now() - rango.dias * 86_400_000);
   // El período anterior de igual largo, para calcular la variación.
@@ -606,8 +609,10 @@ export default async function PanelPage({
         </Tarjeta>
       </div>
 
-      {/* Boletas recientes + actividad del bot. */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      {/* items-start evita que la tabla se estire para igualar a la tarjeta
+          de al lado, que es más alta: dejaba un hueco grande bajo la última
+          fila. */}
+      <div className="grid items-start gap-4 lg:grid-cols-3">
         <Tarjeta className="lg:col-span-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-[1rem] font-semibold">Boletas recientes</h3>
@@ -639,7 +644,9 @@ export default async function PanelPage({
                 <tbody>
                   {d.boletas.map((b) => {
                     const pagada = b.montoPagado >= b.montoTotal;
-                    const atrasada = !pagada && b.fechaVencimiento < new Date();
+                    // `ahora` se fija una vez arriba: leer el reloj por fila
+                    // haría que una boleta cambiara de estado a media tabla.
+                    const atrasada = !pagada && b.fechaVencimiento < ahora;
 
                     return (
                       <tr key={b.id} className="border-b border-border/40 last:border-0">
@@ -684,19 +691,31 @@ export default async function PanelPage({
 
           {d.atencion ? (
             <>
-              <div className="mt-4 text-[1.8rem] leading-none font-semibold tabular-nums">
-                {d.atencion.total}
-                <span className="ml-2 text-[0.85rem] font-normal text-muted-foreground">
-                  consultas
+              <div className="mt-4 flex flex-wrap items-end justify-between gap-2">
+                <div className="text-[1.8rem] leading-none font-semibold tabular-nums">
+                  {d.atencion.total}
+                  <span className="ml-2 text-[0.85rem] font-normal text-muted-foreground">
+                    consultas
+                  </span>
+                </div>
+                {/* El dato que importa: cuántas se resolvieron sin que nadie
+                    del comité contestara. */}
+                <span className="rounded-full bg-forest/10 px-2.5 py-1 text-[0.78rem] font-medium tabular-nums text-forest">
+                  {Math.round(
+                    (d.atencion.resueltas / Math.max(d.atencion.total, 1)) * 100
+                  )}
+                  % automáticas
                 </span>
               </div>
 
-              <div className="mt-4">
-                <SparklineArea
+              {/* Con más alto la curva deja de verse plana: va de 95 a 412 y
+                  en 48px esa subida no se apreciaba. */}
+              <div className="mt-5 h-24">
+                <GraficoArea
                   datos={d.atencion.serie}
                   nombre="Consultas"
                   color="var(--primary)"
-                  id="spark-atencion"
+                  compacto
                 />
               </div>
 

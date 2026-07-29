@@ -187,45 +187,68 @@ export function GraficoArea({
   nombre,
   color,
   formato = "numero",
+  compacto = false,
 }: {
   datos: PuntoSerie[];
   nombre: string;
   color: string;
   formato?: "numero" | "clp";
+  /** Sin eje Y ni grilla, para tarjetas angostas. */
+  compacto?: boolean;
 }) {
   const config = { valor: { label: nombre, color } } satisfies ChartConfig;
+  const gradiente = `area-${nombre.replace(/[^a-zA-Z0-9]/g, "")}`;
 
   return (
-    <ChartContainer config={config} className="h-56 w-full">
-      <AreaChart data={datos} margin={{ top: 8, right: 8, bottom: 0, left: -12 }}>
+    <ChartContainer
+      config={config}
+      className={compacto ? "h-full w-full" : "h-56 w-full"}
+    >
+      <AreaChart
+        data={datos}
+        margin={
+          compacto
+            ? { top: 4, right: 4, bottom: 0, left: 4 }
+            : { top: 8, right: 8, bottom: 0, left: -12 }
+        }
+      >
         <defs>
-          <linearGradient id="areaGrande" x1="0" y1="0" x2="0" y2="1">
+          {/* El id incluye el nombre: con uno fijo, dos áreas en la misma
+              página compartirían degradado y la segunda tomaría el color de
+              la primera. */}
+          <linearGradient id={gradiente} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={color} stopOpacity={0.28} />
             <stop offset="100%" stopColor={color} stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid vertical={false} stroke="var(--border)" />
+
+        {!compacto && (
+          <CartesianGrid vertical={false} stroke="var(--border)" />
+        )}
         <XAxis
           dataKey="periodo"
           tickLine={false}
           axisLine={false}
           tickMargin={8}
           fontSize={12}
+          hide={compacto}
         />
-        <YAxis
-          tickLine={false}
-          axisLine={false}
-          fontSize={12}
-          width={52}
-          tickFormatter={formato === "clp" ? clpCorto : undefined}
-        />
+        {!compacto && (
+          <YAxis
+            tickLine={false}
+            axisLine={false}
+            fontSize={12}
+            width={52}
+            tickFormatter={formato === "clp" ? clpCorto : undefined}
+          />
+        )}
         <ChartTooltip content={<ChartTooltipContent />} />
         <Area
           dataKey="valor"
           type="monotone"
           stroke={color}
           strokeWidth={2}
-          fill="url(#areaGrande)"
+          fill={`url(#${gradiente})`}
           dot={false}
         />
       </AreaChart>
