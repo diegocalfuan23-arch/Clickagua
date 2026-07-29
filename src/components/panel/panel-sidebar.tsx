@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Droplet,
@@ -44,8 +44,35 @@ type Enlace = {
 };
 
 /**
+ * Marca el ítem apenas se hace clic, sin esperar a que termine la navegación.
+ *
+ * `usePathname()` solo cambia cuando la página nueva ya respondió, y las del
+ * panel consultan la base: durante esa espera el ítem clickeado seguía
+ * apagado y el anterior encendido. `useLinkStatus` expone que la navegación
+ * está en curso, así que lo pintamos de inmediato.
+ */
+function EnlaceMenu({
+  label,
+  icon: Icon,
+  activo,
+}: Omit<Enlace, "href"> & { activo: boolean }) {
+  const { pending } = useLinkStatus();
+
+  return (
+    <SidebarMenuButton
+      isActive={activo || pending}
+      tooltip={label}
+      className="hover:bg-muted hover:text-foreground data-active:hover:bg-sidebar-accent data-active:hover:text-sidebar-accent-foreground"
+    >
+      <Icon />
+      <span>{label}</span>
+    </SidebarMenuButton>
+  );
+}
+
+/**
  * El componente base usa `sidebar-accent` tanto para hover como para el ítem
- * activo. Como el activo va en celeste, dejamos el hover en un gris neutro
+ * activo. Como el activo va en índigo, dejamos el hover en un gris neutro
  * para que pasar el mouse no se confunda con estar seleccionado.
  */
 function GrupoEnlaces({
@@ -62,17 +89,12 @@ function GrupoEnlaces({
       <SidebarGroupLabel>{titulo}</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
-          {enlaces.map(({ href, label, icon: Icon }) => (
-            <SidebarMenuItem key={href}>
-              <SidebarMenuButton
-                render={<Link href={href} />}
-                isActive={pathname === href}
-                tooltip={label}
-                className="hover:bg-muted hover:text-foreground data-active:hover:bg-sidebar-accent data-active:hover:text-sidebar-accent-foreground"
-              >
-                <Icon />
-                <span>{label}</span>
-              </SidebarMenuButton>
+          {enlaces.map((enlace) => (
+            <SidebarMenuItem key={enlace.href}>
+              {/* useLinkStatus solo funciona dentro de un <Link>. */}
+              <Link href={enlace.href}>
+                <EnlaceMenu {...enlace} activo={pathname === enlace.href} />
+              </Link>
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
