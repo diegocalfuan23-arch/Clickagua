@@ -17,7 +17,7 @@ import { db } from "@/lib/db";
 import { boletas, socios } from "@/lib/db/schema";
 import { requireApr } from "@/lib/apr-session";
 import {
-  GraficoArea,
+  GraficoAreaMultiple,
   GraficoBarras,
   SparklineArea,
 } from "@/components/panel/graficos";
@@ -238,39 +238,6 @@ export default async function PanelPage({
     valor: deR.get(p) ?? 0,
   }));
 
-  /**
-   * El período que más recaudó y quiénes pagaron en él. La lista y el
-   * gráfico cuentan la misma historia: cuál fue el mejor mes y gracias a
-   * quiénes.
-   */
-  const mejorPeriodo =
-    recaudadoPorPeriodo.length > 0
-      ? recaudadoPorPeriodo.reduce((a, b) => (b.monto > a.monto ? b : a))
-      : null;
-
-  const pagadoresDelMejor = mejorPeriodo
-    ? await db
-        .select({
-          id: socios.id,
-          nombre: socios.nombre,
-          pagado: sql<number>`sum(${boletas.montoPagado})::int`,
-          boletas: sql<number>`count(*)::int`,
-        })
-        .from(boletas)
-        .innerJoin(socios, eq(boletas.socioId, socios.id))
-        .where(
-          and(
-            eq(socios.aprId, apr.id),
-            noAnulada,
-            eq(boletas.periodo, mejorPeriodo.periodo),
-            sql`${boletas.montoPagado} > 0`
-          )
-        )
-        .groupBy(socios.id, socios.nombre)
-        .orderBy(desc(sql`sum(${boletas.montoPagado})`))
-        .limit(6)
-    : [];
-
   const ultimasBoletas = await db
     .select({
       id: boletas.id,
@@ -316,8 +283,6 @@ export default async function PanelPage({
         vencidas: serie("vencidas"),
         boletas: ultimasBoletas,
         socios: ultimosSocios,
-        mejorPeriodo,
-        pagadores: pagadoresDelMejor,
         atencion: null,
       };
 
@@ -532,101 +497,85 @@ export default async function PanelPage({
           </div>
         </Tarjeta>
 
-        {/* Quiénes pagaron en el mejor mes: acompaña al gráfico de ingresos,
-            que está justo debajo. Las dos piezas cuentan lo mismo. */}
-        <Tarjeta>
+        <Tarjeta className="lg:row-span-2">
           <div className="flex items-start justify-between gap-2">
-            <div>
-              <h3 className="text-[1rem] font-semibold">Quiénes pagaron</h3>
-              <p className="mt-0.5 text-[0.85rem] text-muted-foreground">
-                {d.mejorPeriodo
-                  ? `En ${formatearPeriodo(d.mejorPeriodo.periodo)}, el mejor mes`
-                  : "Aún no hay pagos registrados"}
-              </p>
-            </div>
-            <Wallet className="size-4 shrink-0 text-forest" />
+            <h3 className="text-[1rem] font-semibold">Consumo de agua</h3>
+            <Droplets className="size-4 text-primary" />
           </div>
-
-          {d.pagadores.length === 0 ? (
-            <p className="mt-10 mb-8 text-center text-[0.87rem] text-muted-foreground">
-              Todavía nadie ha pagado.
-            </p>
-          ) : (
-            <div className="mt-4 flex flex-col divide-y divide-border/50">
-              {d.pagadores.map((s) => (
-                <div key={s.id} className="flex items-center gap-2.5 py-2.5">
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-forest/10 text-[0.7rem] font-semibold text-forest">
-                    {iniciales(s.nombre)}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-[0.87rem] font-medium">
-                      {s.nombre}
-                    </div>
-                    <div className="text-[0.78rem] text-muted-foreground">
-                      {s.boletas} {s.boletas === 1 ? "boleta" : "boletas"}
-                    </div>
-                  </div>
-                  <span className="shrink-0 text-[0.87rem] font-semibold tabular-nums text-forest">
-                    {clp.format(s.pagado)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </Tarjeta>
-      </div>
-
-      {/* Ingresos por mes: una sola serie, que es donde el área funciona.
-          Con tres estados de escalas distintas las curvas chicas quedaban
-          aplastadas contra el eje. */}
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Tarjeta className="lg:col-span-2">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h3 className="text-[1rem] font-semibold">Ingresos por mes</h3>
-              <p className="mt-0.5 text-[0.85rem] text-muted-foreground">
-                Cuánto se recaudó en cada período
-              </p>
-            </div>
-            {d.mejorPeriodo && (
-              <div className="text-right">
-                <div className="text-[0.78rem] text-muted-foreground">
-                  Mejor mes
-                </div>
-                <div className="mt-0.5 text-[0.95rem] font-semibold text-forest">
-                  {formatearPeriodo(d.mejorPeriodo.periodo)} ·{" "}
-                  {clp.format(d.mejorPeriodo.monto)}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="mt-6">
-            <GraficoArea
-              datos={d.recaudado}
-              nombre="Recaudado"
-              color="var(--forest)"
-              formato="clp"
-            />
-          </div>
-        </Tarjeta>
-
-        <Tarjeta>
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <h3 className="text-[1rem] font-semibold">Consumo de agua</h3>
-              <p className="mt-0.5 text-[0.85rem] text-muted-foreground">
-                Metros cúbicos por período
-              </p>
-            </div>
-            <Droplets className="size-4 shrink-0 text-primary" />
-          </div>
+          <p className="mt-0.5 text-[0.85rem] text-muted-foreground">
+            Metros cúbicos facturados por período
+          </p>
 
           <div className="mt-6">
             <GraficoBarras
               datos={d.consumo}
               nombre="Consumo (m³)"
               color="var(--primary)"
+            />
+          </div>
+
+          <div className="mt-6 border-t border-border pt-4">
+            <h4 className="text-[0.9rem] font-medium">Últimos socios</h4>
+            <div className="mt-3 flex flex-col gap-3">
+              {d.socios.length === 0 ? (
+                <p className="text-[0.85rem] text-muted-foreground">
+                  Aún no cargas el padrón.
+                </p>
+              ) : (
+                d.socios.map((s) => (
+                  <div key={s.id} className="flex items-center gap-2.5">
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-[0.7rem] font-semibold text-muted-foreground">
+                      {iniciales(s.nombre)}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-[0.87rem]">
+                      {s.nombre}
+                    </span>
+                    <span
+                      className={cn(
+                        "shrink-0 rounded-full px-2 py-0.5 text-[0.72rem] font-medium",
+                        s.activo
+                          ? "bg-forest/10 text-forest"
+                          : "bg-muted text-muted-foreground"
+                      )}
+                    >
+                      {s.activo ? "Activo" : "Inactivo"}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </Tarjeta>
+
+        {/* Estado de la cobranza: el equivalente al embudo de la referencia,
+            pero con lo que un comité sí sigue mes a mes. */}
+        <Tarjeta className="lg:col-span-2">
+          <h3 className="text-[1rem] font-semibold">Estado de la cobranza</h3>
+          <p className="mt-0.5 text-[0.85rem] text-muted-foreground">
+            Boletas por período según su estado de pago
+          </p>
+
+          <div className="mt-4 flex flex-wrap gap-4 text-[0.83rem]">
+            {[
+              { label: "Pagadas", color: "bg-forest" },
+              { label: "Pendientes", color: "bg-primary" },
+              { label: "Vencidas", color: "bg-destructive" },
+            ].map((l) => (
+              <span key={l.label} className="flex items-center gap-1.5">
+                <span className={cn("size-2.5 rounded-full", l.color)} />
+                {l.label}
+              </span>
+            ))}
+          </div>
+
+          <div className="mt-5">
+            <GraficoAreaMultiple
+              datos={d.cobranza}
+              series={[
+                { clave: "pagadas", nombre: "Pagadas", color: "var(--forest)" },
+                { clave: "pendientes", nombre: "Pendientes", color: "var(--primary)" },
+                { clave: "vencidas", nombre: "Vencidas", color: "var(--destructive)" },
+              ]}
             />
           </div>
         </Tarjeta>

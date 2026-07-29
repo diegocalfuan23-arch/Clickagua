@@ -31,14 +31,6 @@ export type DatosDashboard = {
     fechaVencimiento: Date;
   }[];
   socios: { id: string; nombre: string; activo: boolean }[];
-  /** El período que más recaudó y quiénes pagaron en él. */
-  mejorPeriodo: { periodo: string; monto: number } | null;
-  pagadores: {
-    id: string;
-    nombre: string;
-    pagado: number;
-    boletas: number;
-  }[];
   /** Null mientras WhatsApp no esté conectado: no hay nada que mostrar. */
   atencion: {
     total: number;
@@ -147,18 +139,6 @@ export const DEMO: DatosDashboard = {
       montoPagado: 0,
       fechaVencimiento: dias(-18),
     },
-  ],
-
-  // Febrero fue el mes más alto de la serie de recaudación.
-  mejorPeriodo: { periodo: "2026-02", monto: 1_980_000 },
-
-  pagadores: [
-    { id: "p1", nombre: "Luis Painemal", pagado: 39_450, boletas: 3 },
-    { id: "p2", nombre: "María Huenchuñir", pagado: 27_750, boletas: 3 },
-    { id: "p3", nombre: "Elena Quilaqueo", pagado: 22_100, boletas: 2 },
-    { id: "p4", nombre: "Rosa Millán", pagado: 14_800, boletas: 2 },
-    { id: "p5", nombre: "Juan Marileo", pagado: 11_300, boletas: 1 },
-    { id: "p6", nombre: "Sofía Nahuelpán", pagado: 9_250, boletas: 1 },
   ],
 
   socios: [
