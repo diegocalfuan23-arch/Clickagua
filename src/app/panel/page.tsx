@@ -1,10 +1,28 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { and, countDistinct, eq, sql } from "drizzle-orm";
-import { AlertTriangle, ReceiptText, Users, Wallet } from "lucide-react";
+import { and, countDistinct, desc, eq, gte, sql } from "drizzle-orm";
+import {
+  AlertTriangle,
+  ArrowDown,
+  ArrowRight,
+  ArrowUp,
+  Droplets,
+  MessageSquare,
+  ReceiptText,
+  Users,
+  Wallet,
+} from "lucide-react";
 import { db } from "@/lib/db";
 import { boletas, socios } from "@/lib/db/schema";
 import { requireApr } from "@/lib/apr-session";
+import {
+  GraficoBarras,
+  GraficoBarrasApiladas,
+  SparklineArea,
+} from "@/components/panel/graficos";
+import { formatearPeriodo } from "@/lib/boletas";
+import { iniciales } from "@/lib/formato";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Resumen",
@@ -16,67 +34,105 @@ const clp = new Intl.NumberFormat("es-CL", {
   maximumFractionDigits: 0,
 });
 
-function Kpi({
-  icono,
-  fondo,
-  texto,
-  etiqueta,
-  valor,
-  detalle,
-  href,
+const fechaCorta = new Intl.DateTimeFormat("es-CL", {
+  day: "2-digit",
+  month: "short",
+});
+
+type Rango = "semana" | "mes" | "año";
+
+const RANGOS: { id: Rango; label: string; dias: number }[] = [
+  { id: "semana", label: "Semanal", dias: 7 },
+  { id: "mes", label: "Mensual", dias: 30 },
+  { id: "año", label: "Anual", dias: 365 },
+];
+
+/** Los últimos N períodos en formato "AAAA-MM", del más viejo al más nuevo. */
+function ultimosPeriodos(n: number): string[] {
+  const hoy = new Date();
+  return Array.from({ length: n }, (_, i) => {
+    const d = new Date(hoy.getFullYear(), hoy.getMonth() - (n - 1 - i), 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  });
+}
+
+function Tarjeta({
+  children,
+  className,
 }: {
-  icono: React.ReactNode;
-  /** Tinte del recuadro del ícono. */
-  fondo: string;
-  /** Color de la cifra: es lo que identifica al indicador de un vistazo. */
-  texto: string;
-  etiqueta: string;
-  valor: string;
-  detalle: string;
-  href: string;
+  children: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <Link
-      href={href}
-      className="rounded-xl border border-border bg-card p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors hover:border-primary/40"
+    <div
+      className={cn(
+        "rounded-xl border border-border bg-card p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+        className
+      )}
     >
-      <div className="flex items-center gap-2.5">
-        <span
-          className={`flex size-9 items-center justify-center rounded-lg [&_svg]:size-4.5 ${fondo} ${texto}`}
-        >
-          {icono}
-        </span>
-        <span className="text-[0.9rem] text-muted-foreground">{etiqueta}</span>
-      </div>
-
-      <div
-        className={`mt-4 text-[1.9rem] leading-none font-semibold tabular-nums ${texto}`}
-      >
-        {valor}
-      </div>
-      <p className="mt-1.5 text-[0.83rem] text-muted-foreground">{detalle}</p>
-    </Link>
+      {children}
+    </div>
   );
 }
 
-export default async function PanelPage() {
+/** Variación respecto al período anterior. */
+function Delta({ valor, invertido }: { valor: number | null; invertido?: boolean }) {
+  if (valor === null) {
+    return (
+      <span className="rounded-full bg-muted px-2 py-0.5 text-[0.75rem] font-medium text-muted-foreground">
+        sin comparación
+      </span>
+    );
+  }
+
+  // En morosidad subir es malo: `invertido` cambia qué color es bueno.
+  const bueno = invertido ? valor <= 0 : valor >= 0;
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[0.75rem] font-medium tabular-nums",
+        bueno ? "bg-forest/10 text-forest" : "bg-destructive/10 text-destructive"
+      )}
+    >
+      {valor >= 0 ? (
+        <ArrowUp className="size-3" />
+      ) : (
+        <ArrowDown className="size-3" />
+      )}
+      {Math.abs(valor).toFixed(1)}%
+    </span>
+  );
+}
+
+export default async function PanelPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ rango?: string }>;
+}) {
   const { apr } = await requireApr();
+  const { rango: rangoParam } = await searchParams;
+
+  const rango = RANGOS.find((r) => r.id === rangoParam) ?? RANGOS[1];
+  const desde = new Date(Date.now() - rango.dias * 86_400_000);
+  // El período anterior de igual largo, para calcular la variación.
+  const desdeAnterior = new Date(Date.now() - rango.dias * 2 * 86_400_000);
+
+  const noAnulada = sql`${boletas.estado} <> 'ANULADA'`;
+  const impaga = sql`${boletas.montoPagado} < ${boletas.montoTotal}`;
+  const vencida = sql`${boletas.fechaVencimiento} < now()`;
 
   const [padron] = await db
     .select({
       total: sql<number>`count(*)::int`,
       activos: sql<number>`count(*) filter (where ${socios.activo})::int`,
+      nuevos: sql<number>`count(*) filter (where ${socios.createdAt} >= ${desde})::int`,
     })
     .from(socios)
     .where(eq(socios.aprId, apr.id));
 
-  // Un moroso es un socio con al menos una boleta impaga cuyo vencimiento ya
-  // pasó. Se cuenta el socio, no la boleta: quien debe tres meses es un
-  // moroso, no tres.
-  //
-  // No basta con estado = 'VENCIDA': ese valor se fija al guardar la boleta y
-  // nadie lo recalcula después, así que una PENDIENTE que venció ayer seguiría
-  // marcada como pendiente. La fecha es la fuente de verdad.
+  // Un moroso es un SOCIO con boletas impagas ya vencidas, no una boleta:
+  // quien debe tres meses es un moroso, no tres.
   const [morosidad] = await db
     .select({
       socios: countDistinct(boletas.socioId),
@@ -84,17 +140,8 @@ export default async function PanelPage() {
     })
     .from(boletas)
     .innerJoin(socios, eq(boletas.socioId, socios.id))
-    .where(
-      and(
-        eq(socios.aprId, apr.id),
-        sql`${boletas.estado} <> 'ANULADA'`,
-        sql`${boletas.montoPagado} < ${boletas.montoTotal}`,
-        sql`${boletas.fechaVencimiento} < now()`
-      )
-    );
+    .where(and(eq(socios.aprId, apr.id), noAnulada, impaga, vencida));
 
-  // Lo recaudado y lo emitido excluyen las anuladas: una boleta sin efecto
-  // no debe inflar ninguna de las dos cifras.
   const [facturacion] = await db
     .select({
       emitidas: sql<number>`count(*)::int`,
@@ -103,72 +150,454 @@ export default async function PanelPage() {
     })
     .from(boletas)
     .innerJoin(socios, eq(boletas.socioId, socios.id))
+    .where(and(eq(socios.aprId, apr.id), noAnulada));
+
+  // Recaudación del rango actual y del anterior, para la variación.
+  const [recienteActual] = await db
+    .select({
+      recaudado: sql<number>`coalesce(sum(${boletas.montoPagado}), 0)::int`,
+      emitidas: sql<number>`count(*)::int`,
+    })
+    .from(boletas)
+    .innerJoin(socios, eq(boletas.socioId, socios.id))
     .where(
-      and(eq(socios.aprId, apr.id), sql`${boletas.estado} <> 'ANULADA'`)
+      and(eq(socios.aprId, apr.id), noAnulada, gte(boletas.fechaEmision, desde))
     );
+
+  const [recienteAnterior] = await db
+    .select({
+      recaudado: sql<number>`coalesce(sum(${boletas.montoPagado}), 0)::int`,
+      emitidas: sql<number>`count(*)::int`,
+    })
+    .from(boletas)
+    .innerJoin(socios, eq(boletas.socioId, socios.id))
+    .where(
+      and(
+        eq(socios.aprId, apr.id),
+        noAnulada,
+        gte(boletas.fechaEmision, desdeAnterior),
+        sql`${boletas.fechaEmision} < ${desde}`
+      )
+    );
+
+  /** Sin base con la que comparar, no inventamos un porcentaje. */
+  const variacion = (actual: number, anterior: number) =>
+    anterior === 0 ? null : ((actual - anterior) / anterior) * 100;
+
+  // Estado de las boletas por período, para el gráfico apilado.
+  const periodos = ultimosPeriodos(8);
+  const porPeriodo = await db
+    .select({
+      periodo: boletas.periodo,
+      pagadas: sql<number>`count(*) filter (where ${boletas.montoPagado} >= ${boletas.montoTotal})::int`,
+      pendientes: sql<number>`count(*) filter (where ${boletas.montoPagado} < ${boletas.montoTotal} and ${boletas.fechaVencimiento} >= now())::int`,
+      vencidas: sql<number>`count(*) filter (where ${boletas.montoPagado} < ${boletas.montoTotal} and ${boletas.fechaVencimiento} < now())::int`,
+      consumo: sql<number>`coalesce(sum(${boletas.consumoM3}), 0)::int`,
+    })
+    .from(boletas)
+    .innerJoin(socios, eq(boletas.socioId, socios.id))
+    .where(and(eq(socios.aprId, apr.id), noAnulada))
+    .groupBy(boletas.periodo);
+
+  const deP = new Map(porPeriodo.map((p) => [p.periodo, p]));
+  const serie = (campo: "pagadas" | "pendientes" | "vencidas" | "consumo") =>
+    periodos.map((p) => deP.get(p)?.[campo] ?? 0);
+
+  // Recaudación acumulada por período, para el sparkline de tendencia.
+  const recaudadoPorPeriodo = await db
+    .select({
+      periodo: boletas.periodo,
+      monto: sql<number>`coalesce(sum(${boletas.montoPagado}), 0)::int`,
+    })
+    .from(boletas)
+    .innerJoin(socios, eq(boletas.socioId, socios.id))
+    .where(and(eq(socios.aprId, apr.id), noAnulada))
+    .groupBy(boletas.periodo);
+
+  const deR = new Map(recaudadoPorPeriodo.map((p) => [p.periodo, p.monto]));
+  const serieRecaudado = periodos.map((p) => deR.get(p) ?? 0);
+
+  const ultimasBoletas = await db
+    .select({
+      id: boletas.id,
+      socioNombre: socios.nombre,
+      periodo: boletas.periodo,
+      montoTotal: boletas.montoTotal,
+      montoPagado: boletas.montoPagado,
+      fechaVencimiento: boletas.fechaVencimiento,
+    })
+    .from(boletas)
+    .innerJoin(socios, eq(boletas.socioId, socios.id))
+    .where(eq(socios.aprId, apr.id))
+    .orderBy(desc(boletas.createdAt))
+    .limit(5);
+
+  const ultimosSocios = await db.query.socios.findMany({
+    where: eq(socios.aprId, apr.id),
+    orderBy: [desc(socios.createdAt)],
+    limit: 5,
+    columns: { id: true, nombre: true, createdAt: true, activo: true },
+  });
 
   const cobertura =
     facturacion.facturado > 0
       ? Math.round((facturacion.recaudado / facturacion.facturado) * 100)
       : 0;
 
+  const tasaMorosidad =
+    padron.total > 0 ? (morosidad.socios / padron.total) * 100 : 0;
+
+  const kpis = [
+    {
+      icono: <Users />,
+      fondo: "bg-primary/10",
+      texto: "text-primary",
+      etiqueta: "Socios",
+      valor: String(padron.total),
+      delta: null,
+      detalle: `${padron.activos} ${padron.activos === 1 ? "activo" : "activos"}`,
+      href: "/panel/socios",
+    },
+    {
+      icono: <AlertTriangle />,
+      fondo: "bg-destructive/10",
+      texto: "text-destructive",
+      etiqueta: "Morosos",
+      valor: String(morosidad.socios),
+      delta: null,
+      detalle:
+        morosidad.socios === 0
+          ? "Sin boletas vencidas"
+          : `${clp.format(morosidad.monto)} por cobrar`,
+      href: "/panel/boletas",
+    },
+    {
+      icono: <Wallet />,
+      fondo: "bg-forest/10",
+      texto: "text-forest",
+      etiqueta: "Recaudado",
+      valor: clp.format(facturacion.recaudado),
+      delta: variacion(recienteActual.recaudado, recienteAnterior.recaudado),
+      detalle:
+        facturacion.facturado === 0
+          ? "Aún no emites boletas"
+          : `${cobertura}% de lo facturado`,
+      href: "/panel/boletas",
+    },
+    {
+      icono: <ReceiptText />,
+      fondo: "bg-tertiary/15",
+      texto: "text-tertiary-texto",
+      etiqueta: "Facturas emitidas",
+      valor: String(facturacion.emitidas),
+      delta: variacion(recienteActual.emitidas, recienteAnterior.emitidas),
+      detalle:
+        facturacion.emitidas === 0
+          ? "Sin boletas emitidas"
+          : `${clp.format(facturacion.facturado)} facturados`,
+      href: "/panel/boletas",
+    },
+  ];
+
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <Kpi
-        icono={<Users />}
-        fondo="bg-primary/10"
-        texto="text-primary"
-        etiqueta="Socios"
-        valor={String(padron.total)}
-        detalle={
-          padron.total === 0
-            ? "Aún no cargas el padrón"
-            : `${padron.activos} ${padron.activos === 1 ? "activo" : "activos"}`
-        }
-        href="/panel/socios"
-      />
+    <>
+      {/* Resumen: los cuatro KPI con un filtro de período único para toda la
+          vista, en vez de un selector por tarjeta. */}
+      <Tarjeta className="p-0">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-5">
+          <h2 className="text-[1.05rem] font-semibold">Resumen</h2>
 
-      <Kpi
-        icono={<AlertTriangle />}
-        fondo="bg-destructive/10"
-        texto="text-destructive"
-        etiqueta="Morosos"
-        valor={String(morosidad.socios)}
-        detalle={
-          morosidad.socios === 0
-            ? "Sin boletas vencidas"
-            : `${clp.format(morosidad.monto)} por cobrar`
-        }
-        href="/panel/boletas"
-      />
+          <div className="flex rounded-lg border border-border p-0.5">
+            {RANGOS.map((r) => (
+              <Link
+                key={r.id}
+                href={`/panel?rango=${r.id}`}
+                className={cn(
+                  "rounded-md px-3 py-1.5 text-[0.85rem] font-medium transition-colors",
+                  r.id === rango.id
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {r.label}
+              </Link>
+            ))}
+          </div>
+        </div>
 
-      <Kpi
-        icono={<Wallet />}
-        fondo="bg-forest/10"
-        texto="text-forest"
-        etiqueta="Recaudado"
-        valor={clp.format(facturacion.recaudado)}
-        detalle={
-          facturacion.facturado === 0
-            ? "Aún no emites boletas"
-            : `${cobertura}% de lo facturado`
-        }
-        href="/panel/boletas"
-      />
+        <div className="grid border-t border-border sm:grid-cols-2 xl:grid-cols-4">
+          {kpis.map((kpi, i) => (
+            <Link
+              key={kpi.etiqueta}
+              href={kpi.href}
+              className={cn(
+                "p-5 transition-colors hover:bg-muted/40",
+                i > 0 && "xl:border-l xl:border-border",
+                i % 2 === 1 && "sm:border-l sm:border-border xl:border-l",
+                i > 1 && "sm:border-t sm:border-border xl:border-t-0"
+              )}
+            >
+              <div className="flex items-center gap-2.5">
+                <span
+                  className={cn(
+                    "flex size-9 items-center justify-center rounded-lg [&_svg]:size-4.5",
+                    kpi.fondo,
+                    kpi.texto
+                  )}
+                >
+                  {kpi.icono}
+                </span>
+                <span className="text-[0.9rem] text-muted-foreground">
+                  {kpi.etiqueta}
+                </span>
+              </div>
 
-      <Kpi
-        icono={<ReceiptText />}
-        fondo="bg-tertiary/15"
-        texto="text-tertiary-texto"
-        etiqueta="Facturas emitidas"
-        valor={String(facturacion.emitidas)}
-        detalle={
-          facturacion.emitidas === 0
-            ? "Sin boletas emitidas"
-            : `${clp.format(facturacion.facturado)} facturados`
-        }
-        href="/panel/boletas"
-      />
-    </div>
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <span
+                  className={cn(
+                    "text-[1.8rem] leading-none font-semibold tabular-nums",
+                    kpi.texto
+                  )}
+                >
+                  {kpi.valor}
+                </span>
+                {kpi.delta !== null && <Delta valor={kpi.delta} />}
+              </div>
+
+              <p className="mt-1.5 text-[0.83rem] text-muted-foreground">
+                {kpi.detalle}
+              </p>
+            </Link>
+          ))}
+        </div>
+      </Tarjeta>
+
+      {/* Dos tarjetas de tendencia + rendimiento del padrón a la derecha. */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Tarjeta>
+          <h3 className="text-[1rem] font-semibold">Tasa de morosidad</h3>
+          <p className="mt-0.5 text-[0.85rem] text-muted-foreground">
+            Socios con boletas vencidas
+          </p>
+
+          <div className="mt-5 flex items-end justify-between gap-3">
+            <div>
+              <div className="text-[1.8rem] leading-none font-semibold tabular-nums">
+                {tasaMorosidad.toFixed(2)}%
+              </div>
+              <p className="mt-1.5 text-[0.83rem] text-muted-foreground">
+                {morosidad.socios} de {padron.total || 0} socios
+              </p>
+            </div>
+            <div className="w-32 text-destructive">
+              <SparklineArea valores={serie("vencidas")} />
+            </div>
+          </div>
+        </Tarjeta>
+
+        <Tarjeta>
+          <h3 className="text-[1rem] font-semibold">Recaudación</h3>
+          <p className="mt-0.5 text-[0.85rem] text-muted-foreground">
+            Pagos registrados por período
+          </p>
+
+          <div className="mt-5 flex items-end justify-between gap-3">
+            <div>
+              <div className="text-[1.8rem] leading-none font-semibold tabular-nums">
+                {clp.format(facturacion.recaudado)}
+              </div>
+              <div className="mt-1.5 flex items-center gap-1.5">
+                <Delta
+                  valor={variacion(
+                    recienteActual.recaudado,
+                    recienteAnterior.recaudado
+                  )}
+                />
+                <span className="text-[0.83rem] text-muted-foreground">
+                  vs. período anterior
+                </span>
+              </div>
+            </div>
+            <div className="w-32 text-forest">
+              <SparklineArea valores={serieRecaudado} />
+            </div>
+          </div>
+        </Tarjeta>
+
+        <Tarjeta className="lg:row-span-2">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="text-[1rem] font-semibold">Consumo de agua</h3>
+            <Droplets className="size-4 text-primary" />
+          </div>
+          <p className="mt-0.5 text-[0.85rem] text-muted-foreground">
+            Metros cúbicos facturados por período
+          </p>
+
+          <div className="mt-6">
+            <GraficoBarras
+              valores={serie("consumo")}
+              etiquetas={periodos.map((p) => formatearPeriodo(p).slice(0, 3))}
+            />
+          </div>
+
+          <div className="mt-6 border-t border-border pt-4">
+            <h4 className="text-[0.9rem] font-medium">Últimos socios</h4>
+            <div className="mt-3 flex flex-col gap-3">
+              {ultimosSocios.length === 0 ? (
+                <p className="text-[0.85rem] text-muted-foreground">
+                  Aún no cargas el padrón.
+                </p>
+              ) : (
+                ultimosSocios.map((s) => (
+                  <div key={s.id} className="flex items-center gap-2.5">
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-[0.7rem] font-semibold text-muted-foreground">
+                      {iniciales(s.nombre)}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-[0.87rem]">
+                      {s.nombre}
+                    </span>
+                    <span
+                      className={cn(
+                        "shrink-0 rounded-full px-2 py-0.5 text-[0.72rem] font-medium",
+                        s.activo
+                          ? "bg-forest/10 text-forest"
+                          : "bg-muted text-muted-foreground"
+                      )}
+                    >
+                      {s.activo ? "Activo" : "Inactivo"}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </Tarjeta>
+
+        {/* Estado de la cobranza: el equivalente al embudo de la referencia,
+            pero con lo que un comité sí sigue mes a mes. */}
+        <Tarjeta className="lg:col-span-2">
+          <h3 className="text-[1rem] font-semibold">Estado de la cobranza</h3>
+          <p className="mt-0.5 text-[0.85rem] text-muted-foreground">
+            Boletas por período según su estado de pago
+          </p>
+
+          <div className="mt-4 flex flex-wrap gap-4 text-[0.83rem]">
+            {[
+              { label: "Pagadas", color: "bg-forest" },
+              { label: "Pendientes", color: "bg-primary" },
+              { label: "Vencidas", color: "bg-destructive" },
+            ].map((l) => (
+              <span key={l.label} className="flex items-center gap-1.5">
+                <span className={cn("size-2.5 rounded-full", l.color)} />
+                {l.label}
+              </span>
+            ))}
+          </div>
+
+          <div className="mt-5">
+            <GraficoBarrasApiladas
+              series={[
+                { nombre: "Pagadas", valores: serie("pagadas"), color: "bg-forest" },
+                { nombre: "Pendientes", valores: serie("pendientes"), color: "bg-primary" },
+                { nombre: "Vencidas", valores: serie("vencidas"), color: "bg-destructive" },
+              ]}
+              etiquetas={periodos.map((p) => formatearPeriodo(p).slice(0, 3))}
+            />
+          </div>
+        </Tarjeta>
+      </div>
+
+      {/* Boletas recientes + actividad del bot. */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Tarjeta className="lg:col-span-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-[1rem] font-semibold">Boletas recientes</h3>
+            <Link
+              href="/panel/boletas"
+              className="inline-flex items-center gap-1 text-[0.85rem] font-medium text-primary hover:underline"
+            >
+              Ver todas
+              <ArrowRight className="size-3.5" />
+            </Link>
+          </div>
+
+          {ultimasBoletas.length === 0 ? (
+            <p className="mt-8 mb-4 text-center text-[0.88rem] text-muted-foreground">
+              Todavía no hay boletas emitidas.
+            </p>
+          ) : (
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full text-[0.87rem]">
+                <thead>
+                  <tr className="border-b border-border/50 text-left text-muted-foreground">
+                    <th className="pb-2.5 font-medium">Socio</th>
+                    <th className="pb-2.5 font-medium">Período</th>
+                    <th className="pb-2.5 font-medium">Monto</th>
+                    <th className="pb-2.5 font-medium">Vence</th>
+                    <th className="pb-2.5 font-medium">Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ultimasBoletas.map((b) => {
+                    const pagada = b.montoPagado >= b.montoTotal;
+                    const atrasada = !pagada && b.fechaVencimiento < new Date();
+
+                    return (
+                      <tr key={b.id} className="border-b border-border/40 last:border-0">
+                        <td className="py-3 font-medium">{b.socioNombre}</td>
+                        <td className="py-3 text-muted-foreground">
+                          {formatearPeriodo(b.periodo)}
+                        </td>
+                        <td className="py-3 tabular-nums">
+                          {clp.format(b.montoTotal)}
+                        </td>
+                        <td className="py-3 tabular-nums text-muted-foreground">
+                          {fechaCorta.format(b.fechaVencimiento)}
+                        </td>
+                        <td className="py-3">
+                          <span
+                            className={cn(
+                              "rounded-full px-2 py-0.5 text-[0.75rem] font-medium",
+                              pagada
+                                ? "bg-forest/10 text-forest"
+                                : atrasada
+                                  ? "bg-destructive/10 text-destructive"
+                                  : "bg-tertiary/15 text-tertiary-texto"
+                            )}
+                          >
+                            {pagada ? "Pagada" : atrasada ? "Vencida" : "Pendiente"}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Tarjeta>
+
+        <Tarjeta>
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="text-[1rem] font-semibold">Atención por WhatsApp</h3>
+            <MessageSquare className="size-4 text-primary" />
+          </div>
+
+          {/* Honesto sobre el estado real: el bot todavía no está conectado. */}
+          <div className="mt-8 mb-6 flex flex-col items-center text-center">
+            <span className="flex size-11 items-center justify-center rounded-full bg-muted">
+              <MessageSquare className="size-5 text-muted-foreground" />
+            </span>
+            <p className="mt-4 text-[0.88rem] font-medium">
+              WhatsApp aún no está conectado
+            </p>
+            <p className="mt-1.5 text-[0.83rem] leading-relaxed text-muted-foreground">
+              Cuando lo actives, aquí verás las consultas de tus socios y
+              cuántas respondió el bot sin que nadie interviniera.
+            </p>
+          </div>
+        </Tarjeta>
+      </div>
+    </>
   );
 }

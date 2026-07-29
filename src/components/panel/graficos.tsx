@@ -202,3 +202,155 @@ export function GraficoLineas({
     </div>
   );
 }
+
+/**
+ * Sparkline con área rellena, para las tarjetas de tendencia.
+ * Toma el color de `currentColor`, así la tarjeta decide el tono.
+ */
+export function SparklineArea({ valores }: { valores: number[] }) {
+  const ancho = 160;
+  const alto = 48;
+  const puntos = puntosDeRuta(valores, ancho, alto - 6);
+  if (!puntos) return null;
+
+  const linea = rutaSuave(puntos);
+  const id = `spark-${valores.join("-").slice(0, 24)}`;
+
+  return (
+    <svg
+      viewBox={`0 0 ${ancho} ${alto}`}
+      preserveAspectRatio="none"
+      className="h-12 w-full"
+      aria-hidden
+    >
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="currentColor" stopOpacity="0.25" />
+          <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={`${linea} L ${ancho},${alto} L 0,${alto} Z`} fill={`url(#${id})`} />
+      <path
+        d={linea}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
+  );
+}
+
+/**
+ * Barras apiladas: una columna por período, cada serie encima de la anterior.
+ * Con todo en cero dibuja las guías pero ninguna barra, en vez de inventar
+ * alturas iguales.
+ */
+export function GraficoBarrasApiladas({
+  series,
+  etiquetas,
+}: {
+  series: { nombre: string; valores: number[]; color: string }[];
+  etiquetas: string[];
+}) {
+  const alto = 200;
+  const columnas = etiquetas.length;
+  if (columnas === 0 || series.length === 0) return null;
+
+  // El total más alto define la escala; si todo es cero usamos 1 para no
+  // dividir por cero, y como ningún valor supera 0 no se dibuja nada.
+  const totales = etiquetas.map((_, i) =>
+    series.reduce((suma, s) => suma + (s.valores[i] ?? 0), 0)
+  );
+  const max = Math.max(...totales, 1);
+  const hayDatos = totales.some((t) => t > 0);
+
+  return (
+    <div>
+      <div className="flex items-end gap-2" style={{ height: alto }}>
+        {etiquetas.map((etiqueta, i) => (
+          <div
+            key={etiqueta}
+            className="flex flex-1 flex-col justify-end gap-0.5"
+            title={`${etiqueta}: ${totales[i]}`}
+          >
+            {series.map((s) => {
+              const valor = s.valores[i] ?? 0;
+              if (valor === 0) return null;
+              return (
+                <div
+                  key={s.nombre}
+                  className={`rounded-sm ${s.color}`}
+                  style={{ height: `${(valor / max) * (alto - 20)}px` }}
+                />
+              );
+            })}
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-2 flex gap-2 border-t border-border pt-2 text-[0.72rem] text-muted-foreground">
+        {etiquetas.map((e) => (
+          <span key={e} className="flex-1 text-center">
+            {e}
+          </span>
+        ))}
+      </div>
+
+      {!hayDatos && (
+        <p className="mt-3 text-center text-[0.83rem] text-muted-foreground">
+          Sin datos todavía
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Barras simples verticales, con el valor máximo destacado. */
+export function GraficoBarras({
+  valores,
+  etiquetas,
+  color = "bg-primary",
+}: {
+  valores: number[];
+  etiquetas: string[];
+  color?: string;
+}) {
+  const alto = 130;
+  const max = Math.max(...valores, 1);
+  const hayDatos = valores.some((v) => v > 0);
+
+  return (
+    <div>
+      <div className="flex items-end gap-1.5" style={{ height: alto }}>
+        {valores.map((valor, i) => (
+          <div
+            key={etiquetas[i]}
+            className="flex flex-1 flex-col justify-end"
+            title={`${etiquetas[i]}: ${valor}`}
+          >
+            <div
+              className={`rounded-t-md ${color} ${valor === max && hayDatos ? "" : "opacity-45"}`}
+              style={{ height: `${Math.max((valor / max) * alto, valor > 0 ? 4 : 0)}px` }}
+            />
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-2 flex gap-1.5 text-[0.72rem] text-muted-foreground">
+        {etiquetas.map((e) => (
+          <span key={e} className="flex-1 text-center">
+            {e}
+          </span>
+        ))}
+      </div>
+
+      {!hayDatos && (
+        <p className="mt-3 text-center text-[0.83rem] text-muted-foreground">
+          Sin datos todavía
+        </p>
+      )}
+    </div>
+  );
+}
