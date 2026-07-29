@@ -31,6 +31,14 @@ export type DatosDashboard = {
     fechaVencimiento: Date;
   }[];
   socios: { id: string; nombre: string; activo: boolean }[];
+  /** Ordenados por deuda: con quién partir la cobranza. */
+  deudores: {
+    id: string;
+    nombre: string;
+    telefono: string;
+    deuda: number;
+    periodos: number;
+  }[];
   /** Null mientras WhatsApp no esté conectado: no hay nada que mostrar. */
   atencion: {
     total: number;
@@ -139,6 +147,15 @@ export const DEMO: DatosDashboard = {
       montoPagado: 0,
       fechaVencimiento: dias(-18),
     },
+  ],
+
+  deudores: [
+    { id: "x1", nombre: "Pedro Curihual", telefono: "+56912345671", deuda: 47_200, periodos: 5 },
+    { id: "x2", nombre: "Carmen Antileo", telefono: "+56912345672", deuda: 35_600, periodos: 4 },
+    { id: "x3", nombre: "Juan Marileo", telefono: "+56912345673", deuda: 28_900, periodos: 3 },
+    { id: "x4", nombre: "Elena Quilaqueo", telefono: "+56912345674", deuda: 21_400, periodos: 2 },
+    { id: "x5", nombre: "Ramón Colipí", telefono: "+56912345675", deuda: 18_750, periodos: 2 },
+    { id: "x6", nombre: "Sofía Nahuelpán", telefono: "+56912345676", deuda: 11_800, periodos: 1 },
   ],
 
   socios: [

@@ -17,10 +17,12 @@ import { db } from "@/lib/db";
 import { boletas, socios } from "@/lib/db/schema";
 import { requireApr } from "@/lib/apr-session";
 import {
+  GraficoArea,
   GraficoBarras,
   GraficoBarrasApiladas,
   SparklineArea,
 } from "@/components/panel/graficos";
+import { BoletasRecientes } from "@/components/panel/boletas-recientes";
 import { formatearPeriodo } from "@/lib/boletas";
 import { DEMO, type DatosDashboard } from "@/lib/demo-dashboard";
 import { iniciales } from "@/lib/formato";
@@ -238,6 +240,27 @@ export default async function PanelPage({
     valor: deR.get(p) ?? 0,
   }));
 
+  /**
+   * Los socios con mayor deuda vencida: es la lista con la que el tesorero
+   * decide a quién llamar primero. Se ordena por monto, pero se muestra
+   * también cuántos períodos lleva impagos, que distingue al que debe mucho
+   * de un mes del que arrastra medio año.
+   */
+  const conMasDeuda = await db
+    .select({
+      id: socios.id,
+      nombre: socios.nombre,
+      telefono: socios.telefono,
+      deuda: sql<number>`sum(${boletas.montoTotal} - ${boletas.montoPagado})::int`,
+      periodos: sql<number>`count(*)::int`,
+    })
+    .from(boletas)
+    .innerJoin(socios, eq(boletas.socioId, socios.id))
+    .where(and(eq(socios.aprId, apr.id), noAnulada, impaga, vencida))
+    .groupBy(socios.id, socios.nombre, socios.telefono)
+    .orderBy(desc(sql`sum(${boletas.montoTotal} - ${boletas.montoPagado})`))
+    .limit(6);
+
   const ultimasBoletas = await db
     .select({
       id: boletas.id,
@@ -283,6 +306,7 @@ export default async function PanelPage({
         vencidas: serie("vencidas"),
         boletas: ultimasBoletas,
         socios: ultimosSocios,
+        deudores: conMasDeuda,
         atencion: null,
       };
 
@@ -435,76 +459,95 @@ export default async function PanelPage({
         </div>
       </Tarjeta>
 
-      {/* Dos tarjetas de tendencia + rendimiento del padrón a la derecha. */}
+      {/* Recaudación a lo ancho con eje en pesos, y a la derecha quién debe
+          más: el gráfico cuenta la tendencia, la lista dice a quién llamar. */}
       <div className="grid gap-4 lg:grid-cols-3">
-        <Tarjeta>
-          <h3 className="text-[1rem] font-semibold">Tasa de morosidad</h3>
-          <p className="mt-0.5 text-[0.85rem] text-muted-foreground">
-            Socios con boletas vencidas
-          </p>
-
-          <div className="mt-5 flex items-end justify-between gap-3">
+        <Tarjeta className="lg:col-span-2">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <div className="text-[1.8rem] leading-none font-semibold tabular-nums">
-                {tasaMorosidad.toFixed(2)}%
-              </div>
-              <p className="mt-1.5 text-[0.83rem] text-muted-foreground">
-                {d.morosidad.socios} de {d.padron.total || 0} socios
+              <h3 className="text-[1rem] font-semibold">Recaudación</h3>
+              <p className="mt-0.5 text-[0.85rem] text-muted-foreground">
+                Pagos registrados en cada período
               </p>
             </div>
-            <div className="w-32">
-              <SparklineArea
-                datos={d.vencidas}
-                nombre="Boletas vencidas"
-                color="var(--destructive)"
-                id="spark-morosidad"
-              />
-            </div>
-          </div>
-        </Tarjeta>
-
-        <Tarjeta>
-          <h3 className="text-[1rem] font-semibold">Recaudación</h3>
-          <p className="mt-0.5 text-[0.85rem] text-muted-foreground">
-            Pagos registrados por período
-          </p>
-
-          <div className="mt-5 flex items-end justify-between gap-3">
-            <div>
-              <div className="text-[1.8rem] leading-none font-semibold tabular-nums">
+            <div className="text-right">
+              <div className="text-[1.5rem] leading-none font-semibold tabular-nums text-forest">
                 {clp.format(d.facturacion.recaudado)}
               </div>
-              <div className="mt-1.5 flex items-center gap-1.5">
-                <Delta
-                  valor={variacion(
-                    recienteActual.recaudado,
-                    recienteAnterior.recaudado
-                  )}
-                />
-                <span className="text-[0.83rem] text-muted-foreground">
-                  vs. período anterior
+              <div className="mt-1.5 flex items-center justify-end gap-1.5">
+                <Delta valor={d.variacionRecaudado} />
+                <span className="text-[0.8rem] text-muted-foreground">
+                  vs. anterior
                 </span>
               </div>
             </div>
-            <div className="w-32">
-              <SparklineArea
-                datos={d.recaudado}
-                nombre="Recaudado"
-                color="var(--forest)"
-                id="spark-recaudacion"
-              />
-            </div>
+          </div>
+
+          <div className="mt-6">
+            <GraficoArea
+              datos={d.recaudado}
+              nombre="Recaudado"
+              color="var(--forest)"
+              formato="clp"
+            />
           </div>
         </Tarjeta>
 
-        <Tarjeta className="lg:row-span-2">
+        {/* El equivalente al Watchlist de la referencia, pero accionable:
+            estos son los socios que hay que ir a cobrar. */}
+        <Tarjeta>
           <div className="flex items-start justify-between gap-2">
-            <h3 className="text-[1rem] font-semibold">Consumo de agua</h3>
-            <Droplets className="size-4 text-primary" />
+            <div>
+              <h3 className="text-[1rem] font-semibold">Mayores deudas</h3>
+              <p className="mt-0.5 text-[0.85rem] text-muted-foreground">
+                Con quién partir la cobranza
+              </p>
+            </div>
+            <span className="shrink-0 rounded-full bg-destructive/10 px-2.5 py-1 text-[0.75rem] font-medium tabular-nums text-destructive">
+              {tasaMorosidad.toFixed(1)}%
+            </span>
           </div>
-          <p className="mt-0.5 text-[0.85rem] text-muted-foreground">
-            Metros cúbicos facturados por período
-          </p>
+
+          {d.deudores.length === 0 ? (
+            <p className="mt-10 mb-8 text-center text-[0.87rem] text-muted-foreground">
+              Nadie tiene boletas vencidas.
+            </p>
+          ) : (
+            <div className="mt-4 flex flex-col divide-y divide-border/50">
+              {d.deudores.map((s) => (
+                <div key={s.id} className="flex items-center gap-2.5 py-2.5">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-[0.7rem] font-semibold text-destructive">
+                    {iniciales(s.nombre)}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[0.87rem] font-medium">
+                      {s.nombre}
+                    </div>
+                    <div className="text-[0.78rem] text-muted-foreground">
+                      {s.periodos} {s.periodos === 1 ? "período" : "períodos"}
+                    </div>
+                  </div>
+                  <span className="shrink-0 text-[0.87rem] font-semibold tabular-nums text-destructive">
+                    {clp.format(s.deuda)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </Tarjeta>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Tarjeta>
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <h3 className="text-[1rem] font-semibold">Consumo de agua</h3>
+              <p className="mt-0.5 text-[0.85rem] text-muted-foreground">
+                Metros cúbicos por período
+              </p>
+            </div>
+            <Droplets className="size-4 shrink-0 text-primary" />
+          </div>
 
           <div className="mt-6">
             <GraficoBarras
@@ -512,38 +555,6 @@ export default async function PanelPage({
               nombre="Consumo (m³)"
               color="var(--primary)"
             />
-          </div>
-
-          <div className="mt-6 border-t border-border pt-4">
-            <h4 className="text-[0.9rem] font-medium">Últimos socios</h4>
-            <div className="mt-3 flex flex-col gap-3">
-              {d.socios.length === 0 ? (
-                <p className="text-[0.85rem] text-muted-foreground">
-                  Aún no cargas el padrón.
-                </p>
-              ) : (
-                d.socios.map((s) => (
-                  <div key={s.id} className="flex items-center gap-2.5">
-                    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-[0.7rem] font-semibold text-muted-foreground">
-                      {iniciales(s.nombre)}
-                    </span>
-                    <span className="min-w-0 flex-1 truncate text-[0.87rem]">
-                      {s.nombre}
-                    </span>
-                    <span
-                      className={cn(
-                        "shrink-0 rounded-full px-2 py-0.5 text-[0.72rem] font-medium",
-                        s.activo
-                          ? "bg-forest/10 text-forest"
-                          : "bg-muted text-muted-foreground"
-                      )}
-                    >
-                      {s.activo ? "Activo" : "Inactivo"}
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
           </div>
         </Tarjeta>
 
@@ -595,60 +606,7 @@ export default async function PanelPage({
             </Link>
           </div>
 
-          {d.boletas.length === 0 ? (
-            <p className="mt-8 mb-4 text-center text-[0.88rem] text-muted-foreground">
-              Todavía no hay boletas emitidas.
-            </p>
-          ) : (
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full text-[0.87rem]">
-                <thead>
-                  <tr className="border-b border-border/50 text-left text-muted-foreground">
-                    <th className="pb-2.5 font-medium">Socio</th>
-                    <th className="pb-2.5 font-medium">Período</th>
-                    <th className="pb-2.5 font-medium">Monto</th>
-                    <th className="pb-2.5 font-medium">Vence</th>
-                    <th className="pb-2.5 font-medium">Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {d.boletas.map((b) => {
-                    const pagada = b.montoPagado >= b.montoTotal;
-                    const atrasada = !pagada && b.fechaVencimiento < new Date();
-
-                    return (
-                      <tr key={b.id} className="border-b border-border/40 last:border-0">
-                        <td className="py-3 font-medium">{b.socioNombre}</td>
-                        <td className="py-3 text-muted-foreground">
-                          {formatearPeriodo(b.periodo)}
-                        </td>
-                        <td className="py-3 tabular-nums">
-                          {clp.format(b.montoTotal)}
-                        </td>
-                        <td className="py-3 tabular-nums text-muted-foreground">
-                          {fechaCorta.format(b.fechaVencimiento)}
-                        </td>
-                        <td className="py-3">
-                          <span
-                            className={cn(
-                              "rounded-full px-2 py-0.5 text-[0.75rem] font-medium",
-                              pagada
-                                ? "bg-forest/10 text-forest"
-                                : atrasada
-                                  ? "bg-destructive/10 text-destructive"
-                                  : "bg-tertiary/15 text-tertiary-texto"
-                            )}
-                          >
-                            {pagada ? "Pagada" : atrasada ? "Vencida" : "Pendiente"}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <BoletasRecientes boletas={d.boletas} />
         </Tarjeta>
 
         <Tarjeta>
