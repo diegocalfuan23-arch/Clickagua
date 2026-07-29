@@ -232,3 +232,90 @@ export function GraficoArea({
     </ChartContainer>
   );
 }
+
+/**
+ * Área con varias series superpuestas, al estilo "Portfolio Performance":
+ * línea con relleno degradado, eje Y con valores y rejilla horizontal.
+ *
+ * Superpuestas y no apiladas: aquí interesa comparar la altura de cada
+ * estado entre sí, no el total del período.
+ */
+export function GraficoAreaMultiple({
+  datos,
+  series,
+  formato = "numero",
+}: {
+  datos: Record<string, string | number>[];
+  series: { clave: string; nombre: string; color: string }[];
+  formato?: "numero" | "clp";
+}) {
+  const config = Object.fromEntries(
+    series.map((s) => [s.clave, { label: s.nombre, color: s.color }])
+  ) satisfies ChartConfig;
+
+  const hayDatos = datos.some((d) =>
+    series.some((s) => Number(d[s.clave] ?? 0) > 0)
+  );
+
+  return (
+    <div>
+      <ChartContainer config={config} className="h-64 w-full">
+        <AreaChart data={datos} margin={{ top: 8, right: 8, bottom: 0, left: -8 }}>
+          <defs>
+            {series.map((s) => (
+              <linearGradient
+                key={s.clave}
+                id={`area-${s.clave}`}
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
+              >
+                <stop offset="0%" stopColor={s.color} stopOpacity={0.25} />
+                <stop offset="100%" stopColor={s.color} stopOpacity={0.02} />
+              </linearGradient>
+            ))}
+          </defs>
+
+          <CartesianGrid vertical={false} stroke="var(--border)" />
+          <XAxis
+            dataKey="periodo"
+            tickLine={false}
+            axisLine={false}
+            tickMargin={12}
+            fontSize={12}
+          />
+          <YAxis
+            tickLine={false}
+            axisLine={false}
+            fontSize={12}
+            width={48}
+            allowDecimals={false}
+            tickFormatter={formato === "clp" ? clpCorto : undefined}
+          />
+          <ChartTooltip content={<ChartTooltipContent />} />
+
+          {series.map((s) => (
+            <Area
+              key={s.clave}
+              dataKey={s.clave}
+              type="monotone"
+              stroke={s.color}
+              strokeWidth={2}
+              fill={`url(#area-${s.clave})`}
+              dot={false}
+              // Sin apilar: cada serie se dibuja desde el cero.
+              stackId={undefined}
+            />
+          ))}
+        </AreaChart>
+      </ChartContainer>
+
+      {!hayDatos && (
+        <p className="mt-2 text-center text-[0.83rem] text-muted-foreground">
+          Sin boletas emitidas todavía
+        </p>
+      )}
+    </div>
+  );
+}

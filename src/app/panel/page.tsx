@@ -17,8 +17,8 @@ import { db } from "@/lib/db";
 import { boletas, socios } from "@/lib/db/schema";
 import { requireApr } from "@/lib/apr-session";
 import {
+  GraficoAreaMultiple,
   GraficoBarras,
-  GraficoBarrasApiladas,
   SparklineArea,
 } from "@/components/panel/graficos";
 import { formatearPeriodo } from "@/lib/boletas";
@@ -569,7 +569,7 @@ export default async function PanelPage({
           </div>
 
           <div className="mt-5">
-            <GraficoBarrasApiladas
+            <GraficoAreaMultiple
               datos={d.cobranza}
               series={[
                 { clave: "pagadas", nombre: "Pagadas", color: "var(--forest)" },
