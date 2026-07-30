@@ -1,4 +1,4 @@
-const SITE_URL = "https://clickagua.vercel.app";
+const SITE_URL = "https://facilagua.com";
 
 const softwareSchema = {
   "@context": "https://schema.org",

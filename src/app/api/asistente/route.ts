@@ -1,6 +1,6 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest } from "next/server";
 import { z } from "zod";
+import { responder } from "@/lib/ia";
 
 const WHATSAPP_CONTACTO = "https://wa.me/56900000000";
 
@@ -41,7 +41,8 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  if (!process.env.ANTHROPIC_API_KEY) {
+  // Basta con que haya un proveedor: la capa de IA cae al otro si uno falla.
+  if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY) {
     return Response.json(
       { error: "El asistente no está disponible por ahora." },
       { status: 503 }
@@ -54,43 +55,15 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: "Consulta inválida." }, { status: 400 });
   }
 
-  const anthropic = new Anthropic();
-
-  const stream = anthropic.messages.stream({
-    model: "claude-opus-5",
-    max_tokens: 1024,
+  const { stream } = await responder({
     system: SYSTEM_PROMPT,
-    messages: parsed.data.mensajes.map((m) => ({
-      role: m.rol,
-      content: m.texto,
-    })),
+    mensajes: parsed.data.mensajes,
+    maxTokens: 1024,
+    respuestaEnlatada:
+      "Disculpa, tuve un problema para responder. Escríbenos por WhatsApp y te ayudamos.",
   });
 
-  const encoder = new TextEncoder();
-
-  return new Response(
-    new ReadableStream({
-      async start(controller) {
-        try {
-          for await (const evento of stream) {
-            if (
-              evento.type === "content_block_delta" &&
-              evento.delta.type === "text_delta"
-            ) {
-              controller.enqueue(encoder.encode(evento.delta.text));
-            }
-          }
-        } catch {
-          controller.enqueue(
-            encoder.encode(
-              "\n\nDisculpa, tuve un problema para responder. Escríbenos por WhatsApp y te ayudamos."
-            )
-          );
-        } finally {
-          controller.close();
-        }
-      },
-    }),
-    { headers: { "Content-Type": "text/plain; charset=utf-8" } }
-  );
+  return new Response(stream, {
+    headers: { "Content-Type": "text/plain; charset=utf-8" },
+  });
 }

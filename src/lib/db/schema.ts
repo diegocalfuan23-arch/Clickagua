@@ -64,7 +64,7 @@ export const aprs = pgTable(
     plan: planEnum("plan").notNull().default("BASICO"),
 
     // --- Landing pública (planes ESTANDAR y PREMIUM) ---
-    /** Subdominio: pitrelahue → pitrelahue.clickagua.com */
+    /** Subdominio: pitrelahue → pitrelahue.facilagua.com */
     slug: text("slug"),
     /** Dominio propio, solo PREMIUM. Null hasta que se verifique. */
     dominioPropio: text("dominioPropio"),

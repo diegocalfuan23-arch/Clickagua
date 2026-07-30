@@ -1,7 +1,7 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { cargarSitio } from "@/lib/sitio";
+import { responder } from "@/lib/ia";
 import { formatearTelefono } from "@/lib/formato";
 
 /**
@@ -148,7 +148,8 @@ Quien te escribe es un vecino o socio del comité. Háblale en español chileno,
 }
 
 export async function POST(req: NextRequest) {
-  if (!process.env.ANTHROPIC_API_KEY) {
+  // Basta con que haya un proveedor: la capa de IA cae al otro si uno falla.
+  if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY) {
     return Response.json(
       { error: "El asistente no está disponible por ahora." },
       { status: 503 }
@@ -184,40 +185,20 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: "Sitio no disponible." }, { status: 404 });
   }
 
-  const anthropic = new Anthropic();
+  // Si la IA no responde, el socio recibe igual algo accionable.
+  const telefono = sitio.apr.telefono;
+  const respuestaEnlatada = telefono
+    ? `Disculpa, no pude responder en este momento. Escríbenos al WhatsApp del comité ${formatearTelefono(telefono)} y te ayudamos.`
+    : "Disculpa, no pude responder en este momento. Contáctate directamente con el comité.";
 
-  const stream = anthropic.messages.stream({
-    model: "claude-opus-5",
-    max_tokens: 700,
+  const { stream } = await responder({
     system: construirPrompt(sitio),
-    messages: mensajes.map((m) => ({ role: m.rol, content: m.texto })),
+    mensajes,
+    maxTokens: 700,
+    respuestaEnlatada,
   });
 
-  const encoder = new TextEncoder();
-
-  return new Response(
-    new ReadableStream({
-      async start(controller) {
-        try {
-          for await (const evento of stream) {
-            if (
-              evento.type === "content_block_delta" &&
-              evento.delta.type === "text_delta"
-            ) {
-              controller.enqueue(encoder.encode(evento.delta.text));
-            }
-          }
-        } catch {
-          controller.enqueue(
-            encoder.encode(
-              "\n\nDisculpa, tuve un problema para responder. Contáctate directamente con el comité."
-            )
-          );
-        } finally {
-          controller.close();
-        }
-      },
-    }),
-    { headers: { "Content-Type": "text/plain; charset=utf-8" } }
-  );
+  return new Response(stream, {
+    headers: { "Content-Type": "text/plain; charset=utf-8" },
+  });
 }

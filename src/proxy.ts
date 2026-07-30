@@ -4,15 +4,15 @@ import type { NextRequest } from "next/server";
 /**
  * Mapea el subdominio de cada comité a su landing.
  *
- *   pitrelahue.clickagua.com/       → /sitio/pitrelahue
- *   pitrelahue.clickagua.com/avisos → /sitio/pitrelahue/avisos
+ *   pitrelahue.facilagua.com/       → /sitio/pitrelahue
+ *   pitrelahue.facilagua.com/avisos → /sitio/pitrelahue/avisos
  *
  * El dominio raíz y www siguen sirviendo la app normal. Los dominios propios
  * (plan Premium) se resuelven en la página por el host completo, porque aquí
  * no podemos consultar la base de datos: el proxy corre en el edge.
  */
 
-const DOMINIO_RAIZ = process.env.NEXT_PUBLIC_DOMINIO_RAIZ ?? "clickagua.com";
+const DOMINIO_RAIZ = process.env.NEXT_PUBLIC_DOMINIO_RAIZ ?? "facilagua.com";
 
 /** Hosts que sirven la app, no una landing de comité. */
 const HOSTS_APP = new Set([
@@ -35,7 +35,7 @@ export function proxy(request: NextRequest) {
 
   if (host.endsWith(`.${DOMINIO_RAIZ}`)) {
     const slug = host.slice(0, -(DOMINIO_RAIZ.length + 1));
-    // Solo el primer nivel: "a.b.clickagua.com" no es un comité válido.
+    // Solo el primer nivel: "a.b.facilagua.com" no es un comité válido.
     if (!slug || slug.includes(".")) return NextResponse.next();
 
     url.pathname = `/sitio/${slug}${url.pathname === "/" ? "" : url.pathname}`;
