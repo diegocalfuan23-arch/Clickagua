@@ -1,0 +1,39 @@
+import type { Metadata } from "next";
+import { requireApr } from "@/lib/apr-session";
+import { ConfiguracionForm } from "@/components/panel/configuracion-form";
+
+export const metadata: Metadata = {
+  title: "Configuración",
+};
+
+export default async function ConfiguracionPage() {
+  const { apr } = await requireApr();
+
+  return (
+    <ConfiguracionForm
+      datos={{
+        nombre: apr.nombre,
+        razonSocial: apr.razonSocial,
+        rut: apr.rut,
+        comuna: apr.comuna,
+        region: apr.region,
+        direccion: apr.direccion,
+        telefono: apr.telefono,
+        email: apr.email,
+        sitioWeb: apr.sitioWeb,
+        diaGeneracionBoletas: apr.diaGeneracionBoletas,
+        diasVencimiento: apr.diasVencimiento,
+        prefijoBoleta: apr.prefijoBoleta,
+        incluyeIva: apr.incluyeIva,
+        porcentajeIva: apr.porcentajeIva,
+        frecuenciaLectura: apr.frecuenciaLectura,
+        toleranciaConsumoAnormal: apr.toleranciaConsumoAnormal,
+        alertaFugaConsumo: apr.alertaFugaConsumo,
+        requiereFotoLectura: apr.requiereFotoLectura,
+        diasGraciaCorte: apr.diasGraciaCorte,
+        diasAvisoCorte: apr.diasAvisoCorte,
+        costoReconexion: apr.costoReconexion,
+      }}
+    />
+  );
+}

@@ -32,6 +32,12 @@ export const direccionMensajeEnum = pgEnum("DireccionMensaje", [
  */
 export const planEnum = pgEnum("Plan", ["BASICO", "ESTANDAR", "PREMIUM"]);
 
+export const frecuenciaLecturaEnum = pgEnum("FrecuenciaLectura", [
+  "MENSUAL",
+  "BIMENSUAL",
+  "TRIMESTRAL",
+]);
+
 export const tipoAvisoEnum = pgEnum("TipoAviso", [
   "CORTE",
   "MANTENCION",
@@ -72,6 +78,47 @@ export const aprs = pgTable(
     tarifaMetroCubico: integer("tarifaMetroCubico"),
     /** Dónde y cómo pagar, en texto libre: varía mucho entre comités. */
     infoPago: text("infoPago"),
+
+    // --- Datos del comité ---
+    /** El nombre legal, que no siempre coincide con el de uso diario. */
+    razonSocial: text("razonSocial"),
+    sitioWeb: text("sitioWeb"),
+    logoUrl: text("logoUrl"),
+
+    // --- Facturación ---
+    /** Día del mes en que el comité emite las boletas. */
+    diaGeneracionBoletas: integer("diaGeneracionBoletas").notNull().default(1),
+    /** Cuántos días desde la emisión hasta el vencimiento. */
+    diasVencimiento: integer("diasVencimiento").notNull().default(15),
+    /** Prefijo del número de boleta: BOL-000123. */
+    prefijoBoleta: text("prefijoBoleta").notNull().default("BOL-"),
+    /** Los APR suelen estar exentos, pero algunos facturan con IVA. */
+    incluyeIva: boolean("incluyeIva").notNull().default(false),
+    porcentajeIva: integer("porcentajeIva").notNull().default(19),
+
+    // --- Medidores ---
+    frecuenciaLectura: frecuenciaLecturaEnum("frecuenciaLectura")
+      .notNull()
+      .default("MENSUAL"),
+    /**
+     * Umbrales de consumo, en porcentaje sobre el promedio del socio.
+     * El de fuga es el más útil: un salto grande casi siempre es una fuga,
+     * y avisarlo a tiempo le ahorra plata al socio.
+     */
+    toleranciaConsumoAnormal: integer("toleranciaConsumoAnormal")
+      .notNull()
+      .default(50),
+    alertaFugaConsumo: integer("alertaFugaConsumo").notNull().default(100),
+    requiereFotoLectura: boolean("requiereFotoLectura")
+      .notNull()
+      .default(false),
+
+    // --- Cortes por morosidad ---
+    /** Días después del vencimiento antes de poder cortar. */
+    diasGraciaCorte: integer("diasGraciaCorte").notNull().default(5),
+    /** Con cuántos días de anticipación se avisa al socio. */
+    diasAvisoCorte: integer("diasAvisoCorte").notNull().default(3),
+    costoReconexion: integer("costoReconexion").notNull().default(0),
 
     createdAt: timestamp("createdAt", { precision: 3 }).notNull().defaultNow(),
     updatedAt: timestamp("updatedAt", { precision: 3 }).notNull().defaultNow(),
