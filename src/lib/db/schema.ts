@@ -85,6 +85,18 @@ export const aprs = pgTable(
     sitioWeb: text("sitioWeb"),
     logoUrl: text("logoUrl"),
 
+    // --- Regional ---
+    /**
+     * País, moneda y zona horaria del comité. Hoy los formatos de monto y
+     * fecha siguen usando es-CL/CLP en ~27 lugares del código; estos campos
+     * guardan la intención para cuando el producto salga de Chile, sin
+     * bloquear eso en una migración futura.
+     */
+    pais: text("pais").notNull().default("CL"),
+    moneda: text("moneda").notNull().default("CLP"),
+    zonaHoraria: text("zonaHoraria").notNull().default("America/Santiago"),
+    idioma: text("idioma").notNull().default("es"),
+
     // --- Facturación ---
     /** Día del mes en que el comité emite las boletas. */
     diaGeneracionBoletas: integer("diaGeneracionBoletas").notNull().default(1),
