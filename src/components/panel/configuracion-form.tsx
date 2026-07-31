@@ -152,27 +152,35 @@ export function ConfiguracionForm({ datos }: { datos: DatosConfiguracion }) {
         </p>
       </div>
 
-      {/* Cinco bloques apilados eran un muro de campos. En pestañas, cada
-          tema se ve solo y el resto no distrae. */}
-      <div className="flex gap-1 overflow-x-auto border-b border-border">
-        {SECCIONES.map(({ id, label, icono: Icono }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setSeccion(id)}
-            className={cn(
-              "-mb-px flex shrink-0 items-center gap-2 border-b-2 px-3.5 py-2.5 text-[0.9rem] font-medium transition-colors",
-              seccion === id
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground",
-            )}
-          >
-            <Icono className="size-4" />
-            {label}
-          </button>
-        ))}
-      </div>
+      {/* Cinco bloques apilados eran un muro de campos. Con el menú al
+          costado cada tema se ve solo, los nombres se leen en vertical sin
+          competir por el ancho, y el formulario conserva el espacio. */}
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+        <nav
+          aria-label="Secciones de configuración"
+          className="flex shrink-0 gap-1 overflow-x-auto lg:w-56 lg:flex-col lg:overflow-visible"
+        >
+          {SECCIONES.map(({ id, label, icono: Icono }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setSeccion(id)}
+              aria-current={seccion === id ? "page" : undefined}
+              className={cn(
+                "flex shrink-0 items-center gap-2.5 rounded-lg px-3 py-2.5 text-[0.9rem] font-medium transition-colors lg:w-full",
+                seccion === id
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
+            >
+              <Icono className="size-4 shrink-0" />
+              {label}
+            </button>
+          ))}
+        </nav>
 
+        {/* min-w-0 evita que un campo ancho empuje el menú fuera de la vista. */}
+        <div className="flex min-w-0 flex-1 flex-col gap-5">
       {seccion === "comite" && (
         <Bloque
           titulo="Datos del comité"
@@ -495,6 +503,8 @@ export function ConfiguracionForm({ datos }: { datos: DatosConfiguracion }) {
           </div>
         </Bloque>
       )}
+        </div>
+      </div>
     </>
   );
 }
