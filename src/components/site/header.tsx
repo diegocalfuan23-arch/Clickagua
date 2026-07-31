@@ -21,7 +21,7 @@ export function Header() {
             <span className="flex size-6.5 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-primary to-secondary">
               <Droplet className="size-3.5 fill-white text-white" />
             </span>
-            ClickAgua
+            FacilAgua
           </Link>
 
           <div className="hidden flex-1 gap-5.5 text-sm text-muted-foreground sm:flex">

@@ -126,7 +126,7 @@ export function PanelSidebar({
                 <Droplet className="size-4 fill-white text-white" />
               </span>
               <span className="grid flex-1 text-left leading-tight">
-                <span className="truncate font-semibold">ClickAgua</span>
+                <span className="truncate font-semibold">FacilAgua</span>
                 <span className="truncate text-xs text-muted-foreground">
                   {apr}
                 </span>

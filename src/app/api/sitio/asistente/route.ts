@@ -6,7 +6,7 @@ import { formatearTelefono } from "@/lib/formato";
 
 /**
  * Asistente del sitio de un comité. Distinto del de /api/asistente: aquí quien
- * pregunta es un socio del APR, no un dirigente evaluando ClickAgua. No vende
+ * pregunta es un socio del APR, no un dirigente evaluando FacilAgua. No vende
  * el software ni menciona planes.
  *
  * Deliberadamente NO responde deudas: en la web no hay forma de saber quién
@@ -141,7 +141,7 @@ Quien te escribe es un vecino o socio del comité. Háblale en español chileno,
 - No pidas RUT, dirección, teléfono ni ningún dato personal.
 - Si preguntan por un corte de agua, revisa los avisos vigentes y responde con lo que dicen. Si no hay ninguno que corresponda, dilo con claridad.
 - Habla siempre como el comité ("nuestro horario", "puedes pagar en..."), nunca como un software externo.
-- No menciones ClickAgua, ni que eres una inteligencia artificial de un proveedor, ni hables de planes o precios de software.
+- No menciones FacilAgua, ni que eres una inteligencia artificial de un proveedor, ni hables de planes o precios de software.
 - Si preguntan algo ajeno al comité y al agua potable rural, dilo amablemente y vuelve al tema.`);
 
   return partes.join("\n\n");

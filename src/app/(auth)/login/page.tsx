@@ -3,9 +3,9 @@ import Link from "next/link";
 import { LoginForm } from "@/components/auth/login-form";
 
 export const metadata: Metadata = {
-  title: "Acceso APR — ClickAgua",
+  title: "Acceso APR — FacilAgua",
   description:
-    "Ingresa al panel de ClickAgua para administrar los socios y boletas de tu APR o SSR.",
+    "Ingresa al panel de FacilAgua para administrar los socios y boletas de tu APR o SSR.",
 };
 
 export default function LoginPage() {

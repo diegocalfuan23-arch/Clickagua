@@ -3,7 +3,7 @@ const SITE_URL = "https://facilagua.com";
 const softwareSchema = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  name: "ClickAgua",
+  name: "FacilAgua",
   applicationCategory: "BusinessApplication",
   operatingSystem: "Web",
   url: SITE_URL,

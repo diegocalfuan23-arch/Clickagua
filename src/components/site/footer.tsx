@@ -8,10 +8,10 @@ export function Footer() {
           <span className="flex size-5.5 items-center justify-center rounded-md bg-linear-to-br from-primary to-secondary">
             <Droplet className="size-3 fill-white text-white" />
           </span>
-          ClickAgua
+          FacilAgua
         </div>
         <span>
-          &copy; 2026 ClickAgua. Hecho para los comités de agua potable rural
+          &copy; 2026 FacilAgua. Hecho para los comités de agua potable rural
           de Chile.
         </span>
       </div>

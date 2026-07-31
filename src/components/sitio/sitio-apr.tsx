@@ -258,7 +258,7 @@ export function SitioApr({
               href="https://facilagua.com"
               className="font-medium text-primary hover:underline"
             >
-              ClickAgua
+              FacilAgua
             </a>
           </span>
         </div>

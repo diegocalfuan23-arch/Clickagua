@@ -18,8 +18,8 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default:
-      "ClickAgua — Software de gestión para APR y SSR con atención por WhatsApp",
-    template: "%s | ClickAgua",
+      "FacilAgua — Software de gestión para APR y SSR con atención por WhatsApp",
+    template: "%s | FacilAgua",
   },
   description:
     "Software para comités de Agua Potable Rural en Chile: administra socios, boletas y pagos, y responde automáticamente por WhatsApp cuánto debe cada socio.",
@@ -33,8 +33,8 @@ export const metadata: Metadata = {
     "boletas agua potable rural",
     "comité de agua potable rural",
   ],
-  applicationName: "ClickAgua",
-  authors: [{ name: "ClickAgua" }],
+  applicationName: "FacilAgua",
+  authors: [{ name: "FacilAgua" }],
   alternates: {
     canonical: "/",
   },
@@ -42,14 +42,14 @@ export const metadata: Metadata = {
     type: "website",
     locale: "es_CL",
     url: SITE_URL,
-    siteName: "ClickAgua",
-    title: "ClickAgua — Software de gestión para APR y SSR",
+    siteName: "FacilAgua",
+    title: "FacilAgua — Software de gestión para APR y SSR",
     description:
       "Administra socios, boletas y pagos de tu comité de Agua Potable Rural, y responde consultas de deuda automáticamente por WhatsApp.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "ClickAgua — Software de gestión para APR y SSR",
+    title: "FacilAgua — Software de gestión para APR y SSR",
     description:
       "Administra socios, boletas y pagos de tu APR, y responde consultas por WhatsApp de forma automática.",
   },

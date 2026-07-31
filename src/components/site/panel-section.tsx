@@ -33,7 +33,7 @@ export function PanelSection() {
       <div className="mx-auto max-w-[1180px] px-7">
         <div className="mx-auto mb-13 max-w-[640px] text-center">
           <span className="font-mono text-[0.72rem] font-semibold tracking-[0.09em] text-primary uppercase">
-            El otro pilar de ClickAgua
+            El otro pilar de FacilAgua
           </span>
           <h2 className="mt-3 text-[clamp(1.8rem,3vw,2.4rem)] font-semibold text-balance">
             Un panel para que tu directiva administre todo

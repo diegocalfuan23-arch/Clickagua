@@ -15,7 +15,7 @@ const SUGERENCIAS = [
 ];
 
 const SALUDO =
-  "Hola 👋 Soy el asistente de ClickAgua. Puedo contarte cómo funciona, qué incluye cada plan o qué necesita tu comité para partir. ¿Qué te gustaría saber?";
+  "Hola 👋 Soy el asistente de FacilAgua. Puedo contarte cómo funciona, qué incluye cada plan o qué necesita tu comité para partir. ¿Qué te gustaría saber?";
 
 export function AssistantWidget() {
   const [abierto, setAbierto] = useState(false);
@@ -93,7 +93,7 @@ export function AssistantWidget() {
               <Droplet className="size-4 fill-white text-white" />
             </span>
             <div>
-              <div className="text-sm font-semibold">Asistente ClickAgua</div>
+              <div className="text-sm font-semibold">Asistente FacilAgua</div>
               <div className="text-[0.75rem] text-muted-foreground">
                 Responde al instante
               </div>

@@ -16,7 +16,7 @@ export default function AuthLayout({
           <span className="flex size-6.5 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-primary to-secondary">
             <Droplet className="size-3.5 fill-white text-white" />
           </span>
-          ClickAgua
+          FacilAgua
         </Link>
       </header>
 
@@ -25,7 +25,7 @@ export default function AuthLayout({
       </main>
 
       <footer className="px-7 py-6 text-center text-[0.8rem] text-muted-foreground">
-        &copy; 2026 ClickAgua · Para comités de agua potable rural de Chile
+        &copy; 2026 FacilAgua · Para comités de agua potable rural de Chile
       </footer>
     </div>
   );

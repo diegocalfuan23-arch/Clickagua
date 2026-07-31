@@ -309,7 +309,7 @@ export function ConfiguracionForm({ datos }: { datos: DatosConfiguracion }) {
 
           <p className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-[0.83rem] text-muted-foreground">
             Por ahora los montos y fechas del panel se muestran en formato
-            chileno. Estos datos quedan guardados para cuando ClickAgua opere
+            chileno. Estos datos quedan guardados para cuando FacilAgua opere
             fuera de Chile.
           </p>
         </Bloque>

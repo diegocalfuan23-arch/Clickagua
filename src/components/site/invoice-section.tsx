@@ -15,7 +15,7 @@ const puntos = [
   {
     titulo: "Historial de boletas pendientes",
     detalle:
-      "Si hay más de un mes impago, ClickAgua lo suma y lo explica sin que el socio tenga que preguntar dos veces.",
+      "Si hay más de un mes impago, FacilAgua lo suma y lo explica sin que el socio tenga que preguntar dos veces.",
   },
   {
     titulo: "Identificación por teléfono o RUT",

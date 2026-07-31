@@ -164,7 +164,7 @@ export function RegisterForm() {
 
       <p className="text-center text-[0.8rem] leading-relaxed text-muted-foreground sm:col-span-2">
         Al crear la cuenta aceptas los términos de servicio y la política de
-        privacidad de ClickAgua.
+        privacidad de FacilAgua.
       </p>
     </form>
   );
