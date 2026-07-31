@@ -9,24 +9,54 @@ import { user as userTable } from "@/lib/db/auth-schema";
 /**
  * Orígenes aceptados. Sin esto, Better Auth solo confía en BETTER_AUTH_URL y
  * rechaza con "invalid origin" cualquier petición que llegue desde otra
- * variante del dominio: el sitio se sirve en www pero la variable apunta al
+ * variante del dominio: el sitio se sirve en www pero la variable apuntaba al
  * raíz, y el registro fallaba por esa diferencia.
  *
- * Los sitios de los comités viven en subdominios, así que el comodín cubre
- * pitrelahue.facilagua.com y cualquier otro que se publique.
+ * Todo sale del entorno para que cambiar de dominio no obligue a tocar código.
  */
-const DOMINIO = process.env.NEXT_PUBLIC_DOMINIO_RAIZ ?? "facilagua.com";
+function origenesConfiables(): string[] {
+  const origenes: string[] = [];
 
-const origenesConfiables = [
-  `https://${DOMINIO}`,
-  `https://www.${DOMINIO}`,
-  `https://*.${DOMINIO}`,
-  // Los previews de Vercel cambian de URL en cada deploy.
-  "https://*.vercel.app",
-];
+  // El dominio propio. Si falta la variable, se deduce de BETTER_AUTH_URL, que
+  // Better Auth necesita igual: así no hay ningún dominio escrito en el código.
+  const dominio =
+    process.env.NEXT_PUBLIC_DOMINIO_RAIZ ??
+    (() => {
+      const url = process.env.BETTER_AUTH_URL;
+      if (!url) return null;
+      try {
+        return new URL(url).hostname.replace(/^www\./, "");
+      } catch {
+        return null;
+      }
+    })();
+
+  if (dominio) {
+    origenes.push(
+      `https://${dominio}`,
+      `https://www.${dominio}`,
+      // Los sitios de los comités viven en subdominios: pitrelahue.<dominio>.
+      `https://*.${dominio}`
+    );
+  }
+
+  // El dominio de producción que Vercel asigna al proyecto.
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    origenes.push(`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`);
+  }
+
+  // La URL de este deploy: en previews cambia con cada push, y sin ella el
+  // registro falla ahí aunque funcione en producción. Acotado a este deploy,
+  // no a *.vercel.app, que aceptaría proyectos de terceros.
+  if (process.env.VERCEL_URL) {
+    origenes.push(`https://${process.env.VERCEL_URL}`);
+  }
+
+  return origenes;
+}
 
 export const auth = betterAuth({
-  trustedOrigins: origenesConfiables,
+  trustedOrigins: origenesConfiables(),
   database: drizzleAdapter(db, {
     provider: "pg",
     schema,
