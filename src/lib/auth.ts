@@ -6,7 +6,27 @@ import * as schema from "@/lib/db/auth-schema";
 import { aprs } from "@/lib/db/schema";
 import { user as userTable } from "@/lib/db/auth-schema";
 
+/**
+ * Orígenes aceptados. Sin esto, Better Auth solo confía en BETTER_AUTH_URL y
+ * rechaza con "invalid origin" cualquier petición que llegue desde otra
+ * variante del dominio: el sitio se sirve en www pero la variable apunta al
+ * raíz, y el registro fallaba por esa diferencia.
+ *
+ * Los sitios de los comités viven en subdominios, así que el comodín cubre
+ * pitrelahue.facilagua.com y cualquier otro que se publique.
+ */
+const DOMINIO = process.env.NEXT_PUBLIC_DOMINIO_RAIZ ?? "facilagua.com";
+
+const origenesConfiables = [
+  `https://${DOMINIO}`,
+  `https://www.${DOMINIO}`,
+  `https://*.${DOMINIO}`,
+  // Los previews de Vercel cambian de URL en cada deploy.
+  "https://*.vercel.app",
+];
+
 export const auth = betterAuth({
+  trustedOrigins: origenesConfiables,
   database: drizzleAdapter(db, {
     provider: "pg",
     schema,
