@@ -14,7 +14,6 @@ import { Logo } from "@/components/marca/logo";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -122,11 +121,13 @@ export function PanelSidebar({
               render={<Link href="/panel" />}
               className="hover:bg-transparent active:bg-transparent"
             >
-              <Logo className="size-8" />
+              {/* Solo la marca: el nombre del comité ya identifica dónde
+                  está el usuario, y repetir "FacilAgua" ahí no aporta. */}
+              <Logo className="size-9" />
               <span className="grid flex-1 text-left leading-tight">
-                <span className="truncate font-semibold">FacilAgua</span>
+                <span className="truncate font-semibold">{apr}</span>
                 <span className="truncate text-xs text-muted-foreground">
-                  {apr}
+                  {comuna}
                 </span>
               </span>
             </SidebarMenuButton>
@@ -139,13 +140,8 @@ export function PanelSidebar({
         <GrupoEnlaces titulo="Atención" enlaces={atencion} pathname={pathname} />
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border">
-        <div className="flex flex-col gap-0.5 px-2 py-1 text-xs group-data-[collapsible=icon]:hidden">
-          <span className="truncate font-medium">{apr}</span>
-          <span className="truncate text-muted-foreground">{comuna}</span>
-        </div>
-      </SidebarFooter>
-
+      {/* El pie mostraba el comité y la comuna, que ahora van arriba junto al
+          logo: repetirlo abajo era la misma información dos veces. */}
       <SidebarRail />
     </Sidebar>
   );

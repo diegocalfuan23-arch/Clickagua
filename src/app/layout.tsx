@@ -12,7 +12,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const SITE_URL = "https://facilagua.com";
+/**
+ * URL canónica del sitio. Sale del entorno porque el dominio se sirve en www
+ * (el raíz redirige 308): si aquí quedara el raíz, Google indexaría una URL
+ * que redirige y se diluiría el posicionamiento entre las dos variantes.
+ */
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  process.env.BETTER_AUTH_URL ??
+  "https://www.facilagua.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
