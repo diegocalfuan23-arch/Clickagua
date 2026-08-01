@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Droplet } from "lucide-react";
+import { Logo } from "@/components/marca/logo";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -18,9 +18,7 @@ export function Header() {
             href="#"
             className="mr-1.5 flex items-center gap-2 text-base font-semibold"
           >
-            <span className="flex size-6.5 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-primary to-secondary">
-              <Droplet className="size-3.5 fill-white text-white" />
-            </span>
+            <Logo className="size-6.5" />
             FacilAgua
           </Link>
 

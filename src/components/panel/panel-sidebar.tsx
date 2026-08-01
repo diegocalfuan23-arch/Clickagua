@@ -3,7 +3,6 @@
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Droplet,
   Globe,
   LayoutDashboard,
   Users,
@@ -11,6 +10,7 @@ import {
   MessageSquare,
   Settings,
 } from "lucide-react";
+import { Logo } from "@/components/marca/logo";
 import {
   Sidebar,
   SidebarContent,
@@ -122,9 +122,7 @@ export function PanelSidebar({
               render={<Link href="/panel" />}
               className="hover:bg-transparent active:bg-transparent"
             >
-              <span className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-primary to-secondary">
-                <Droplet className="size-4 fill-white text-white" />
-              </span>
+              <Logo className="size-8" />
               <span className="grid flex-1 text-left leading-tight">
                 <span className="truncate font-semibold">FacilAgua</span>
                 <span className="truncate text-xs text-muted-foreground">

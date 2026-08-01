@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Droplet, MessageCircle, ReceiptText, Users } from "lucide-react";
+import { Logo } from "@/components/marca/logo";
+import { MessageCircle, ReceiptText, Users } from "lucide-react";
 
 /**
  * Login y registro en dos columnas: el formulario a la izquierda y la
@@ -42,9 +43,7 @@ export default function AuthLayout({
             href="/"
             className="inline-flex items-center gap-2 text-base font-semibold"
           >
-            <span className="flex size-6.5 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-primary to-secondary">
-              <Droplet className="size-3.5 fill-white text-white" />
-            </span>
+            <Logo className="size-6.5" />
             FacilAgua
           </Link>
         </header>
