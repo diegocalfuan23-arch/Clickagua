@@ -44,6 +44,7 @@ export function LoginForm() {
           type="email"
           autoComplete="email"
           placeholder="tesoreria@apr-ejemplo.cl"
+          className="h-10"
           required
         />
       </div>
@@ -63,6 +64,7 @@ export function LoginForm() {
           name="password"
           type="password"
           autoComplete="current-password"
+          className="h-10"
           required
         />
       </div>

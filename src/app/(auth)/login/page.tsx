@@ -10,8 +10,8 @@ export const metadata: Metadata = {
 
 export default function LoginPage() {
   return (
-    <div className="w-full max-w-[400px]">
-      <h1 className="text-[1.6rem] font-semibold tracking-tight">
+    <div className="w-full max-w-100">
+      <h1 className="text-[1.75rem] leading-tight font-semibold tracking-tight">
         Acceso para tu APR
       </h1>
       <p className="mt-2 text-[0.95rem] text-muted-foreground">

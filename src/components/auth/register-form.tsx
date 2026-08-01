@@ -79,6 +79,7 @@ export function RegisterForm() {
           id="rutComite"
           name="rutComite"
           placeholder="76.543.210-9"
+          className="h-10"
           required
         />
       </div>
@@ -94,6 +95,7 @@ export function RegisterForm() {
           id="responsable"
           name="responsable"
           placeholder="Nombre y apellido"
+          className="h-10"
           required
         />
       </div>
@@ -125,6 +127,7 @@ export function RegisterForm() {
           type="email"
           autoComplete="email"
           placeholder="tesoreria@apr-ejemplo.cl"
+          className="h-10"
           required
         />
       </div>
@@ -137,6 +140,7 @@ export function RegisterForm() {
           type="password"
           autoComplete="new-password"
           minLength={8}
+          className="h-10"
           required
         />
         <span className="text-[0.8rem] text-muted-foreground">
