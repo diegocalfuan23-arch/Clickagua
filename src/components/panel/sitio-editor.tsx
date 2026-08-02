@@ -10,6 +10,7 @@ import {
   Globe,
   Loader2,
   Plus,
+  Sparkles,
   Trash2,
   Wrench,
 } from "lucide-react";
@@ -17,6 +18,7 @@ import {
   alternarPublicado,
   crearAviso,
   eliminarAviso,
+  generarSitioIA,
   guardarSitio,
   type ResultadoAccion,
 } from "@/app/panel/sitio/actions";
@@ -110,6 +112,32 @@ export function SitioEditor({
   const [publicando, iniciarPublicar] = useTransition();
   const [errorPublicar, setErrorPublicar] = useState<string | null>(null);
 
+  const [sitioDescripcion, setSitioDescripcion] = useState(
+    datos.sitioDescripcion ?? ""
+  );
+  const [horarioAtencion, setHorarioAtencion] = useState(
+    datos.horarioAtencion ?? ""
+  );
+  const [infoPago, setInfoPago] = useState(datos.infoPago ?? "");
+
+  const [textoIA, setTextoIA] = useState("");
+  const [generandoIA, iniciarGenerarIA] = useTransition();
+  const [errorIA, setErrorIA] = useState<string | null>(null);
+
+  function generarConIA() {
+    setErrorIA(null);
+    iniciarGenerarIA(async () => {
+      const r = await generarSitioIA(textoIA);
+      if (!r.ok) {
+        setErrorIA(r.error);
+        return;
+      }
+      setSitioDescripcion(r.datos.sitioDescripcion);
+      setHorarioAtencion(r.datos.horarioAtencion);
+      setInfoPago(r.datos.infoPago);
+    });
+  }
+
   const url = `https://${slug || sugerenciaSlug}.${dominioRaiz}`;
 
   async function copiar() {
@@ -189,6 +217,46 @@ export function SitioEditor({
         </span>
       </div>
 
+      <section className="rounded-xl border border-primary/25 bg-primary/3 p-5">
+        <div className="flex items-center gap-2">
+          <Sparkles className="size-4 text-primary" />
+          <h2 className="text-[1.05rem] font-semibold">Redactar con IA</h2>
+        </div>
+        <p className="mt-0.5 text-[0.87rem] text-muted-foreground">
+          Cuéntanos de tu comité en un par de frases y completamos la
+          descripción, el horario y la forma de pago por ti. Revisa el
+          resultado antes de guardar.
+        </p>
+
+        <Textarea
+          rows={3}
+          maxLength={800}
+          value={textoIA}
+          onChange={(e) => setTextoIA(e.target.value)}
+          placeholder="Somos APR Pitrelahué, atendemos martes y jueves de 9 a 13, cobramos 8000 de cargo fijo más 500 el m³, se paga en efectivo en la oficina o por transferencia."
+          className="mt-4 bg-card"
+        />
+
+        {errorIA && (
+          <p className="mt-2 text-[0.85rem] text-destructive">{errorIA}</p>
+        )}
+
+        <Button
+          type="button"
+          variant="outline"
+          className="mt-3 border-primary/30"
+          disabled={generandoIA}
+          onClick={generarConIA}
+        >
+          {generandoIA ? (
+            <Loader2 className="animate-spin" />
+          ) : (
+            <Sparkles />
+          )}
+          {generandoIA ? "Redactando…" : "Completar campos"}
+        </Button>
+      </section>
+
       <form action={accion} className="flex flex-col gap-5">
         <Tarjeta
           titulo="Dirección web"
@@ -244,7 +312,8 @@ export function SitioEditor({
                 name="sitioDescripcion"
                 rows={3}
                 maxLength={500}
-                defaultValue={datos.sitioDescripcion ?? ""}
+                value={sitioDescripcion}
+                onChange={(e) => setSitioDescripcion(e.target.value)}
                 placeholder="Somos el comité de agua potable rural que abastece a las familias de…"
               />
               <p className="text-[0.8rem] text-muted-foreground">
@@ -260,7 +329,8 @@ export function SitioEditor({
                 name="horarioAtencion"
                 rows={2}
                 maxLength={300}
-                defaultValue={datos.horarioAtencion ?? ""}
+                value={horarioAtencion}
+                onChange={(e) => setHorarioAtencion(e.target.value)}
                 placeholder={"Lunes a viernes, 9:00 a 14:00\nSábados, 9:00 a 12:00"}
               />
             </div>
@@ -302,7 +372,8 @@ export function SitioEditor({
                 name="infoPago"
                 rows={3}
                 maxLength={1000}
-                defaultValue={datos.infoPago ?? ""}
+                value={infoPago}
+                onChange={(e) => setInfoPago(e.target.value)}
                 placeholder={"En la oficina del comité, en efectivo.\nTransferencia: Cuenta Vista 1234567, Banco Estado."}
               />
             </div>

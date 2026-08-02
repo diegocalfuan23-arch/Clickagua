@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { aprs, avisos } from "@/lib/db/schema";
 import { requireApr } from "@/lib/apr-session";
 import { puede, slugDisponible, type Plan } from "@/lib/planes";
+import { generarSitio, type SitioGenerado } from "@/lib/ia";
 
 export type ResultadoAccion = { ok: true } | { ok: false; error: string };
 
@@ -175,6 +176,40 @@ export async function crearAviso(
   revalidatePath("/panel/sitio");
   if (apr.slug) revalidatePath(`/sitio/${apr.slug}`);
   return { ok: true };
+}
+
+export type ResultadoGenerar =
+  | { ok: true; datos: SitioGenerado }
+  | { ok: false; error: string };
+
+/**
+ * Completa descripción, horario e info de pago desde un par de frases
+ * sueltas del dirigente. Solo devuelve el texto sugerido: no escribe en la
+ * base, para que el dirigente pueda revisarlo antes de guardar.
+ */
+export async function generarSitioIA(
+  texto: string
+): Promise<ResultadoGenerar> {
+  const { error } = await exigirLanding();
+  if (error) return { ok: false, error };
+
+  const limpio = texto.trim();
+  if (!limpio) {
+    return { ok: false, error: "Escribe algo sobre tu comité primero." };
+  }
+  if (limpio.length > 800) {
+    return { ok: false, error: "Muy largo. Intenta con menos de 800 caracteres." };
+  }
+
+  const datos = await generarSitio(limpio);
+  if (!datos) {
+    return {
+      ok: false,
+      error: "No se pudo generar el texto en este momento. Intenta de nuevo.",
+    };
+  }
+
+  return { ok: true, datos };
 }
 
 export async function eliminarAviso(id: string): Promise<ResultadoAccion> {
