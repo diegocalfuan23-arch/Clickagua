@@ -12,7 +12,9 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.21 0.006 250);
 
-  --primary: oklch(0.557 0.227 273);
+  /* #3607F2 — mismo matiz que el índigo anterior (272 vs 273) pero más
+     profundo y saturado. Sube el contraste con blanco de 5.06:1 a 8.50:1. */
+  --primary: oklch(0.454 0.289 272);
   --primary-foreground: oklch(0.99 0 0);
 
   --secondary: oklch(0.55 0.2 355);
@@ -38,18 +40,18 @@
 
   --border: oklch(0.922 0.004 250);
   --input: oklch(0.922 0.004 250);
-  --ring: oklch(0.557 0.227 273);
+  --ring: oklch(0.454 0.289 272);
 
   --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.21 0.006 250);
-  --sidebar-primary: oklch(0.557 0.227 273);
+  --sidebar-primary: oklch(0.454 0.289 272);
   --sidebar-primary-foreground: oklch(0.99 0 0);
   /* El ítem activo usa el índigo pleno del primario, igual que los botones:
      el lila lavado anterior no se leía como seleccionado. */
-  --sidebar-accent: oklch(0.557 0.227 273);
+  --sidebar-accent: oklch(0.454 0.289 272);
   --sidebar-accent-foreground: oklch(0.99 0 0);
   --sidebar-border: oklch(0.922 0.004 250);
-  --sidebar-ring: oklch(0.557 0.227 273);
+  --sidebar-ring: oklch(0.454 0.289 272);
 }
 
 .dark {
