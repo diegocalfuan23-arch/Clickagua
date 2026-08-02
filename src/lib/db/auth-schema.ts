@@ -22,6 +22,12 @@ export const user = pgTable("user", {
   cargo: text("cargo").notNull(),
   // Comité al que pertenece el usuario. Determina qué datos puede ver.
   aprId: text("aprId"),
+  /**
+   * ADMIN: quien registra el comité, ve todo el panel.
+   * OPERADOR: técnico de terreno, solo carga lecturas para que el admin
+   * las apruebe. Se une siempre a través de una invitación (ver Invitacion).
+   */
+  rol: text("rol").notNull().default("ADMIN"),
 });
 
 export const session = pgTable("session", {

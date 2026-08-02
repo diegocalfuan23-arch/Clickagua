@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { db } from "@/lib/db";
 import { boletas, socios } from "@/lib/db/schema";
-import { requireApr } from "@/lib/apr-session";
+import { requireAdmin } from "@/lib/apr-session";
 import {
   GraficoArea,
   GraficoBarras,
@@ -112,7 +112,7 @@ export default async function PanelPage({
 }: {
   searchParams: Promise<{ rango?: string; demo?: string }>;
 }) {
-  const { apr } = await requireApr();
+  const { apr } = await requireAdmin();
   const { rango: rangoParam, demo: demoParam } = await searchParams;
 
   const demo = demoParam === "1";

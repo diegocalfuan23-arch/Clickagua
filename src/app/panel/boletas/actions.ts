@@ -5,7 +5,7 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { boletas, socios } from "@/lib/db/schema";
-import { requireApr } from "@/lib/apr-session";
+import { requireAdmin } from "@/lib/apr-session";
 import {
   aMonto,
   calcularDesdeLecturas,
@@ -79,7 +79,7 @@ export async function guardarBoleta(
   _prev: ResultadoAccion | null,
   formData: FormData
 ): Promise<ResultadoAccion> {
-  const { apr } = await requireApr();
+  const { apr } = await requireAdmin();
   const boletaId = String(formData.get("boletaId") ?? "").trim();
 
   const parsed = boletaSchema.safeParse({
@@ -206,7 +206,7 @@ export async function registrarPago(
   boletaId: string,
   monto: number
 ): Promise<ResultadoAccion> {
-  const { apr } = await requireApr();
+  const { apr } = await requireAdmin();
 
   if (!Number.isFinite(monto) || monto < 0) {
     return { ok: false, error: "El monto pagado no es válido." };
@@ -250,7 +250,7 @@ export async function registrarPago(
 }
 
 export async function anularBoleta(boletaId: string): Promise<ResultadoAccion> {
-  const { apr } = await requireApr();
+  const { apr } = await requireAdmin();
 
   const fila = await db
     .select({ id: boletas.id })
@@ -276,7 +276,7 @@ export async function anularBoleta(boletaId: string): Promise<ResultadoAccion> {
 export async function eliminarBoleta(
   boletaId: string
 ): Promise<ResultadoAccion> {
-  const { apr } = await requireApr();
+  const { apr } = await requireAdmin();
 
   const fila = await db
     .select({ id: boletas.id })
@@ -340,7 +340,7 @@ export async function importarBoletas(
   _prev: ResultadoImportacion | null,
   formData: FormData
 ): Promise<ResultadoImportacion> {
-  const { apr } = await requireApr();
+  const { apr } = await requireAdmin();
 
   const archivo = formData.get("archivo");
   if (!(archivo instanceof File) || archivo.size === 0) {

@@ -5,7 +5,7 @@ import { and, eq, ne } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { aprs, avisos } from "@/lib/db/schema";
-import { requireApr } from "@/lib/apr-session";
+import { requireAdmin } from "@/lib/apr-session";
 import { puede, slugDisponible, type Plan } from "@/lib/planes";
 import { generarSitio, type SitioGenerado } from "@/lib/ia";
 
@@ -47,7 +47,7 @@ function aFecha(valor: FormDataEntryValue | null): Date | null {
  * es control de acceso: sin esto, un POST directo saltaría el gate.
  */
 async function exigirLanding() {
-  const { apr } = await requireApr();
+  const { apr } = await requireAdmin();
   if (!puede(apr.plan as Plan, "landing")) {
     return { apr, error: "Tu plan actual no incluye el sitio público." };
   }

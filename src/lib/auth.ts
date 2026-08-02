@@ -90,6 +90,13 @@ export const auth = betterAuth({
         // Lo asigna el servidor tras crear el APR, nunca el cliente.
         input: false,
       },
+      rol: {
+        type: "string",
+        required: false,
+        // Todo registro nace ADMIN; solo unirseConInvitacion() lo baja a
+        // OPERADOR, nunca el propio usuario al registrarse.
+        input: false,
+      },
     },
   },
   databaseHooks: {

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { requireApr } from "@/lib/apr-session";
+import { requireAdmin } from "@/lib/apr-session";
 import { ConfiguracionForm } from "@/components/panel/configuracion-form";
 
 export const metadata: Metadata = {
@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ConfiguracionPage() {
-  const { apr } = await requireApr();
+  const { apr } = await requireAdmin();
 
   return (
     <ConfiguracionForm

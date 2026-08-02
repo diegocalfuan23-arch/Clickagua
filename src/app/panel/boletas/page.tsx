@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { asc, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { boletas, socios } from "@/lib/db/schema";
-import { requireApr } from "@/lib/apr-session";
+import { requireAdmin } from "@/lib/apr-session";
 import { BoletasTabla } from "@/components/panel/boletas-tabla";
 
 export const metadata: Metadata = {
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function BoletasPage() {
-  const { apr } = await requireApr();
+  const { apr } = await requireAdmin();
 
   const listado = await db
     .select({

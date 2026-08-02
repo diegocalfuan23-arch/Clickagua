@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { socios } from "@/lib/db/schema";
-import { requireApr } from "@/lib/apr-session";
+import { requireAdmin } from "@/lib/apr-session";
 import { SociosTabla } from "@/components/panel/socios-tabla";
 
 export const metadata: Metadata = {
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function SociosPage() {
-  const { apr } = await requireApr();
+  const { apr } = await requireAdmin();
 
   const listado = await db.query.socios.findMany({
     where: eq(socios.aprId, apr.id),

@@ -14,12 +14,13 @@ export default async function PanelLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { apr } = await requireApr();
+  const { user, apr } = await requireApr();
+  const rol = user.rol === "OPERADOR" ? "OPERADOR" : "ADMIN";
 
   return (
     <TooltipProvider>
       <SidebarProvider>
-        <PanelSidebar apr={apr.nombre} comuna={apr.comuna} />
+        <PanelSidebar apr={apr.nombre} comuna={apr.comuna} rol={rol} />
 
         {/* El gradiente va en el contenedor, no en el área de contenido: así
             cubre también el header. Centrado en 50% 50% para que el velo quede

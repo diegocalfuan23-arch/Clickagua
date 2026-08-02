@@ -3,7 +3,7 @@ import { desc, eq } from "drizzle-orm";
 import { Globe, Lock } from "lucide-react";
 import { db } from "@/lib/db";
 import { avisos } from "@/lib/db/schema";
-import { requireApr } from "@/lib/apr-session";
+import { requireAdmin } from "@/lib/apr-session";
 import {
   NOMBRE_PLAN,
   generarSlug,
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 const DOMINIO_RAIZ = process.env.NEXT_PUBLIC_DOMINIO_RAIZ ?? "facilagua.com";
 
 export default async function SitioPage() {
-  const { apr } = await requireApr();
+  const { apr } = await requireAdmin();
   const plan = apr.plan as Plan;
 
   if (!puede(plan, "landing")) {

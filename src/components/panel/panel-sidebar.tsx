@@ -9,6 +9,7 @@ import {
   ReceiptText,
   MessageSquare,
   Settings,
+  Droplets,
 } from "lucide-react";
 import { Logo } from "@/components/marca/logo";
 import {
@@ -29,12 +30,18 @@ const gestion = [
   { href: "/panel", label: "Resumen", icon: LayoutDashboard },
   { href: "/panel/socios", label: "Socios", icon: Users },
   { href: "/panel/boletas", label: "Boletas", icon: ReceiptText },
+  { href: "/panel/lecturas", label: "Lecturas", icon: Droplets },
 ];
 
 const atencion = [
   { href: "/panel/conversaciones", label: "Conversaciones", icon: MessageSquare },
   { href: "/panel/sitio", label: "Sitio público", icon: Globe },
   { href: "/panel/configuracion", label: "Configuración", icon: Settings },
+];
+
+/** Lo único que un OPERADOR puede ver: cargar lecturas, nada más. */
+const soloOperador = [
+  { href: "/panel/lecturas", label: "Lecturas", icon: Droplets },
 ];
 
 type Enlace = {
@@ -106,11 +113,14 @@ function GrupoEnlaces({
 export function PanelSidebar({
   apr,
   comuna,
+  rol,
 }: {
   apr: string;
   comuna: string;
+  rol: "ADMIN" | "OPERADOR";
 }) {
   const pathname = usePathname();
+  const inicio = rol === "ADMIN" ? "/panel" : "/panel/lecturas";
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
@@ -118,8 +128,8 @@ export function PanelSidebar({
           su contenido a la izquierda y no deja centrar la marca. */}
       <SidebarHeader className="py-4">
         <Link
-          href="/panel"
-          aria-label="Ir al resumen"
+          href={inicio}
+          aria-label="Ir al inicio"
           className="flex justify-center transition-opacity hover:opacity-80"
         >
           {/* Al colapsar el sidebar el ancho se reduce, así que el logo baja
@@ -129,8 +139,14 @@ export function PanelSidebar({
       </SidebarHeader>
 
       <SidebarContent>
-        <GrupoEnlaces titulo="Gestión" enlaces={gestion} pathname={pathname} />
-        <GrupoEnlaces titulo="Atención" enlaces={atencion} pathname={pathname} />
+        {rol === "ADMIN" ? (
+          <>
+            <GrupoEnlaces titulo="Gestión" enlaces={gestion} pathname={pathname} />
+            <GrupoEnlaces titulo="Atención" enlaces={atencion} pathname={pathname} />
+          </>
+        ) : (
+          <GrupoEnlaces titulo="Terreno" enlaces={soloOperador} pathname={pathname} />
+        )}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">

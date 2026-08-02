@@ -6,6 +6,8 @@ import { db } from "@/lib/db";
 import { aprs } from "@/lib/db/schema";
 import { user as userTable } from "@/lib/db/auth-schema";
 
+export type RolPanel = "ADMIN" | "OPERADOR";
+
 /**
  * Devuelve la sesión y el APR al que pertenece el usuario. Redirige a /login
  * si no hay sesión, de modo que toda página del panel quede protegida.
@@ -55,6 +57,22 @@ export async function requireApr() {
     .update(userTable)
     .set({ aprId: apr.id })
     .where(eq(userTable.id, user.id));
+
+  return { user, apr };
+}
+
+/**
+ * Igual que requireApr(), pero además exige rol ADMIN. Úsala en cualquier
+ * página que un OPERADOR no deba ver: socios, boletas, configuración, sitio
+ * público y la aprobación de lecturas. Un operador que intente entrar por
+ * URL directa queda igual bloqueado, no solo oculto en el menú.
+ */
+export async function requireAdmin() {
+  const { user, apr } = await requireApr();
+
+  if (user.rol !== "ADMIN") {
+    redirect("/panel/lecturas");
+  }
 
   return { user, apr };
 }

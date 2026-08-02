@@ -5,7 +5,7 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { socios } from "@/lib/db/schema";
-import { requireApr } from "@/lib/apr-session";
+import { requireAdmin } from "@/lib/apr-session";
 
 const socioSchema = z.object({
   nombre: z.string().trim().min(1, "El nombre es obligatorio."),
@@ -44,7 +44,7 @@ export async function crearSocio(
   _prev: ResultadoAccion | null,
   formData: FormData
 ): Promise<ResultadoAccion> {
-  const { apr } = await requireApr();
+  const { apr } = await requireAdmin();
 
   const parsed = socioSchema.safeParse({
     nombre: formData.get("nombre"),
@@ -90,7 +90,7 @@ export async function editarSocio(
   _prev: ResultadoAccion | null,
   formData: FormData
 ): Promise<ResultadoAccion> {
-  const { apr } = await requireApr();
+  const { apr } = await requireAdmin();
 
   const socioId = String(formData.get("socioId") ?? "");
   if (!socioId) {
@@ -148,7 +148,7 @@ export async function alternarActivo(
   socioId: string,
   activo: boolean
 ): Promise<ResultadoAccion> {
-  const { apr } = await requireApr();
+  const { apr } = await requireAdmin();
 
   await db
     .update(socios)
@@ -160,7 +160,7 @@ export async function alternarActivo(
 }
 
 export async function eliminarSocio(socioId: string): Promise<ResultadoAccion> {
-  const { apr } = await requireApr();
+  const { apr } = await requireAdmin();
 
   // El filtro por aprId impide borrar un socio de otro comité.
   await db
@@ -218,7 +218,7 @@ export async function importarSocios(
   _prev: ResultadoImportacion | null,
   formData: FormData
 ): Promise<ResultadoImportacion> {
-  const { apr } = await requireApr();
+  const { apr } = await requireAdmin();
 
   const archivo = formData.get("archivo");
   if (!(archivo instanceof File) || archivo.size === 0) {

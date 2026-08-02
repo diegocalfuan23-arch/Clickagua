@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { aprs } from "@/lib/db/schema";
-import { requireApr } from "@/lib/apr-session";
+import { requireAdmin } from "@/lib/apr-session";
 
 export type ResultadoAccion = { ok: true } | { ok: false; error: string };
 
@@ -36,7 +36,7 @@ export async function guardarComite(
   _prev: ResultadoAccion | null,
   formData: FormData
 ): Promise<ResultadoAccion> {
-  const { apr } = await requireApr();
+  const { apr } = await requireAdmin();
 
   const parsed = comiteSchema.safeParse({
     nombre: formData.get("nombre"),
@@ -83,7 +83,7 @@ export async function guardarRegional(
   _prev: ResultadoAccion | null,
   formData: FormData
 ): Promise<ResultadoAccion> {
-  const { apr } = await requireApr();
+  const { apr } = await requireAdmin();
 
   const pais = String(formData.get("pais") ?? "");
   if (!PAISES.includes(pais as (typeof PAISES)[number])) {
@@ -119,7 +119,7 @@ export async function guardarFacturacion(
   _prev: ResultadoAccion | null,
   formData: FormData
 ): Promise<ResultadoAccion> {
-  const { apr } = await requireApr();
+  const { apr } = await requireAdmin();
 
   const dia = aEntero(formData.get("diaGeneracionBoletas")) ?? 1;
   const dias = aEntero(formData.get("diasVencimiento")) ?? 15;
@@ -168,7 +168,7 @@ export async function guardarMedidores(
   _prev: ResultadoAccion | null,
   formData: FormData
 ): Promise<ResultadoAccion> {
-  const { apr } = await requireApr();
+  const { apr } = await requireAdmin();
 
   const frecuencia = String(formData.get("frecuenciaLectura") ?? "");
   if (!FRECUENCIAS.includes(frecuencia as (typeof FRECUENCIAS)[number])) {
@@ -209,7 +209,7 @@ export async function guardarCortes(
   _prev: ResultadoAccion | null,
   formData: FormData
 ): Promise<ResultadoAccion> {
-  const { apr } = await requireApr();
+  const { apr } = await requireAdmin();
 
   const gracia = aEntero(formData.get("diasGraciaCorte")) ?? 5;
   const aviso = aEntero(formData.get("diasAvisoCorte")) ?? 3;

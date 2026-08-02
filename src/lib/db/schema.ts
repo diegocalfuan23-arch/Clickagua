@@ -44,6 +44,12 @@ export const tipoAvisoEnum = pgEnum("TipoAviso", [
   "NOTICIA",
 ]);
 
+export const estadoLecturaEnum = pgEnum("EstadoLectura", [
+  "PENDIENTE",
+  "APROBADA",
+  "RECHAZADA",
+]);
+
 /**
  * Un APR/SSR: el comité dueño de los datos. Todo lo demás cuelga de aquí,
  * de modo que un comité nunca vea los socios ni boletas de otro.
@@ -219,6 +225,7 @@ export const sociosRelations = relations(socios, ({ many, one }) => ({
     references: [aprs.id],
   }),
   boletas: many(boletas),
+  lecturas: many(lecturas),
   conversacion: one(conversaciones, {
     fields: [socios.id],
     references: [conversaciones.socioId],
@@ -326,5 +333,80 @@ export const mensajesRelations = relations(mensajes, ({ one }) => ({
   conversacion: one(conversaciones, {
     fields: [mensajes.conversacionId],
     references: [conversaciones.id],
+  }),
+}));
+
+/**
+ * Link de invitación para que un técnico se registre como OPERADOR de un
+ * comité, sin tener que adivinar el RUT del APR (que es como hoy se une
+ * un ADMIN nuevo). El admin genera el código desde el panel y lo comparte
+ * por WhatsApp o correo; se consume una sola vez.
+ */
+export const invitaciones = pgTable(
+  "Invitacion",
+  {
+    id: text("id").primaryKey().$defaultFn(() => createId()),
+    aprId: text("aprId")
+      .notNull()
+      .references(() => aprs.id, { onDelete: "cascade" }),
+    codigo: text("codigo").notNull().$defaultFn(() => createId()),
+    rol: text("rol").notNull().default("OPERADOR"),
+    usadaPor: text("usadaPor"),
+    expiraEn: timestamp("expiraEn", { precision: 3 }).notNull(),
+    createdAt: timestamp("createdAt", { precision: 3 }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("Invitacion_codigo_key").on(table.codigo),
+    index("Invitacion_aprId_idx").on(table.aprId),
+  ]
+);
+
+export const invitacionesRelations = relations(invitaciones, ({ one }) => ({
+  apr: one(aprs, {
+    fields: [invitaciones.aprId],
+    references: [aprs.id],
+  }),
+}));
+
+/**
+ * Lectura de terreno, previa a la boleta. El operador la registra al mirar
+ * el medidor; queda PENDIENTE hasta que el admin la aprueba o rechaza. Solo
+ * al aprobarse se usa para calcular una Boleta — así una lectura mal
+ * tomada nunca llega a cobrarse sin que alguien la revise primero.
+ */
+export const lecturas = pgTable(
+  "Lectura",
+  {
+    id: text("id").primaryKey().$defaultFn(() => createId()),
+    socioId: text("socioId")
+      .notNull()
+      .references(() => socios.id, { onDelete: "cascade" }),
+    valor: integer("valor").notNull(),
+    periodo: text("periodo").notNull(),
+    foto: text("foto"),
+    observacion: text("observacion"),
+    estado: estadoLecturaEnum("estado").notNull().default("PENDIENTE"),
+    /** Quién la registró en terreno (el operador) y quién la aprobó/rechazó. */
+    registradaPorId: text("registradaPorId").notNull(),
+    revisadaPorId: text("revisadaPorId"),
+    motivoRechazo: text("motivoRechazo"),
+    createdAt: timestamp("createdAt", { precision: 3 }).notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt", { precision: 3 }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("Lectura_socioId_idx").on(table.socioId),
+    index("Lectura_estado_idx").on(table.estado),
+    // Un socio no puede tener dos lecturas pendientes del mismo período: si el
+    // operador se equivoca, primero hay que resolver la que ya está en cola.
+    uniqueIndex("Lectura_socio_periodo_pendiente_key")
+      .on(table.socioId, table.periodo)
+      .where(sql`${table.estado} = 'PENDIENTE'`),
+  ]
+);
+
+export const lecturasRelations = relations(lecturas, ({ one }) => ({
+  socio: one(socios, {
+    fields: [lecturas.socioId],
+    references: [socios.id],
   }),
 }));
