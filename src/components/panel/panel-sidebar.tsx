@@ -114,20 +114,18 @@ export function PanelSidebar({
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              size="lg"
-              render={<Link href="/panel" />}
-              className="hover:bg-transparent active:bg-transparent"
-            >
-              {/* Solo la marca, sin texto: el nombre del comité ya aparece
-                  en el header y en el pie del sidebar. */}
-              <Logo className="size-9" />
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+      {/* Un enlace simple en vez de SidebarMenuButton: ese componente alinea
+          su contenido a la izquierda y no deja centrar la marca. */}
+      <SidebarHeader className="py-4">
+        <Link
+          href="/panel"
+          aria-label="Ir al resumen"
+          className="flex justify-center transition-opacity hover:opacity-80"
+        >
+          {/* Al colapsar el sidebar el ancho se reduce, así que el logo baja
+              de tamaño para no tocar los bordes. */}
+          <Logo className="size-12 group-data-[collapsible=icon]:size-8" />
+        </Link>
       </SidebarHeader>
 
       <SidebarContent>
