@@ -10,7 +10,7 @@ const planes = [
     periodo: "/mes",
     iva: true,
     lista: [
-      "Consultas de deuda ilimitadas",
+      "300 respuestas de WhatsApp al mes",
       "Hasta 200 socios cargados",
       "Panel de administración",
       "Soporte por WhatsApp",
@@ -25,7 +25,7 @@ const planes = [
     periodo: "/mes",
     iva: true,
     lista: [
-      "Todo lo del plan anterior",
+      "1.200 respuestas de WhatsApp al mes",
       "Hasta 800 socios cargados",
       "Importación de boletas por CSV",
       "Soporte prioritario",
@@ -40,13 +40,26 @@ const planes = [
     periodo: null,
     iva: false,
     lista: [
-      "Todo lo del plan Estándar",
+      "Respuestas de WhatsApp a medida",
       "Socios ilimitados",
       "Múltiples sedes o comités",
       "Acompañamiento en la puesta en marcha",
     ],
     cta: "Conversemos",
     destacado: false,
+  },
+];
+
+const addOnes = [
+  {
+    nombre: "+300 respuestas",
+    precio: "0,25 UF",
+    periodo: "/mes",
+  },
+  {
+    nombre: "+1.000 respuestas",
+    precio: "0,7 UF",
+    periodo: "/mes",
   },
 ];
 
@@ -127,6 +140,40 @@ export function PricingSection() {
               >
                 {plan.cta}
               </a>
+            </div>
+          ))}
+        </div>
+
+        <p className="mx-auto mt-6 max-w-[640px] text-center text-[0.85rem] text-muted-foreground">
+          El bot de WhatsApp necesita un número exclusivo para el comité (no
+          puede ser el celular personal de alguien de la directiva). Un chip
+          nuevo sirve.
+        </p>
+
+        <div className="mx-auto mt-13 max-w-[640px] text-center">
+          <h3 className="text-[1.3rem] font-semibold">
+            ¿Se acaban las respuestas del mes?
+          </h3>
+          <p className="mt-2 text-[0.95rem] text-muted-foreground">
+            Compra más desde el mismo panel, sin cambiar de plan.
+          </p>
+        </div>
+
+        <div className="mx-auto mt-6 flex max-w-[560px] flex-col gap-3.5 sm:flex-row">
+          {addOnes.map((addOn) => (
+            <div
+              key={addOn.nombre}
+              className="flex flex-1 items-center justify-between rounded-xl border border-border bg-card px-5.5 py-4"
+            >
+              <span className="text-[0.92rem] font-medium">
+                {addOn.nombre}
+              </span>
+              <span className="flex items-baseline gap-1 text-[1.05rem] font-semibold">
+                {addOn.precio}
+                <span className="font-sans text-[0.8rem] font-medium text-muted-foreground">
+                  {addOn.periodo}
+                </span>
+              </span>
             </div>
           ))}
         </div>
