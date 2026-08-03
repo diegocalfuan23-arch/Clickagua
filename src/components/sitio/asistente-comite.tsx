@@ -99,22 +99,20 @@ export function AsistenteComite({
       <Button
         onClick={() => setAbierto((v) => !v)}
         aria-label={abierto ? "Cerrar asistente" : "Abrir asistente"}
-        className="fixed right-5 bottom-5 z-50 size-13 rounded-md border-[3px] border-[#1a1a1a] bg-[#C3F207] text-[#1a1a1a] shadow-lg hover:bg-[#C3F207]/90"
+        className="fixed right-5 bottom-5 z-50 size-13 rounded-full shadow-lg"
       >
         {abierto ? <X className="size-5" /> : <MessageCircle className="size-5" />}
       </Button>
 
       {abierto && (
-        <div className="fixed right-5 bottom-22 z-50 flex h-[520px] w-[min(380px,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-md border-[3px] border-[#1a1a1a] bg-white shadow-xl">
-          <div className="flex shrink-0 items-center gap-2.5 border-b-[3px] border-[#1a1a1a] bg-primary px-4 py-3.5 text-white">
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-md border-2 border-white">
-              <Droplets className="size-4 text-white" />
+        <div className="fixed right-5 bottom-22 z-50 flex h-[520px] w-[min(380px,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-xl">
+          <div className="flex shrink-0 items-center gap-2.5 border-b border-border px-4 py-3.5">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+              <Droplets className="size-4 text-primary" />
             </span>
             <div className="min-w-0">
-              <div className="truncate text-sm font-bold uppercase tracking-wide">
-                {nombreApr}
-              </div>
-              <div className="text-[0.75rem] text-white/75">
+              <div className="truncate text-sm font-semibold">{nombreApr}</div>
+              <div className="text-[0.75rem] text-muted-foreground">
                 Responde al instante
               </div>
             </div>
@@ -133,9 +131,9 @@ export function AsistenteComite({
               >
                 {m.texto || (
                   <span className="inline-flex gap-1">
-                    <span className="size-1.5 animate-pulse rounded-full bg-muted-foreground/60" />
-                    <span className="size-1.5 animate-pulse rounded-full bg-muted-foreground/60 [animation-delay:0.15s]" />
-                    <span className="size-1.5 animate-pulse rounded-full bg-muted-foreground/60 [animation-delay:0.3s]" />
+                    <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/60" />
+                    <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:0.15s]" />
+                    <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:0.3s]" />
                   </span>
                 )}
               </div>
