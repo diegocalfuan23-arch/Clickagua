@@ -1,7 +1,7 @@
 import {
   AlertTriangle,
   Clock,
-  Droplets,
+  Droplet,
   Mail,
   MapPin,
   MessageCircle,
@@ -10,21 +10,19 @@ import {
 } from "lucide-react";
 import { formatearTelefono } from "@/lib/formato";
 import { AsistenteComite } from "@/components/sitio/asistente-comite";
-import { PaisajeRural } from "@/components/sitio/paisaje-rural";
 
 /*
-  Segunda pasada sobre la referencia real (Comité APR Caburgua). La primera
-  pasada corrigió la paleta y la tipografía pero mantuvo el mismo esqueleto
-  genérico: header, hero centrado, tarjetas en fila — el usuario señaló que
-  eso seguía sintiéndose de plantilla, no la paleta. Esta versión rompe esa
-  composición:
-  - El hero es asimétrico (texto + ilustración propia), no centrado.
-  - Tarifas —que casi todo comité carga desde el día uno— vive dentro del
-    hero, no espera como otra tarjeta más abajo.
-  - Contacto es una franja horizontal de datos, con otro ritmo que las
-    tarjetas cuadradas.
-  - Avisos, cuando existen, son una banda de ancho completo que interrumpe
-    el layout — se sienten como una alerta real, no como contenido más.
+  Tercera pasada. Las dos anteriores inventaron un mundo visual propio para
+  esta página (primero bloques "señalética vial" rechazados como amateur,
+  luego una paleta celeste/serif inspirada en un sitio de APR real que el
+  usuario dijo que mejoraba "casi nada"). El usuario pidió inspirarse en la
+  landing del software (src/components/site/*), que ya tiene estilo propio
+  y probado: badge mono en mayúsculas como eyebrow, monospace para números
+  y montos, bordes finos con rounded-2xl (nunca gruesos), objetos reales
+  dramatizados (la sección de boleta de la landing) en vez de ilustraciones
+  inventadas, bg-muted/40 para alternar secciones. Esta versión hereda ese
+  sistema en vez de crear uno nuevo — es la misma marca que ya conocen los
+  socios si alguna vez vieron la landing, no una tercera identidad distinta.
 */
 
 export type DatosSitio = {
@@ -67,21 +65,18 @@ const fechaHora = new Intl.DateTimeFormat("es-CL", {
 const ESTILO_AVISO = {
   CORTE: {
     icono: AlertTriangle,
-    clase: "bg-destructive/[0.06] border-destructive/25",
-    color: "text-destructive",
     etiqueta: "Corte de agua",
+    tono: "bg-destructive/12 text-destructive",
   },
   MANTENCION: {
     icono: Wrench,
-    clase: "bg-tertiary/[0.08] border-tertiary/30",
-    color: "text-tertiary-texto",
     etiqueta: "Mantención",
+    tono: "bg-tertiary/20 text-tertiary-foreground",
   },
   NOTICIA: {
-    icono: Droplets,
-    clase: "bg-primary/[0.05] border-primary/20",
-    color: "text-primary",
+    icono: Droplet,
     etiqueta: "Noticia",
+    tono: "bg-primary/12 text-primary",
   },
 } as const;
 
@@ -107,19 +102,18 @@ export function SitioApr({
     apr.tarifaCargoFijo !== null || apr.tarifaMetroCubico !== null;
   const hayContacto =
     apr.direccion || apr.telefono || apr.email || apr.horarioAtencion;
+  const corteActivo = avisos.find((a) => a.tipo === "CORTE");
 
   return (
-    <div className="min-h-screen bg-white">
-      <header className="border-b border-black/[0.04] bg-white">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-6 py-4 sm:px-8">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/[0.08]">
-            <Droplets className="size-5 text-primary" />
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border">
+        <div className="mx-auto flex max-w-[1180px] items-center gap-3 px-7 py-4">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+            <Droplet className="size-4.5 fill-primary text-primary" />
           </span>
           <div className="min-w-0">
-            <div className="truncate font-semibold text-[#1c2340]">
-              {apr.nombre}
-            </div>
-            <div className="text-[0.8rem] text-[#1c2340]/55">
+            <div className="truncate font-semibold">{apr.nombre}</div>
+            <div className="text-[0.8rem] text-muted-foreground">
               {apr.comuna}
               {apr.region && `, ${apr.region}`}
             </div>
@@ -127,85 +121,51 @@ export function SitioApr({
         </div>
       </header>
 
-      {/* Hero asimétrico: texto + tarifa a la izquierda, ilustración a la
-          derecha. En mobile la ilustración baja de tamaño y queda arriba
-          del texto, como una franja, no como un bloque que empuja todo. */}
-      <div className="bg-gradient-to-b from-[#eef7fb] to-[#d6ebf3]">
-        <div className="mx-auto grid max-w-6xl gap-8 px-6 pt-10 pb-14 sm:px-8 sm:pt-14 sm:pb-18 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-4">
-          <div className="order-2 lg:order-1">
-            <p
-              className="text-[1.4rem] leading-snug text-[#1c2340] sm:text-[1.75rem]"
-              style={{ fontFamily: "var(--font-sitio-calida), serif" }}
+      <section className="py-16 text-center">
+        <div className="mx-auto flex max-w-[680px] flex-col items-center px-7">
+          <span
+            className={
+              corteActivo
+                ? "rounded-full bg-destructive/12 px-3.5 py-1.5 font-mono text-[0.72rem] font-semibold tracking-[0.09em] text-destructive uppercase"
+                : "rounded-full bg-forest/12 px-3.5 py-1.5 font-mono text-[0.72rem] font-semibold tracking-[0.09em] text-forest uppercase"
+            }
+          >
+            {corteActivo ? "Corte de agua programado" : "Servicio normal"}
+          </span>
+
+          <h1 className="mt-5.5 mb-4 text-[clamp(1.9rem,4vw,2.6rem)] leading-[1.1] font-semibold text-balance">
+            {apr.nombre}
+          </h1>
+          <p className="mb-7 max-w-[52ch] text-[1.05rem] leading-relaxed text-muted-foreground">
+            {apr.sitioDescripcion ??
+              `Comité de Agua Potable Rural de ${apr.comuna}. Aquí encuentras nuestros datos de contacto, avisos de corte y la información de pago.`}
+          </p>
+
+          {whatsapp && (
+            <a
+              href={`https://wa.me/${whatsapp}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-11 items-center gap-2 rounded-full bg-primary px-6 text-[0.95rem] font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
-              {apr.sitioDescripcion ??
-                `Comité de Agua Potable Rural de ${apr.comuna}. Aquí encuentras nuestros datos de contacto, avisos de corte y la información de pago.`}
-            </p>
-
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              {whatsapp && (
-                <a
-                  href={`https://wa.me/${whatsapp}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-[0.95rem] font-medium text-white shadow-[0_8px_20px_-6px_rgba(54,7,242,0.45)] transition-transform hover:-translate-y-0.5"
-                >
-                  <MessageCircle className="size-4" />
-                  Consulta tu cuenta por WhatsApp
-                </a>
-              )}
-            </div>
-
-            {hayTarifas && (
-              <div className="mt-9 flex gap-8 border-t border-[#1c2340]/10 pt-6">
-                {apr.tarifaCargoFijo !== null && (
-                  <div>
-                    <div className="text-[0.78rem] font-medium text-[#1c2340]/55">
-                      Cargo fijo
-                    </div>
-                    <div className="mt-0.5 text-[1.6rem] leading-none font-semibold tabular-nums text-[#1c2340]">
-                      {clp.format(apr.tarifaCargoFijo)}
-                    </div>
-                  </div>
-                )}
-                {apr.tarifaMetroCubico !== null && (
-                  <div>
-                    <div className="text-[0.78rem] font-medium text-[#1c2340]/55">
-                      Valor del m³
-                    </div>
-                    <div className="mt-0.5 text-[1.6rem] leading-none font-semibold tabular-nums text-[#1c2340]">
-                      {clp.format(apr.tarifaMetroCubico)}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          <PaisajeRural className="order-1 h-auto w-full max-w-[380px] justify-self-center lg:order-2 lg:max-w-none lg:justify-self-end" />
+              <MessageCircle className="size-4" />
+              Consulta tu cuenta por WhatsApp
+            </a>
+          )}
         </div>
+      </section>
 
-        <svg
-          viewBox="0 0 1440 60"
-          preserveAspectRatio="none"
-          className="block h-[32px] w-full text-white sm:h-[44px]"
-          aria-hidden
-        >
-          <path
-            fill="currentColor"
-            d="M0,32 C240,64 480,0 720,20 C960,40 1200,64 1440,28 L1440,60 L0,60 Z"
-          />
-        </svg>
-      </div>
-
-      {/* Avisos: banda de ancho completo cuando hay algo activo, para que
-          se lea como una alerta y no como una tarjeta más de la página. */}
       {avisos.length > 0 && (
-        <div className="border-b border-black/[0.05] bg-[#fbfbfc]">
-          <div className="mx-auto max-w-6xl px-6 py-8 sm:px-8">
-            <h2 className="text-[0.8rem] font-semibold tracking-[0.06em] text-[#1c2340]/50 uppercase">
-              Avisos
+        <section className="border-y border-border bg-muted/40 py-16">
+          <div className="mx-auto max-w-[1180px] px-7">
+            <span className="font-mono text-[0.72rem] font-semibold tracking-[0.09em] text-primary uppercase">
+              Al día
+            </span>
+            <h2 className="mt-3 mb-7 text-[clamp(1.5rem,2.5vw,1.9rem)] font-semibold text-balance">
+              Avisos vigentes
             </h2>
-            <div className="mt-4 flex flex-col gap-3">
+
+            <div className="grid gap-4 sm:grid-cols-2">
               {avisos.map((aviso) => {
                 const estilo = ESTILO_AVISO[aviso.tipo];
                 const Icono = estilo.icono;
@@ -214,31 +174,31 @@ export function SitioApr({
                 return (
                   <article
                     key={aviso.id}
-                    className={`rounded-2xl border p-5 ${estilo.clase}`}
+                    className="rounded-2xl border border-border bg-card p-6"
                   >
-                    <div className="flex items-center gap-2">
-                      <Icono className={`size-4 ${estilo.color}`} />
-                      <span
-                        className={`text-[0.78rem] font-semibold tracking-wide uppercase ${estilo.color}`}
-                      >
-                        {estilo.etiqueta}
-                      </span>
+                    <div
+                      className={`mb-3.5 flex size-9 items-center justify-center rounded-[10px] ${estilo.tono}`}
+                    >
+                      <Icono className="size-4.5" />
                     </div>
-                    <h3 className="mt-2 text-[1.05rem] font-semibold text-[#1c2340]">
+                    <span className="font-mono text-[0.72rem] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
+                      {estilo.etiqueta}
+                    </span>
+                    <h3 className="mt-1.5 mb-1.5 text-[1.05rem] font-semibold">
                       {aviso.titulo}
                     </h3>
                     {rango && (
-                      <p className="mt-1 text-[0.88rem] font-medium text-[#1c2340]/60">
+                      <p className="text-[0.87rem] font-medium tabular-nums text-muted-foreground">
                         {rango}
                       </p>
                     )}
                     {aviso.sectores && (
-                      <p className="mt-1 text-[0.88rem] text-[#1c2340]/60">
+                      <p className="mt-0.5 text-[0.87rem] text-muted-foreground">
                         Sectores: {aviso.sectores}
                       </p>
                     )}
                     {aviso.cuerpo && (
-                      <p className="mt-2 text-[0.93rem] leading-relaxed text-[#1c2340]/70">
+                      <p className="mt-2.5 text-[0.9rem] leading-relaxed text-muted-foreground">
                         {aviso.cuerpo}
                       </p>
                     )}
@@ -247,65 +207,125 @@ export function SitioApr({
               })}
             </div>
           </div>
-        </div>
+        </section>
       )}
 
-      {/* Contacto: franja horizontal de datos, no una tarjeta cuadrada —
-          distinto ritmo que la sección de arriba y que evita repetir el
-          mismo contenedor una tercera vez en la página. */}
-      {hayContacto && (
-        <div className="mx-auto max-w-6xl px-6 py-10 sm:px-8">
-          <h2 className="text-[0.8rem] font-semibold tracking-[0.06em] text-[#1c2340]/50 uppercase">
-            Contacto
-          </h2>
-          <div className="mt-4 flex flex-wrap gap-x-10 gap-y-4 text-[0.95rem]">
-            {apr.direccion && (
-              <div className="flex items-center gap-2.5">
-                <MapPin className="size-4 shrink-0 text-primary/70" />
-                <span className="text-[#1c2340]/85">{apr.direccion}</span>
-              </div>
-            )}
-            {apr.telefono && (
-              <div className="flex items-center gap-2.5">
-                <Phone className="size-4 shrink-0 text-primary/70" />
-                <span className="tabular-nums text-[#1c2340]/85">
-                  {formatearTelefono(apr.telefono)}
-                </span>
-              </div>
-            )}
-            {apr.email && (
-              <div className="flex items-center gap-2.5">
-                <Mail className="size-4 shrink-0 text-primary/70" />
-                <span className="break-all text-[#1c2340]/85">
-                  {apr.email}
-                </span>
-              </div>
-            )}
-            {apr.horarioAtencion && (
-              <div className="flex items-start gap-2.5">
-                <Clock className="mt-0.5 size-4 shrink-0 text-primary/70" />
-                <span className="whitespace-pre-line text-[#1c2340]/85">
-                  {apr.horarioAtencion}
-                </span>
+      {(hayTarifas || apr.infoPago) && (
+        <section id="tarifas" className="py-16">
+          {/* pr-20 en mobile: la boleta tiene fondo sólido de ancho completo
+              y, sin ese margen, queda justo debajo del botón flotante del
+              asistente mientras se hace scroll. Se anula desde lg, donde la
+              boleta ya no ocupa el ancho completo de la sección. */}
+          <div className="mx-auto grid max-w-[1180px] gap-14 px-7 pr-20 lg:grid-cols-[0.85fr_1.15fr] lg:items-center lg:pr-7">
+            <div>
+              <span className="font-mono text-[0.72rem] font-semibold tracking-[0.09em] text-primary uppercase">
+                Tarifas y pago
+              </span>
+              <h2 className="mt-3 text-[clamp(1.6rem,2.8vw,2.1rem)] font-semibold text-balance">
+                Lo que cobra tu comité, sin letra chica.
+              </h2>
+              {apr.infoPago && (
+                <p className="mt-4 max-w-[46ch] text-[0.95rem] leading-relaxed whitespace-pre-line text-muted-foreground">
+                  {apr.infoPago}
+                </p>
+              )}
+            </div>
+
+            {hayTarifas && (
+              <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
+                <div className="flex items-center gap-2 bg-foreground px-5.5 py-4 text-background">
+                  <span className="flex size-6 items-center justify-center rounded-md bg-primary">
+                    <Droplet className="size-3.5 fill-white text-white" />
+                  </span>
+                  <span className="text-[0.95rem] font-semibold">
+                    {apr.nombre}
+                  </span>
+                </div>
+
+                <div className="p-5.5">
+                  {apr.tarifaCargoFijo !== null && (
+                    <div className="flex justify-between border-b border-dashed border-border py-3.5 text-[0.95rem]">
+                      <span className="text-muted-foreground">Cargo fijo</span>
+                      <span className="font-mono font-semibold tabular-nums">
+                        {clp.format(apr.tarifaCargoFijo)}
+                      </span>
+                    </div>
+                  )}
+                  {apr.tarifaMetroCubico !== null && (
+                    <div className="flex justify-between py-3.5 text-[0.95rem]">
+                      <span className="text-muted-foreground">
+                        Valor del m³
+                      </span>
+                      <span className="font-mono font-semibold tabular-nums">
+                        {clp.format(apr.tarifaMetroCubico)}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
-
-          {apr.infoPago && (
-            <p className="mt-6 max-w-[65ch] border-t border-black/[0.06] pt-5 text-[0.93rem] leading-relaxed whitespace-pre-line text-[#1c2340]/70">
-              {apr.infoPago}
-            </p>
-          )}
-        </div>
+        </section>
       )}
 
-      <footer className="border-t border-black/[0.06] bg-[#f4f8fa]">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-6 py-6 text-[0.85rem] text-[#1c2340]/60 sm:px-8">
+      {hayContacto && (
+        <section className="border-t border-border bg-muted/40 py-16">
+          <div className="mx-auto max-w-[1180px] px-7">
+            <span className="font-mono text-[0.72rem] font-semibold tracking-[0.09em] text-primary uppercase">
+              Contacto
+            </span>
+            <h2 className="mt-3 mb-7 text-[clamp(1.5rem,2.5vw,1.9rem)] font-semibold text-balance">
+              Dónde encontrarnos
+            </h2>
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {apr.direccion && (
+                <div className="rounded-2xl border border-border bg-card p-5">
+                  <MapPin className="size-4.5 text-primary" />
+                  <div className="mt-3 text-[0.95rem] font-medium">
+                    {apr.direccion}
+                  </div>
+                </div>
+              )}
+              {apr.telefono && (
+                <div className="rounded-2xl border border-border bg-card p-5">
+                  <Phone className="size-4.5 text-primary" />
+                  <div className="mt-3 font-mono text-[0.95rem] font-medium tabular-nums">
+                    {formatearTelefono(apr.telefono)}
+                  </div>
+                </div>
+              )}
+              {apr.email && (
+                <div className="rounded-2xl border border-border bg-card p-5">
+                  <Mail className="size-4.5 text-primary" />
+                  <div className="mt-3 text-[0.95rem] font-medium break-all">
+                    {apr.email}
+                  </div>
+                </div>
+              )}
+              {apr.horarioAtencion && (
+                <div className="rounded-2xl border border-border bg-card p-5">
+                  <Clock className="size-4.5 text-primary" />
+                  <div className="mt-3 text-[0.95rem] font-medium whitespace-pre-line">
+                    {apr.horarioAtencion}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      <footer className="border-t border-border py-10">
+        <div className="mx-auto flex max-w-[1180px] flex-wrap items-center justify-between gap-4 px-7 text-[0.85rem] text-muted-foreground">
+          <div className="flex items-center gap-2 font-semibold text-foreground">
+            <span className="flex size-6 items-center justify-center rounded-md bg-primary/10">
+              <Droplet className="size-3.5 fill-primary text-primary" />
+            </span>
+            {apr.nombre}
+          </div>
           <span>
-            © {new Date().getFullYear()} {apr.nombre}
-          </span>
-          <span>
-            Sitio creado con{" "}
+            © {new Date().getFullYear()} · Sitio creado con{" "}
             <a
               href="https://facilagua.com"
               className="font-medium text-primary hover:underline"
