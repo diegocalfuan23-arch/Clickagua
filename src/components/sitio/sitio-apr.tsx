@@ -10,17 +10,21 @@ import {
 } from "lucide-react";
 import { formatearTelefono } from "@/lib/formato";
 import { AsistenteComite } from "@/components/sitio/asistente-comite";
+import { PaisajeRural } from "@/components/sitio/paisaje-rural";
 
 /*
-  Referencia real: sitio del Comité APR Caburgua (.impeccable/referencias/
-  apr-caburgua.png), señalada por el usuario tras rechazar un primer intento
-  "señalética vial" que se sintió como bloques de color genéricos, no como
-  algo hecho por y para la comunidad. Se toma de esa referencia: paleta de
-  azul cielo suave (no índigo saturado a página completa), un divisor de
-  sección en onda, tarjetas con sombra suave en vez de bordes gruesos, y una
-  frase de bienvenida en cursiva cálida. No se copian fotos ni ilustraciones
-  a color de la referencia porque FacilAgua no tiene fotografía real de
-  ningún comité todavía — inventar esas fotos sería peor que no tenerlas.
+  Segunda pasada sobre la referencia real (Comité APR Caburgua). La primera
+  pasada corrigió la paleta y la tipografía pero mantuvo el mismo esqueleto
+  genérico: header, hero centrado, tarjetas en fila — el usuario señaló que
+  eso seguía sintiéndose de plantilla, no la paleta. Esta versión rompe esa
+  composición:
+  - El hero es asimétrico (texto + ilustración propia), no centrado.
+  - Tarifas —que casi todo comité carga desde el día uno— vive dentro del
+    hero, no espera como otra tarjeta más abajo.
+  - Contacto es una franja horizontal de datos, con otro ritmo que las
+    tarjetas cuadradas.
+  - Avisos, cuando existen, son una banda de ancho completo que interrumpe
+    el layout — se sienten como una alerta real, no como contenido más.
 */
 
 export type DatosSitio = {
@@ -63,19 +67,19 @@ const fechaHora = new Intl.DateTimeFormat("es-CL", {
 const ESTILO_AVISO = {
   CORTE: {
     icono: AlertTriangle,
-    clase: "border-destructive/20 bg-destructive/[0.04]",
+    clase: "bg-destructive/[0.06] border-destructive/25",
     color: "text-destructive",
     etiqueta: "Corte de agua",
   },
   MANTENCION: {
     icono: Wrench,
-    clase: "border-tertiary/30 bg-tertiary/[0.06]",
+    clase: "bg-tertiary/[0.08] border-tertiary/30",
     color: "text-tertiary-texto",
     etiqueta: "Mantención",
   },
   NOTICIA: {
     icono: Droplets,
-    clase: "border-primary/15 bg-primary/[0.04]",
+    clase: "bg-primary/[0.05] border-primary/20",
     color: "text-primary",
     etiqueta: "Noticia",
   },
@@ -101,11 +105,13 @@ export function SitioApr({
   const whatsapp = apr.telefono?.replace(/[^0-9]/g, "");
   const hayTarifas =
     apr.tarifaCargoFijo !== null || apr.tarifaMetroCubico !== null;
+  const hayContacto =
+    apr.direccion || apr.telefono || apr.email || apr.horarioAtencion;
 
   return (
     <div className="min-h-screen bg-white">
       <header className="border-b border-black/[0.04] bg-white">
-        <div className="mx-auto flex max-w-5xl items-center gap-3 px-6 py-4 sm:px-8">
+        <div className="mx-auto flex max-w-6xl items-center gap-3 px-6 py-4 sm:px-8">
           <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/[0.08]">
             <Droplets className="size-5 text-primary" />
           </span>
@@ -121,35 +127,67 @@ export function SitioApr({
         </div>
       </header>
 
-      {/* Franja celeste con la bienvenida, cerrada por un borde en onda —
-          el gesto más reconocible de la referencia real. */}
-      <div className="bg-gradient-to-b from-[#e4f1f8] to-[#d6ebf3]">
-        <div className="mx-auto max-w-5xl px-6 pt-12 pb-20 sm:px-8 sm:pt-16">
-          <p
-            className="text-[1.5rem] leading-snug text-[#1c2340] sm:text-[1.9rem]"
-            style={{ fontFamily: "var(--font-sitio-calida), serif" }}
-          >
-            {apr.sitioDescripcion ??
-              `Comité de Agua Potable Rural de ${apr.comuna}. Aquí encuentras nuestros datos de contacto, avisos de corte y la información de pago.`}
-          </p>
-
-          {whatsapp && (
-            <a
-              href={`https://wa.me/${whatsapp}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-7 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-[0.95rem] font-medium text-white shadow-[0_8px_20px_-6px_rgba(54,7,242,0.45)] transition-transform hover:-translate-y-0.5"
+      {/* Hero asimétrico: texto + tarifa a la izquierda, ilustración a la
+          derecha. En mobile la ilustración baja de tamaño y queda arriba
+          del texto, como una franja, no como un bloque que empuja todo. */}
+      <div className="bg-gradient-to-b from-[#eef7fb] to-[#d6ebf3]">
+        <div className="mx-auto grid max-w-6xl gap-8 px-6 pt-10 pb-14 sm:px-8 sm:pt-14 sm:pb-18 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-4">
+          <div className="order-2 lg:order-1">
+            <p
+              className="text-[1.4rem] leading-snug text-[#1c2340] sm:text-[1.75rem]"
+              style={{ fontFamily: "var(--font-sitio-calida), serif" }}
             >
-              <MessageCircle className="size-4" />
-              Consulta tu cuenta por WhatsApp
-            </a>
-          )}
+              {apr.sitioDescripcion ??
+                `Comité de Agua Potable Rural de ${apr.comuna}. Aquí encuentras nuestros datos de contacto, avisos de corte y la información de pago.`}
+            </p>
+
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              {whatsapp && (
+                <a
+                  href={`https://wa.me/${whatsapp}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-[0.95rem] font-medium text-white shadow-[0_8px_20px_-6px_rgba(54,7,242,0.45)] transition-transform hover:-translate-y-0.5"
+                >
+                  <MessageCircle className="size-4" />
+                  Consulta tu cuenta por WhatsApp
+                </a>
+              )}
+            </div>
+
+            {hayTarifas && (
+              <div className="mt-9 flex gap-8 border-t border-[#1c2340]/10 pt-6">
+                {apr.tarifaCargoFijo !== null && (
+                  <div>
+                    <div className="text-[0.78rem] font-medium text-[#1c2340]/55">
+                      Cargo fijo
+                    </div>
+                    <div className="mt-0.5 text-[1.6rem] leading-none font-semibold tabular-nums text-[#1c2340]">
+                      {clp.format(apr.tarifaCargoFijo)}
+                    </div>
+                  </div>
+                )}
+                {apr.tarifaMetroCubico !== null && (
+                  <div>
+                    <div className="text-[0.78rem] font-medium text-[#1c2340]/55">
+                      Valor del m³
+                    </div>
+                    <div className="mt-0.5 text-[1.6rem] leading-none font-semibold tabular-nums text-[#1c2340]">
+                      {clp.format(apr.tarifaMetroCubico)}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <PaisajeRural className="order-1 h-auto w-full max-w-[380px] justify-self-center lg:order-2 lg:max-w-none lg:justify-self-end" />
         </div>
 
         <svg
           viewBox="0 0 1440 60"
           preserveAspectRatio="none"
-          className="block h-[36px] w-full text-white sm:h-[48px]"
+          className="block h-[32px] w-full text-white sm:h-[44px]"
           aria-hidden
         >
           <path
@@ -159,10 +197,12 @@ export function SitioApr({
         </svg>
       </div>
 
-      <main className="mx-auto max-w-5xl px-6 pt-10 pb-24 sm:px-8 sm:pb-10">
-        {avisos.length > 0 && (
-          <section>
-            <h2 className="text-[1.2rem] font-semibold text-[#1c2340]">
+      {/* Avisos: banda de ancho completo cuando hay algo activo, para que
+          se lea como una alerta y no como una tarjeta más de la página. */}
+      {avisos.length > 0 && (
+        <div className="border-b border-black/[0.05] bg-[#fbfbfc]">
+          <div className="mx-auto max-w-6xl px-6 py-8 sm:px-8">
+            <h2 className="text-[0.8rem] font-semibold tracking-[0.06em] text-[#1c2340]/50 uppercase">
               Avisos
             </h2>
             <div className="mt-4 flex flex-col gap-3">
@@ -174,7 +214,7 @@ export function SitioApr({
                 return (
                   <article
                     key={aviso.id}
-                    className={`rounded-2xl border p-5 shadow-[0_1px_2px_rgba(28,35,64,0.04)] ${estilo.clase}`}
+                    className={`rounded-2xl border p-5 ${estilo.clase}`}
                   >
                     <div className="flex items-center gap-2">
                       <Icono className={`size-4 ${estilo.color}`} />
@@ -206,87 +246,61 @@ export function SitioApr({
                 );
               })}
             </div>
-          </section>
-        )}
+          </div>
+        </div>
+      )}
 
-        <div
-          className={`grid gap-5 md:grid-cols-2 ${avisos.length > 0 ? "mt-10" : ""}`}
-        >
-          <section className="rounded-2xl border border-black/[0.06] bg-white p-6 shadow-[0_1px_3px_rgba(28,35,64,0.06)]">
-            <h2 className="text-[1.1rem] font-semibold text-[#1c2340]">
-              Contacto
-            </h2>
-            <dl className="mt-4 flex flex-col gap-3.5 text-[0.93rem]">
-              {apr.direccion && (
-                <div className="flex gap-3">
-                  <MapPin className="mt-0.5 size-4 shrink-0 text-primary/70" />
-                  <dd className="text-[#1c2340]/85">{apr.direccion}</dd>
-                </div>
-              )}
-              {apr.telefono && (
-                <div className="flex gap-3">
-                  <Phone className="mt-0.5 size-4 shrink-0 text-primary/70" />
-                  <dd className="tabular-nums text-[#1c2340]/85">
-                    {formatearTelefono(apr.telefono)}
-                  </dd>
-                </div>
-              )}
-              {apr.email && (
-                <div className="flex gap-3">
-                  <Mail className="mt-0.5 size-4 shrink-0 text-primary/70" />
-                  <dd className="break-all text-[#1c2340]/85">{apr.email}</dd>
-                </div>
-              )}
-              {apr.horarioAtencion && (
-                <div className="flex gap-3">
-                  <Clock className="mt-0.5 size-4 shrink-0 text-primary/70" />
-                  <dd className="whitespace-pre-line text-[#1c2340]/85">
-                    {apr.horarioAtencion}
-                  </dd>
-                </div>
-              )}
-            </dl>
-          </section>
+      {/* Contacto: franja horizontal de datos, no una tarjeta cuadrada —
+          distinto ritmo que la sección de arriba y que evita repetir el
+          mismo contenedor una tercera vez en la página. */}
+      {hayContacto && (
+        <div className="mx-auto max-w-6xl px-6 py-10 sm:px-8">
+          <h2 className="text-[0.8rem] font-semibold tracking-[0.06em] text-[#1c2340]/50 uppercase">
+            Contacto
+          </h2>
+          <div className="mt-4 flex flex-wrap gap-x-10 gap-y-4 text-[0.95rem]">
+            {apr.direccion && (
+              <div className="flex items-center gap-2.5">
+                <MapPin className="size-4 shrink-0 text-primary/70" />
+                <span className="text-[#1c2340]/85">{apr.direccion}</span>
+              </div>
+            )}
+            {apr.telefono && (
+              <div className="flex items-center gap-2.5">
+                <Phone className="size-4 shrink-0 text-primary/70" />
+                <span className="tabular-nums text-[#1c2340]/85">
+                  {formatearTelefono(apr.telefono)}
+                </span>
+              </div>
+            )}
+            {apr.email && (
+              <div className="flex items-center gap-2.5">
+                <Mail className="size-4 shrink-0 text-primary/70" />
+                <span className="break-all text-[#1c2340]/85">
+                  {apr.email}
+                </span>
+              </div>
+            )}
+            {apr.horarioAtencion && (
+              <div className="flex items-start gap-2.5">
+                <Clock className="mt-0.5 size-4 shrink-0 text-primary/70" />
+                <span className="whitespace-pre-line text-[#1c2340]/85">
+                  {apr.horarioAtencion}
+                </span>
+              </div>
+            )}
+          </div>
 
-          {(hayTarifas || apr.infoPago) && (
-            <section className="rounded-2xl border border-black/[0.06] bg-white p-6 shadow-[0_1px_3px_rgba(28,35,64,0.06)]">
-              <h2 className="text-[1.1rem] font-semibold text-[#1c2340]">
-                Tarifas y pago
-              </h2>
-
-              {hayTarifas && (
-                <dl className="mt-4 flex flex-col gap-2.5 text-[0.93rem]">
-                  {apr.tarifaCargoFijo !== null && (
-                    <div className="flex items-center justify-between gap-3">
-                      <dt className="text-[#1c2340]/55">Cargo fijo</dt>
-                      <dd className="font-medium tabular-nums text-[#1c2340]">
-                        {clp.format(apr.tarifaCargoFijo)}
-                      </dd>
-                    </div>
-                  )}
-                  {apr.tarifaMetroCubico !== null && (
-                    <div className="flex items-center justify-between gap-3">
-                      <dt className="text-[#1c2340]/55">Metro cúbico (m³)</dt>
-                      <dd className="font-medium tabular-nums text-[#1c2340]">
-                        {clp.format(apr.tarifaMetroCubico)}
-                      </dd>
-                    </div>
-                  )}
-                </dl>
-              )}
-
-              {apr.infoPago && (
-                <p className="mt-4 border-t border-black/[0.06] pt-4 text-[0.93rem] leading-relaxed whitespace-pre-line text-[#1c2340]/70">
-                  {apr.infoPago}
-                </p>
-              )}
-            </section>
+          {apr.infoPago && (
+            <p className="mt-6 max-w-[65ch] border-t border-black/[0.06] pt-5 text-[0.93rem] leading-relaxed whitespace-pre-line text-[#1c2340]/70">
+              {apr.infoPago}
+            </p>
           )}
         </div>
-      </main>
+      )}
 
-      <footer className="mt-8 border-t border-black/[0.06] bg-[#f4f8fa]">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-2 px-6 py-6 text-[0.85rem] text-[#1c2340]/60 sm:px-8">
+      <footer className="border-t border-black/[0.06] bg-[#f4f8fa]">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-6 py-6 text-[0.85rem] text-[#1c2340]/60 sm:px-8">
           <span>
             © {new Date().getFullYear()} {apr.nombre}
           </span>
