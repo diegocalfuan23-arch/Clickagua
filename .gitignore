@@ -42,3 +42,6 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# impeccable design skill: decision payloads and inspection screenshots
+.impeccable/
