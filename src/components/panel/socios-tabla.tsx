@@ -97,12 +97,14 @@ function AvataresApilados({ nombres }: { nombres: string[] }) {
 function TarjetaResumen({
   icono,
   color,
+  colorValor,
   etiqueta,
   valor,
   nombres,
 }: {
   icono: React.ReactNode;
   color: string;
+  colorValor: string;
   etiqueta: string;
   valor: number;
   nombres: string[];
@@ -124,7 +126,12 @@ function TarjetaResumen({
       <div className="mt-4 text-[0.87rem] text-muted-foreground">{etiqueta}</div>
 
       <div className="mt-1 flex items-end justify-between gap-2">
-        <span className="text-[1.6rem] leading-none font-semibold tabular-nums">
+        <span
+          className={cn(
+            "text-[1.6rem] leading-none font-semibold tabular-nums",
+            colorValor
+          )}
+        >
           {valor}
         </span>
         <AvataresApilados nombres={nombres} />
@@ -320,6 +327,7 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
         <TarjetaResumen
           icono={<Users />}
           color="bg-primary/10 text-primary"
+          colorValor="text-primary"
           etiqueta="Total de socios"
           valor={socios.length}
           nombres={socios.map((s) => s.nombre)}
@@ -327,6 +335,7 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
         <TarjetaResumen
           icono={<UserCheck />}
           color="bg-forest/10 text-forest"
+          colorValor="text-forest"
           etiqueta="Socios activos"
           valor={activos}
           nombres={listaActivos.map((s) => s.nombre)}
@@ -334,6 +343,7 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
         <TarjetaResumen
           icono={<MessageCircle />}
           color="bg-tertiary/15 text-tertiary"
+          colorValor="text-tertiary-texto"
           etiqueta="Con WhatsApp"
           valor={conTelefono}
           nombres={listaConTelefono.map((s) => s.nombre)}
@@ -341,6 +351,7 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
         <TarjetaResumen
           icono={<MapPinOff />}
           color="bg-secondary/10 text-secondary"
+          colorValor="text-secondary"
           etiqueta="Sin dirección"
           valor={listaSinDireccion.length}
           nombres={listaSinDireccion.map((s) => s.nombre)}
