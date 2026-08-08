@@ -410,3 +410,36 @@ export const lecturasRelations = relations(lecturas, ({ one }) => ({
     references: [socios.id],
   }),
 }));
+
+export const estadoConsultaEnum = pgEnum("EstadoConsulta", [
+  "NUEVA",
+  "RESPONDIDA",
+  "DESCARTADA",
+]);
+
+/**
+ * Consulta desde el formulario público de facilagua.com. No cuelga de ningún
+ * Apr: quien escribe todavía no es cliente, es un comité evaluando el
+ * producto. Se guarda en vez de mandarse por correo para no perder ninguna
+ * si el envío falla, y para poder darles seguimiento con un estado.
+ */
+export const consultas = pgTable(
+  "Consulta",
+  {
+    id: text("id").primaryKey().$defaultFn(() => createId()),
+    nombre: text("nombre").notNull(),
+    apr: text("apr").notNull(),
+    /** Un solo campo: el formulario acepta correo o teléfono indistintamente. */
+    contacto: text("contacto").notNull(),
+    mensaje: text("mensaje"),
+    estado: estadoConsultaEnum("estado").notNull().default("NUEVA"),
+    /** Notas internas al hacer seguimiento; no las ve quien consulta. */
+    notas: text("notas"),
+    createdAt: timestamp("createdAt", { precision: 3 }).notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt", { precision: 3 }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("Consulta_estado_idx").on(table.estado),
+    index("Consulta_createdAt_idx").on(table.createdAt),
+  ]
+);

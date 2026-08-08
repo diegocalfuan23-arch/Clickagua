@@ -1,12 +1,28 @@
 "use client";
 
-import { MessageCircle, Mail } from "lucide-react";
+import { useActionState, useEffect, useRef } from "react";
+import { Check, Loader2, MessageCircle, Mail } from "lucide-react";
+import {
+  enviarConsulta,
+  type ResultadoConsulta,
+} from "@/app/actions-contacto";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
 export function ContactSection() {
+  const [estado, accion, pendiente] = useActionState<
+    ResultadoConsulta | null,
+    FormData
+  >(enviarConsulta, null);
+
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (estado?.ok) formRef.current?.reset();
+  }, [estado]);
+
   return (
     <section id="contacto" className="border-y border-border bg-muted/40 py-23">
       <div className="mx-auto grid max-w-[1180px] gap-15 px-7 sm:grid-cols-[0.85fr_1.15fr]">
@@ -45,7 +61,8 @@ export function ContactSection() {
         </div>
 
         <form
-          onSubmit={(e) => e.preventDefault()}
+          ref={formRef}
+          action={accion}
           className="grid gap-4.5 rounded-2xl border border-border bg-card p-7.5 shadow-md sm:grid-cols-2"
         >
           <div className="flex flex-col gap-1.5">
@@ -76,11 +93,46 @@ export function ContactSection() {
               id="mensaje"
               name="mensaje"
               rows={4}
+              maxLength={2000}
               placeholder="Cuéntanos cuántos socios tiene tu comité y qué te gustaría resolver primero."
             />
           </div>
-          <Button type="submit" className="sm:col-span-2 justify-self-start">
-            Enviar consulta
+
+          {/* Trampa para bots: fuera de la vista y del foco, nunca la llena
+              una persona. Si viene con algo, la consulta se descarta. */}
+          <div aria-hidden className="hidden">
+            <label htmlFor="sitioWeb">No completar</label>
+            <input
+              id="sitioWeb"
+              name="sitioWeb"
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+            />
+          </div>
+
+          {estado && !estado.ok && (
+            <p
+              role="alert"
+              className="rounded-lg bg-destructive/10 px-3.5 py-2.5 text-[0.88rem] text-destructive sm:col-span-2"
+            >
+              {estado.error}
+            </p>
+          )}
+          {estado?.ok && (
+            <p className="flex items-center gap-2 rounded-lg bg-forest/10 px-3.5 py-2.5 text-[0.88rem] text-forest sm:col-span-2">
+              <Check className="size-4 shrink-0" />
+              Consulta recibida. Te contactamos dentro de 1 día hábil.
+            </p>
+          )}
+
+          <Button
+            type="submit"
+            disabled={pendiente}
+            className="justify-self-start sm:col-span-2"
+          >
+            {pendiente && <Loader2 className="animate-spin" />}
+            {pendiente ? "Enviando…" : "Enviar consulta"}
           </Button>
         </form>
       </div>
