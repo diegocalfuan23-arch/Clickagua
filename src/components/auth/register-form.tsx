@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { signUp } from "@/lib/auth-client";
@@ -167,8 +168,15 @@ export function RegisterForm() {
       </Button>
 
       <p className="text-center text-[0.8rem] leading-relaxed text-muted-foreground sm:col-span-2">
-        Al crear la cuenta aceptas los términos de servicio y la política de
-        privacidad de FacilAgua.
+        Al crear la cuenta aceptas los{" "}
+        <Link href="/terminos" className="text-primary hover:underline">
+          términos de uso
+        </Link>{" "}
+        y la{" "}
+        <Link href="/privacidad" className="text-primary hover:underline">
+          política de privacidad
+        </Link>{" "}
+        de FacilAgua.
       </p>
     </form>
   );

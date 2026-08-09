@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Logo } from "@/components/marca/logo";
 
 export function Footer() {
@@ -8,6 +9,19 @@ export function Footer() {
           <Logo className="size-5.5" />
           FacilAgua
         </div>
+
+        <div className="flex flex-wrap items-center gap-5">
+          <Link href="/terminos" className="transition-colors hover:text-foreground">
+            Términos de uso
+          </Link>
+          <Link
+            href="/privacidad"
+            className="transition-colors hover:text-foreground"
+          >
+            Privacidad
+          </Link>
+        </div>
+
         <span>
           &copy; 2026 FacilAgua. Hecho para los comités de agua potable rural
           de Chile.
