@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/mantenimiento/borrar-cuentas",
+      "schedule": "0 4 * * *"
+    }
+  ]
+}

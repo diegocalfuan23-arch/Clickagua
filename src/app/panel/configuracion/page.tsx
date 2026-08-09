@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { requireAdmin } from "@/lib/apr-session";
+import { resumenDatos } from "@/app/panel/configuracion/datos-actions";
 import { ConfiguracionForm } from "@/components/panel/configuracion-form";
 
 export const metadata: Metadata = {
@@ -8,9 +9,11 @@ export const metadata: Metadata = {
 
 export default async function ConfiguracionPage() {
   const { apr } = await requireAdmin();
+  const resumen = await resumenDatos();
 
   return (
     <ConfiguracionForm
+      resumenDatos={resumen}
       datos={{
         nombre: apr.nombre,
         razonSocial: apr.razonSocial,

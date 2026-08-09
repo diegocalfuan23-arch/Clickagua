@@ -138,6 +138,14 @@ export const aprs = pgTable(
     diasAvisoCorte: integer("diasAvisoCorte").notNull().default(3),
     costoReconexion: integer("costoReconexion").notNull().default(0),
 
+    // --- Cierre de cuenta (Ley 21.719) ---
+    /**
+     * Cuándo el comité pidió cerrar su cuenta. La política de privacidad
+     * promete eliminar todo 90 días después de esa fecha; hasta entonces
+     * puede arrepentirse y recuperar sus datos. Null = cuenta vigente.
+     */
+    cierreSolicitadoEn: timestamp("cierreSolicitadoEn", { precision: 3 }),
+
     createdAt: timestamp("createdAt", { precision: 3 }).notNull().defaultNow(),
     updatedAt: timestamp("updatedAt", { precision: 3 }).notNull().defaultNow(),
   },

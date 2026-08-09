@@ -9,7 +9,12 @@ import {
   Loader2,
   ReceiptText,
   Scissors,
+  ShieldCheck,
 } from "lucide-react";
+import {
+  DatosPrivacidad,
+  type ResumenDatos,
+} from "@/components/panel/datos-privacidad";
 import {
   guardarComite,
   guardarCortes,
@@ -128,7 +133,13 @@ function Campo({
   );
 }
 
-type Seccion = "comite" | "regional" | "facturacion" | "medidores" | "cortes";
+type Seccion =
+  | "comite"
+  | "regional"
+  | "facturacion"
+  | "medidores"
+  | "cortes"
+  | "datos";
 
 const SECCIONES: { id: Seccion; label: string; icono: typeof Building2 }[] = [
   { id: "comite", label: "Comité", icono: Building2 },
@@ -136,9 +147,16 @@ const SECCIONES: { id: Seccion; label: string; icono: typeof Building2 }[] = [
   { id: "facturacion", label: "Facturación", icono: ReceiptText },
   { id: "medidores", label: "Medidores", icono: Gauge },
   { id: "cortes", label: "Cortes", icono: Scissors },
+  { id: "datos", label: "Datos y privacidad", icono: ShieldCheck },
 ];
 
-export function ConfiguracionForm({ datos }: { datos: DatosConfiguracion }) {
+export function ConfiguracionForm({
+  datos,
+  resumenDatos,
+}: {
+  datos: DatosConfiguracion;
+  resumenDatos: ResumenDatos;
+}) {
   const [seccion, setSeccion] = useState<Seccion>("comite");
 
   return (
@@ -502,6 +520,13 @@ export function ConfiguracionForm({ datos }: { datos: DatosConfiguracion }) {
             </Campo>
           </div>
         </Bloque>
+      )}
+
+      {seccion === "datos" && (
+        <DatosPrivacidad
+          resumen={resumenDatos}
+          nombreComite={datos.nombre}
+        />
       )}
         </div>
       </div>
