@@ -190,7 +190,7 @@ export type ResultadoGenerar =
 export async function generarSitioIA(
   texto: string
 ): Promise<ResultadoGenerar> {
-  const { error } = await exigirLanding();
+  const { apr, error } = await exigirLanding();
   if (error) return { ok: false, error };
 
   const limpio = texto.trim();
@@ -201,7 +201,7 @@ export async function generarSitioIA(
     return { ok: false, error: "Muy largo. Intenta con menos de 800 caracteres." };
   }
 
-  const datos = await generarSitio(limpio);
+  const datos = await generarSitio(limpio, apr.id);
   if (!datos) {
     return {
       ok: false,

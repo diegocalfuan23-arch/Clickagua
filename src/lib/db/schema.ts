@@ -451,3 +451,36 @@ export const consultas = pgTable(
     index("Consulta_createdAt_idx").on(table.createdAt),
   ]
 );
+
+export const proveedorIaEnum = pgEnum("ProveedorIA", [
+  "anthropic",
+  "openai",
+  "enlatada",
+]);
+
+/**
+ * Una fila por cada llamada a un modelo de IA. Existe para poder ver costo
+ * real de IA, algo que hoy no se registra en ningún lado: `max_tokens` es
+ * solo el tope que se pide, no lo que se gastó.
+ *
+ * aprId es nullable porque el asistente de la landing (quien evalúa
+ * contratar FacilAgua) no pertenece a ningún comité todavía.
+ */
+export const usosIa = pgTable(
+  "UsoIA",
+  {
+    id: text("id").primaryKey().$defaultFn(() => createId()),
+    aprId: text("aprId").references(() => aprs.id, { onDelete: "set null" }),
+    /** Qué endpoint originó la llamada: asistente-landing, asistente-sitio, generar-sitio. */
+    origen: text("origen").notNull(),
+    proveedor: proveedorIaEnum("proveedor").notNull(),
+    modelo: text("modelo").notNull(),
+    tokensEntrada: integer("tokensEntrada").notNull().default(0),
+    tokensSalida: integer("tokensSalida").notNull().default(0),
+    createdAt: timestamp("createdAt", { precision: 3 }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("UsoIA_aprId_idx").on(table.aprId),
+    index("UsoIA_createdAt_idx").on(table.createdAt),
+  ]
+);

@@ -61,6 +61,8 @@ export async function POST(req: NextRequest) {
     maxTokens: 1024,
     respuestaEnlatada:
       "Disculpa, tuve un problema para responder. Escríbenos por WhatsApp y te ayudamos.",
+    origen: "asistente-landing",
+    // Sin aprId: quien pregunta acá evalúa contratar, no es cliente todavía.
   });
 
   return new Response(stream, {

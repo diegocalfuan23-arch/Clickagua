@@ -26,6 +26,7 @@ import { AsistenteComite } from "@/components/sitio/asistente-comite";
 */
 
 export type DatosSitio = {
+  id: string;
   nombre: string;
   comuna: string;
   region: string | null;

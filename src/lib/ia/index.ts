@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
+import { registrarUsoIa } from "@/lib/ia/uso";
 
 /**
  * Capa de IA con respaldo entre proveedores.
@@ -66,6 +67,11 @@ export type ResultadoIA = {
  *
  * `respuestaEnlatada` es lo que se envía si todo falla: nunca dejamos al
  * socio sin respuesta.
+ *
+ * `aprId`/`origen` son solo para métricas (tabla UsoIA): identifican de
+ * dónde vino la llamada y a qué comité cobrarle el costo, cuando aplica.
+ * `aprId` es null para el asistente de la landing, que no pertenece a
+ * ningún comité todavía.
  */
 export async function responder({
   system,
@@ -73,6 +79,8 @@ export async function responder({
   maxTokens = 700,
   forzarComplejo = false,
   respuestaEnlatada,
+  aprId = null,
+  origen,
 }: {
   system: string;
   mensajes: Mensaje[];
@@ -80,6 +88,8 @@ export async function responder({
   /** Salta la clasificación y usa el modelo caro. */
   forzarComplejo?: boolean;
   respuestaEnlatada: string;
+  aprId?: string | null;
+  origen: string;
 }): Promise<ResultadoIA> {
   const ultimo = mensajes.at(-1)?.texto ?? "";
   const simple = !forzarComplejo && esConsultaSimple(ultimo);
@@ -134,6 +144,24 @@ export async function responder({
                 );
               } finally {
                 controller.close();
+                // finalMessage() no vuelve a pegarle a la red: junta lo que
+                // ya se recibió durante el streaming. Se pide después de
+                // cerrar para no demorar la respuesta al usuario.
+                stream
+                  .finalMessage()
+                  .then((msg) => {
+                    registrarUsoIa({
+                      aprId,
+                      origen,
+                      proveedor: "anthropic",
+                      modelo,
+                      tokensEntrada: msg.usage.input_tokens,
+                      tokensSalida: msg.usage.output_tokens,
+                    });
+                  })
+                  .catch(() => {
+                    // El stream se cortó a mitad: no hay usage confiable.
+                  });
               }
             },
           }),
@@ -157,6 +185,9 @@ export async function responder({
         model: MODELO_RESPALDO,
         max_tokens: maxTokens,
         stream: true,
+        // Sin esto el uso de tokens no viaja en el stream: llegaría siempre
+        // en null y no habría forma de medir el costo del respaldo.
+        stream_options: { include_usage: true },
         messages: [
           { role: "system", content: system },
           ...mensajes.map((m) => ({
@@ -170,15 +201,33 @@ export async function responder({
         proveedor: "openai",
         stream: new ReadableStream({
           async start(controller) {
+            let entrada = 0;
+            let salida = 0;
             try {
               for await (const parte of stream) {
                 const texto = parte.choices[0]?.delta?.content;
                 if (texto) controller.enqueue(encoder.encode(texto));
+                // El chunk final trae usage y un choices vacío: no compite
+                // con los chunks de texto de arriba.
+                if (parte.usage) {
+                  entrada = parte.usage.prompt_tokens;
+                  salida = parte.usage.completion_tokens;
+                }
               }
             } catch {
               controller.enqueue(encoder.encode(`\n\n${respuestaEnlatada}`));
             } finally {
               controller.close();
+              if (entrada || salida) {
+                registrarUsoIa({
+                  aprId,
+                  origen,
+                  proveedor: "openai",
+                  modelo: MODELO_RESPALDO,
+                  tokensEntrada: entrada,
+                  tokensSalida: salida,
+                });
+              }
             }
           },
         }),
@@ -189,6 +238,15 @@ export async function responder({
   }
 
   // 3. Sin proveedores. El socio recibe algo útil igual.
+  registrarUsoIa({
+    aprId,
+    origen,
+    proveedor: "enlatada",
+    modelo: "ninguno",
+    tokensEntrada: 0,
+    tokensSalida: 0,
+  });
+
   return {
     proveedor: "enlatada",
     stream: new ReadableStream({
@@ -246,7 +304,8 @@ Reglas:
  * generar y dejar el formulario tal como estaba.
  */
 export async function generarSitio(
-  texto: string
+  texto: string,
+  aprId: string
 ): Promise<SitioGenerado | null> {
   if (process.env.ANTHROPIC_API_KEY) {
     try {
@@ -264,6 +323,15 @@ export async function generarSitio(
           },
         ],
         tool_choice: { type: "tool", name: "completar_sitio" },
+      });
+
+      registrarUsoIa({
+        aprId,
+        origen: "generar-sitio",
+        proveedor: "anthropic",
+        modelo: MODELO_COMPLEJO,
+        tokensEntrada: msg.usage.input_tokens,
+        tokensSalida: msg.usage.output_tokens,
       });
 
       const bloque = msg.content.find((b) => b.type === "tool_use");
@@ -290,6 +358,17 @@ export async function generarSitio(
           { role: "user", content: texto },
         ],
       });
+
+      if (res.usage) {
+        registrarUsoIa({
+          aprId,
+          origen: "generar-sitio",
+          proveedor: "openai",
+          modelo: MODELO_RESPALDO,
+          tokensEntrada: res.usage.prompt_tokens,
+          tokensSalida: res.usage.completion_tokens,
+        });
+      }
 
       const contenido = res.choices[0]?.message?.content;
       if (contenido) return JSON.parse(contenido) as SitioGenerado;

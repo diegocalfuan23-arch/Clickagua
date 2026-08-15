@@ -196,6 +196,8 @@ export async function POST(req: NextRequest) {
     mensajes,
     maxTokens: 700,
     respuestaEnlatada,
+    aprId: sitio.apr.id,
+    origen: "asistente-sitio",
   });
 
   return new Response(stream, {
