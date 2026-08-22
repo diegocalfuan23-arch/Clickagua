@@ -12,11 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
-/**
- * TODO: reemplazar por el WhatsApp real de Diego cuando lo confirme.
- * Formato E.164 (mismo que usa el resto del sistema para teléfonos).
- */
-const WHATSAPP_CONTACTO = "+56900000000";
+const WHATSAPP_CONTACTO = "+56942506724";
 
 export function ContactSection() {
   const [estado, accion, pendiente] = useActionState<

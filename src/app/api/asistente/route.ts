@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { responder } from "@/lib/ia";
 
-const WHATSAPP_CONTACTO = "https://wa.me/56900000000";
+const WHATSAPP_CONTACTO = "https://wa.me/56942506724";
 
 const SYSTEM_PROMPT = `Eres el asistente de FacilAgua, un software chileno de gestión para comités de Agua Potable Rural (APR) y Servicios Sanitarios Rurales (SSR).
 
