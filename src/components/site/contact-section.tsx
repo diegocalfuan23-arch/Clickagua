@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef } from "react";
 import { Check, Loader2, MessageCircle, Mail } from "lucide-react";
+import { formatearTelefono } from "@/lib/formato";
 import {
   enviarConsulta,
   type ResultadoConsulta,
@@ -11,6 +12,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
+/**
+ * TODO: reemplazar por el WhatsApp real de Diego cuando lo confirme.
+ * Formato E.164 (mismo que usa el resto del sistema para teléfonos).
+ */
+const WHATSAPP_CONTACTO = "+56900000000";
+
 export function ContactSection() {
   const [estado, accion, pendiente] = useActionState<
     ResultadoConsulta | null,
@@ -18,10 +25,18 @@ export function ContactSection() {
   >(enviarConsulta, null);
 
   const formRef = useRef<HTMLFormElement>(null);
+  const origenRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (estado?.ok) formRef.current?.reset();
   }, [estado]);
+
+  // document.referrer solo existe en el cliente y solo tiene el valor
+  // correcto en la carga inicial de la página (no cambia con la
+  // navegación de una SPA), así que se lee una vez al montar.
+  useEffect(() => {
+    if (origenRef.current) origenRef.current.value = document.referrer;
+  }, []);
 
   return (
     <section id="contacto" className="border-y border-border bg-muted/40 py-23">
@@ -39,15 +54,22 @@ export function ContactSection() {
           </p>
 
           <div className="mt-8.5 flex flex-col gap-4.5">
-            <div className="flex items-center gap-3 text-[0.92rem]">
+            <a
+              href={`https://wa.me/${WHATSAPP_CONTACTO.replace("+", "")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 text-[0.92rem] transition-opacity hover:opacity-80"
+            >
               <MessageCircle className="size-4.5 shrink-0 text-primary" />
               <div>
                 <strong className="block text-[0.88rem]">
                   WhatsApp directo
                 </strong>
-                <span className="text-muted-foreground">+56 9 0000 0000</span>
+                <span className="text-muted-foreground">
+                  {formatearTelefono(WHATSAPP_CONTACTO)}
+                </span>
               </div>
-            </div>
+            </a>
             <div className="flex items-center gap-3 text-[0.92rem]">
               <Mail className="size-4.5 shrink-0 text-primary" />
               <div>
@@ -97,6 +119,10 @@ export function ContactSection() {
               placeholder="Cuéntanos cuántos socios tiene tu comité y qué te gustaría resolver primero."
             />
           </div>
+
+          {/* De dónde vino la visita (document.referrer), para saber qué
+              canal trae consultas reales. Se rellena por JS al montar. */}
+          <input ref={origenRef} type="hidden" name="origenCliente" />
 
           {/* Trampa para bots: fuera de la vista y del foco, nunca la llena
               una persona. Si viene con algo, la consulta se descarta. */}

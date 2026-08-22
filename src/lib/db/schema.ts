@@ -440,6 +440,13 @@ export const consultas = pgTable(
     /** Un solo campo: el formulario acepta correo o teléfono indistintamente. */
     contacto: text("contacto").notNull(),
     mensaje: text("mensaje"),
+    /**
+     * De dónde vino la visita: document.referrer del navegador (ej.
+     * "https://www.google.com/"), o "directo" si escribió la URL a mano o
+     * venía de WhatsApp/una app que no manda referrer. Sirve para saber qué
+     * canal trae consultas reales, no solo visitas.
+     */
+    origen: text("origen"),
     estado: estadoConsultaEnum("estado").notNull().default("NUEVA"),
     /** Notas internas al hacer seguimiento; no las ve quien consulta. */
     notas: text("notas"),

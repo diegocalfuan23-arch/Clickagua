@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { consultas } from "@/lib/db/schema";
@@ -15,9 +16,29 @@ const consultaSchema = z.object({
     .min(5, "Deja un correo o teléfono para responderte.")
     .max(160),
   mensaje: z.string().trim().max(2000).optional(),
+  /** document.referrer capturado en el cliente al montar el formulario. */
+  origenCliente: z.string().trim().max(300).optional(),
   /** Campo trampa: los humanos no lo ven, los bots sí lo llenan. */
   sitioWeb: z.string().max(0).optional(),
 });
+
+/**
+ * "https://www.google.com/search?q=..." → "google.com". Nos importa el
+ * dominio de origen, no la URL completa (que puede traer la búsqueda
+ * exacta de alguien, dato que no necesitamos guardar).
+ */
+function origenLegible(referrer: string | null): string {
+  if (!referrer) return "directo";
+  try {
+    const host = new URL(referrer).hostname.replace(/^www\./, "");
+    // Un referrer del propio dominio no es "origen externo": es solo
+    // navegación interna (ej. de /panel a la landing).
+    if (host.endsWith("facilagua.com")) return "directo";
+    return host;
+  } catch {
+    return "directo";
+  }
+}
 
 /**
  * Límite por proceso: un mismo servidor no acepta una avalancha de consultas.
@@ -45,6 +66,7 @@ export async function enviarConsulta(
     apr: formData.get("apr"),
     contacto: formData.get("contacto"),
     mensaje: formData.get("mensaje") || undefined,
+    origenCliente: formData.get("origenCliente") || undefined,
     sitioWeb: formData.get("sitioWeb") || undefined,
   });
 
@@ -62,12 +84,19 @@ export async function enviarConsulta(
     };
   }
 
+  // El del cliente es más confiable (captura la primera carga real de la
+  // página); la cabecera del servidor es respaldo si el JS no llegó a
+  // correr a tiempo o el navegador la bloqueó.
+  const referrerServidor = (await headers()).get("referer");
+  const origen = origenLegible(parsed.data.origenCliente || referrerServidor);
+
   try {
     await db.insert(consultas).values({
       nombre: parsed.data.nombre,
       apr: parsed.data.apr,
       contacto: parsed.data.contacto,
       mensaje: parsed.data.mensaje ?? null,
+      origen,
     });
   } catch {
     return {
