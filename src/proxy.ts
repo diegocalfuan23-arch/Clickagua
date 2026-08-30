@@ -4,15 +4,15 @@ import type { NextRequest } from "next/server";
 /**
  * Mapea el subdominio de cada comité a su landing.
  *
- *   pitrelahue.facilagua.com/       → /sitio/pitrelahue
- *   pitrelahue.facilagua.com/avisos → /sitio/pitrelahue/avisos
+ *   pitrelahue.facilapr.cl/       → /sitio/pitrelahue
+ *   pitrelahue.facilapr.cl/avisos → /sitio/pitrelahue/avisos
  *
  * El dominio raíz y www siguen sirviendo la app normal. Los dominios propios
  * (plan Premium) se resuelven en la página por el host completo, porque aquí
  * no podemos consultar la base de datos: el proxy corre en el edge.
  */
 
-const DOMINIO_RAIZ = process.env.NEXT_PUBLIC_DOMINIO_RAIZ ?? "facilagua.com";
+const DOMINIO_RAIZ = process.env.NEXT_PUBLIC_DOMINIO_RAIZ ?? "facilapr.cl";
 
 /** Hosts que sirven la app, no una landing de comité. */
 const HOSTS_APP = new Set([
@@ -21,10 +21,25 @@ const HOSTS_APP = new Set([
   "localhost",
 ]);
 
+/**
+ * El nombre anterior del producto (FacilAgua). Cualquier visita ahí, en
+ * cualquier ruta, redirige 301 al dominio actual: nunca sirve la app, para
+ * no partir en dos el SEO ni dejar visitas viejas en un dominio muerto.
+ */
+const DOMINIOS_ANTIGUOS = new Set(["facilagua.com", "www.facilagua.com"]);
+
 export function proxy(request: NextRequest) {
   const host = (request.headers.get("host") ?? "")
     .toLowerCase()
     .split(":")[0]; // fuera el puerto
+
+  if (DOMINIOS_ANTIGUOS.has(host)) {
+    const destino = request.nextUrl.clone();
+    destino.protocol = "https";
+    destino.host = DOMINIO_RAIZ;
+    destino.port = "";
+    return NextResponse.redirect(destino, 301);
+  }
 
   if (!host || HOSTS_APP.has(host)) return NextResponse.next();
 
@@ -35,7 +50,7 @@ export function proxy(request: NextRequest) {
 
   if (host.endsWith(`.${DOMINIO_RAIZ}`)) {
     const slug = host.slice(0, -(DOMINIO_RAIZ.length + 1));
-    // Solo el primer nivel: "a.b.facilagua.com" no es un comité válido.
+    // Solo el primer nivel: "a.b.facilapr.cl" no es un comité válido.
     if (!slug || slug.includes(".")) return NextResponse.next();
 
     url.pathname = `/sitio/${slug}${url.pathname === "/" ? "" : url.pathname}`;

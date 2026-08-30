@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 /**
- * La marca de FacilAgua: la misma f cursiva del favicon, para que la pestaña
+ * La marca de Facilapr: la misma f cursiva del favicon, para que la pestaña
  * del navegador y el encabezado muestren lo mismo.
  *
  * Es texto SVG y no una imagen, así escala sin perder nitidez y hereda el
@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
  */
 export function Logo({
   className,
-  titulo = "FacilAgua",
+  titulo = "Facilapr",
 }: {
   className?: string;
   /** Solo para lectores de pantalla; el nombre visible va aparte. */
@@ -57,7 +57,7 @@ export function LogoConNombre({
           tamano === "sm" ? "text-[0.95rem]" : "text-base"
         )}
       >
-        FacilAgua
+        Facilapr
       </span>
     </span>
   );

@@ -17,7 +17,7 @@ export function Hero() {
         </h1>
         <p className="mb-8 max-w-[48ch] text-[1.16rem] leading-relaxed text-muted-foreground">
           Administra los socios, boletas y pagos de tu comité de Agua Potable
-          Rural desde un solo panel — y deja que FacilAgua responda por
+          Rural desde un solo panel — y deja que Facilapr responda por
           WhatsApp cuánto debe cada socio, a cualquier hora.
         </p>
         <div className="mb-2 flex flex-wrap justify-center gap-3.5">

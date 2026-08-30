@@ -15,7 +15,7 @@ const SUGERENCIAS = [
 ];
 
 /**
- * Widget del sitio de un comité. Habla como el comité, no como FacilAgua:
+ * Widget del sitio de un comité. Habla como el comité, no como Facilapr:
  * para el vecino que entra, este es el sitio de su APR.
  */
 export function AsistenteComite({

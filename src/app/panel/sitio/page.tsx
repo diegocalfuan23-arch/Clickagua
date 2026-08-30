@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   title: "Sitio público",
 };
 
-const DOMINIO_RAIZ = process.env.NEXT_PUBLIC_DOMINIO_RAIZ ?? "facilagua.com";
+const DOMINIO_RAIZ = process.env.NEXT_PUBLIC_DOMINIO_RAIZ ?? "facilapr.cl";
 
 export default async function SitioPage() {
   const { apr } = await requireAdmin();

@@ -30,7 +30,7 @@ export function ProblemSection() {
         <div className="mb-11 flex flex-wrap items-end justify-between gap-6">
           <div className="max-w-[640px]">
             <span className="font-mono text-[0.72rem] font-semibold tracking-[0.09em] text-primary uppercase">
-              Por qué escribimos FacilAgua
+              Por qué escribimos Facilapr
             </span>
             <h2 className="mt-3 text-[clamp(1.8rem,3vw,2.4rem)] font-semibold text-balance">
               Lo mismo de siempre, en toda oficina de APR

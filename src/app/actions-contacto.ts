@@ -33,7 +33,7 @@ function origenLegible(referrer: string | null): string {
     const host = new URL(referrer).hostname.replace(/^www\./, "");
     // Un referrer del propio dominio no es "origen externo": es solo
     // navegación interna (ej. de /panel a la landing).
-    if (host.endsWith("facilagua.com")) return "directo";
+    if (host.endsWith("facilapr.cl")) return "directo";
     return host;
   } catch {
     return "directo";
@@ -102,7 +102,7 @@ export async function enviarConsulta(
     return {
       ok: false,
       error:
-        "No pudimos registrar tu consulta. Escríbenos directamente a hola@facilagua.com.",
+        "No pudimos registrar tu consulta. Escríbenos directamente a hola@facilapr.cl.",
     };
   }
 

@@ -176,7 +176,7 @@ export function RegisterForm() {
         <Link href="/privacidad" className="text-primary hover:underline">
           política de privacidad
         </Link>{" "}
-        de FacilAgua.
+        de Facilapr.
       </p>
     </form>
   );

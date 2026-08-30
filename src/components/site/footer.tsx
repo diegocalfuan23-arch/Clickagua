@@ -7,7 +7,7 @@ export function Footer() {
       <div className="mx-auto flex max-w-[1180px] flex-wrap items-center justify-between gap-4 px-7 text-[0.85rem] text-muted-foreground">
         <div className="flex items-center gap-2 font-semibold text-foreground">
           <Logo className="size-5.5" />
-          FacilAgua
+          Facilapr
         </div>
 
         <div className="flex flex-wrap items-center gap-5">
@@ -23,7 +23,7 @@ export function Footer() {
         </div>
 
         <span>
-          &copy; 2026 FacilAgua. Hecho para los comités de agua potable rural
+          &copy; 2026 Facilapr. Hecho para los comités de agua potable rural
           de Chile.
         </span>
       </div>

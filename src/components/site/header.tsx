@@ -19,7 +19,7 @@ export function Header() {
             className="mr-1.5 flex items-center gap-2 text-base font-semibold"
           >
             <Logo className="size-6.5" />
-            FacilAgua
+            Facilapr
           </Link>
 
           <div className="hidden flex-1 gap-5.5 text-sm text-muted-foreground sm:flex">

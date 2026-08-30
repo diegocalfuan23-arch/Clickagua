@@ -13,21 +13,22 @@ const geistMono = Geist_Mono({
 });
 
 /**
- * URL canónica del sitio. Sale del entorno porque el dominio se sirve en www
- * (el raíz redirige 308): si aquí quedara el raíz, Google indexaría una URL
- * que redirige y se diluiría el posicionamiento entre las dos variantes.
+ * URL canónica del sitio. Sale del entorno porque facilapr.cl se sirve sin
+ * www (www.facilapr.cl redirige al dominio raíz): si aquí quedara la
+ * variante equivocada, Google indexaría una URL que redirige y se diluiría
+ * el posicionamiento entre las dos variantes.
  */
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ??
   process.env.BETTER_AUTH_URL ??
-  "https://www.facilagua.com";
+  "https://facilapr.cl";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default:
-      "FacilAgua — Software de gestión para APR y SSR con atención por WhatsApp",
-    template: "%s | FacilAgua",
+      "Facilapr — Software de gestión para APR y SSR con atención por WhatsApp",
+    template: "%s | Facilapr",
   },
   description:
     "Software para comités de Agua Potable Rural en Chile: administra socios, boletas y pagos, y responde automáticamente por WhatsApp cuánto debe cada socio.",
@@ -41,8 +42,8 @@ export const metadata: Metadata = {
     "boletas agua potable rural",
     "comité de agua potable rural",
   ],
-  applicationName: "FacilAgua",
-  authors: [{ name: "FacilAgua" }],
+  applicationName: "Facilapr",
+  authors: [{ name: "Facilapr" }],
   alternates: {
     canonical: "/",
   },
@@ -50,14 +51,14 @@ export const metadata: Metadata = {
     type: "website",
     locale: "es_CL",
     url: SITE_URL,
-    siteName: "FacilAgua",
-    title: "FacilAgua — Software de gestión para APR y SSR",
+    siteName: "Facilapr",
+    title: "Facilapr — Software de gestión para APR y SSR",
     description:
       "Administra socios, boletas y pagos de tu comité de Agua Potable Rural, y responde consultas de deuda automáticamente por WhatsApp.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "FacilAgua — Software de gestión para APR y SSR",
+    title: "Facilapr — Software de gestión para APR y SSR",
     description:
       "Administra socios, boletas y pagos de tu APR, y responde consultas por WhatsApp de forma automática.",
   },

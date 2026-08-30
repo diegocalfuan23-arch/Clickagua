@@ -328,10 +328,10 @@ export function SitioApr({
           <span>
             © {new Date().getFullYear()} · Sitio creado con{" "}
             <a
-              href="https://facilagua.com"
+              href="https://facilapr.cl"
               className="font-medium text-primary hover:underline"
             >
-              FacilAgua
+              Facilapr
             </a>
           </span>
         </div>

@@ -25,7 +25,7 @@ export function CtaSection() {
               "relative h-11 rounded-full bg-background px-6 text-foreground hover:bg-background/90"
             )}
           >
-            Conversar con el equipo de FacilAgua
+            Conversar con el equipo de Facilapr
           </a>
         </div>
       </div>

@@ -5,7 +5,7 @@ import { Logo } from "@/components/marca/logo";
 export const metadata: Metadata = {
   title: "Términos de uso",
   description:
-    "Condiciones del servicio FacilAgua para comités de Agua Potable Rural de Chile.",
+    "Condiciones del servicio Facilapr para comités de Agua Potable Rural de Chile.",
 };
 
 const ACTUALIZADO = "8 de agosto de 2026";
@@ -17,7 +17,7 @@ export default function TerminosPage() {
         <div className="mx-auto flex max-w-[820px] items-center gap-2 px-7 py-5">
           <Link href="/" className="flex items-center gap-2 font-semibold">
             <Logo className="size-6" />
-            FacilAgua
+            Facilapr
           </Link>
         </div>
       </header>
@@ -35,9 +35,9 @@ export default function TerminosPage() {
 
         <div className="mt-10 flex flex-col gap-9 text-[0.97rem] leading-relaxed">
           <section>
-            <h2 className="text-[1.2rem] font-semibold">1. Qué es FacilAgua</h2>
+            <h2 className="text-[1.2rem] font-semibold">1. Qué es Facilapr</h2>
             <p className="mt-3">
-              FacilAgua es un servicio de software para comités de Agua Potable
+              Facilapr es un servicio de software para comités de Agua Potable
               Rural (APR/SSR) de Chile. Permite administrar el padrón de socios,
               emitir boletas, registrar lecturas y pagos, publicar un sitio
               público del comité y responder consultas de socios por WhatsApp.
@@ -62,7 +62,7 @@ export default function TerminosPage() {
               3. Los datos son del comité
             </h2>
             <p className="mt-3">
-              Los datos que el comité carga en FacilAgua le pertenecen. Nosotros
+              Los datos que el comité carga en Facilapr le pertenecen. Nosotros
               los procesamos por su cuenta, según lo descrito en la{" "}
               <Link
                 href="/privacidad"
@@ -93,7 +93,7 @@ export default function TerminosPage() {
                 invite. Cada cuenta es personal.
               </li>
               <li>
-                Revisar las boletas y lecturas antes de emitirlas. FacilAgua
+                Revisar las boletas y lecturas antes de emitirlas. Facilapr
                 calcula según los datos y tarifas que el comité configura, pero
                 el monto cobrado es decisión del comité.
               </li>
@@ -172,7 +172,7 @@ export default function TerminosPage() {
               9. Término del servicio
             </h2>
             <p className="mt-3">
-              El comité puede dejar de usar FacilAgua cuando quiera. Podemos
+              El comité puede dejar de usar Facilapr cuando quiera. Podemos
               suspender una cuenta que incumpla estos términos o que use el
               servicio de forma que perjudique a terceros, avisando salvo casos
               graves o urgentes.
@@ -195,10 +195,10 @@ export default function TerminosPage() {
             <p className="mt-3">
               Escríbenos a{" "}
               <a
-                href="mailto:hola@facilagua.com"
+                href="mailto:hola@facilapr.cl"
                 className="font-medium text-primary hover:underline"
               >
-                hola@facilagua.com
+                hola@facilapr.cl
               </a>
               .
             </p>

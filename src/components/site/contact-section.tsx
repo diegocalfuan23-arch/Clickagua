@@ -71,7 +71,7 @@ export function ContactSection() {
               <div>
                 <strong className="block text-[0.88rem]">Correo</strong>
                 <span className="text-muted-foreground">
-                  hola@facilagua.com
+                  hola@facilapr.cl
                 </span>
               </div>
             </div>

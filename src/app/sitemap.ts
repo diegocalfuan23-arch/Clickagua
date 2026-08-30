@@ -1,14 +1,15 @@
 import type { MetadataRoute } from "next";
 
 /**
- * URL canónica del sitio. Sale del entorno porque el dominio se sirve en www
- * (el raíz redirige 308): si aquí quedara el raíz, Google indexaría una URL
- * que redirige y se diluiría el posicionamiento entre las dos variantes.
+ * URL canónica del sitio. Sale del entorno porque facilapr.cl se sirve sin
+ * www (www.facilapr.cl redirige al dominio raíz): si aquí quedara la
+ * variante equivocada, Google indexaría una URL que redirige y se diluiría
+ * el posicionamiento entre las dos variantes.
  */
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ??
   process.env.BETTER_AUTH_URL ??
-  "https://www.facilagua.com";
+  "https://facilapr.cl";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [

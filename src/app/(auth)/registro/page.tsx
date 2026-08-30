@@ -3,16 +3,16 @@ import Link from "next/link";
 import { RegisterForm } from "@/components/auth/register-form";
 
 export const metadata: Metadata = {
-  title: "Registrar mi APR — FacilAgua",
+  title: "Registrar mi APR — Facilapr",
   description:
-    "Crea la cuenta de tu APR o SSR en FacilAgua y empieza a responder consultas de socios por WhatsApp.",
+    "Crea la cuenta de tu APR o SSR en Facilapr y empieza a responder consultas de socios por WhatsApp.",
 };
 
 export default function RegistroPage() {
   return (
     <div className="w-full max-w-[540px]">
       <h1 className="text-[1.6rem] font-semibold tracking-tight">
-        Registra tu comité en FacilAgua
+        Registra tu comité en Facilapr
       </h1>
       <p className="mt-2 text-[0.95rem] text-muted-foreground">
         Creamos la cuenta de tu APR o SSR. Después podrás cargar tus socios y

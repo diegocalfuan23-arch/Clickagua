@@ -91,7 +91,7 @@ export async function exportarDatos(): Promise<ResultadoExportar> {
     return {
       ok: true,
       contenido,
-      nombreArchivo: `facilagua-${apr.slug ?? apr.id}-${fecha}.json`,
+      nombreArchivo: `facilapr-${apr.slug ?? apr.id}-${fecha}.json`,
     };
   } catch {
     return {

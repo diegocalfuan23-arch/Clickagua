@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 /**
- * El layout raíz define `title.template = "%s | FacilAgua"`. En el sitio de
+ * El layout raíz define `title.template = "%s | Facilapr"`. En el sitio de
  * un comité eso sobra: es su página, no la nuestra. Un template sin sufijo
  * lo anula para todo lo que cuelgue de /sitio.
  *

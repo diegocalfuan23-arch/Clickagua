@@ -70,7 +70,7 @@ export const aprs = pgTable(
     plan: planEnum("plan").notNull().default("BASICO"),
 
     // --- Landing pública (planes ESTANDAR y PREMIUM) ---
-    /** Subdominio: pitrelahue → pitrelahue.facilagua.com */
+    /** Subdominio: pitrelahue → pitrelahue.facilapr.cl */
     slug: text("slug"),
     /** Dominio propio, solo PREMIUM. Null hasta que se verifique. */
     dominioPropio: text("dominioPropio"),
@@ -426,7 +426,7 @@ export const estadoConsultaEnum = pgEnum("EstadoConsulta", [
 ]);
 
 /**
- * Consulta desde el formulario público de facilagua.com. No cuelga de ningún
+ * Consulta desde el formulario público de facilapr.cl. No cuelga de ningún
  * Apr: quien escribe todavía no es cliente, es un comité evaluando el
  * producto. Se guarda en vez de mandarse por correo para no perder ninguna
  * si el envío falla, y para poder darles seguimiento con un estado.
@@ -471,7 +471,7 @@ export const proveedorIaEnum = pgEnum("ProveedorIA", [
  * solo el tope que se pide, no lo que se gastó.
  *
  * aprId es nullable porque el asistente de la landing (quien evalúa
- * contratar FacilAgua) no pertenece a ningún comité todavía.
+ * contratar Facilapr) no pertenece a ningún comité todavía.
  */
 export const usosIa = pgTable(
   "UsoIA",

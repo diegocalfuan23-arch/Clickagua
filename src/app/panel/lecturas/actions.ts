@@ -261,6 +261,6 @@ export async function generarInvitacionOperador(): Promise<ResultadoInvitacion> 
   const { apr } = await requireAdmin();
   const invitacion = await crearInvitacion(apr.id);
 
-  const dominio = process.env.NEXT_PUBLIC_DOMINIO_RAIZ ?? "facilagua.com";
+  const dominio = process.env.NEXT_PUBLIC_DOMINIO_RAIZ ?? "facilapr.cl";
   return { ok: true, url: `https://${dominio}/invitacion/${invitacion.codigo}` };
 }

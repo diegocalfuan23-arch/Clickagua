@@ -4,7 +4,7 @@ import { aprDeInvitacion } from "@/lib/invitaciones";
 import { InvitacionForm } from "@/components/auth/invitacion-form";
 
 export const metadata: Metadata = {
-  title: "Unirme como operador — FacilAgua",
+  title: "Unirme como operador — Facilapr",
 };
 
 export default async function InvitacionPage({

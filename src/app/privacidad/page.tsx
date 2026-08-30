@@ -5,7 +5,7 @@ import { Logo } from "@/components/marca/logo";
 export const metadata: Metadata = {
   title: "Política de privacidad",
   description:
-    "Cómo FacilAgua trata los datos personales de socios de comités de Agua Potable Rural, conforme a la Ley 21.719.",
+    "Cómo Facilapr trata los datos personales de socios de comités de Agua Potable Rural, conforme a la Ley 21.719.",
 };
 
 const ACTUALIZADO = "8 de agosto de 2026";
@@ -25,7 +25,7 @@ export default function PrivacidadPage() {
         <div className="mx-auto flex max-w-[820px] items-center gap-2 px-7 py-5">
           <Link href="/" className="flex items-center gap-2 font-semibold">
             <Logo className="size-6" />
-            FacilAgua
+            Facilapr
           </Link>
         </div>
       </header>
@@ -45,7 +45,7 @@ export default function PrivacidadPage() {
           <section className="rounded-2xl border border-border bg-muted/40 p-6">
             <p>
               Esta política explica cómo tratamos los datos personales en
-              FacilAgua, conforme a la <strong>Ley 21.719</strong>, que regula
+              Facilapr, conforme a la <strong>Ley 21.719</strong>, que regula
               la protección y el tratamiento de los datos personales en Chile y
               entra en vigencia el <strong>1 de diciembre de 2026</strong>.
             </p>
@@ -56,7 +56,7 @@ export default function PrivacidadPage() {
               1. Quién es responsable de tus datos
             </h2>
             <p className="mt-3">
-              FacilAgua es una herramienta que usan los comités de Agua Potable
+              Facilapr es una herramienta que usan los comités de Agua Potable
               Rural (APR/SSR) para administrar su servicio. Esa distinción
               importa:
             </p>
@@ -67,7 +67,7 @@ export default function PrivacidadPage() {
                 a quién se los entrega.
               </li>
               <li>
-                <strong>FacilAgua es el encargado del tratamiento.</strong>{" "}
+                <strong>Facilapr es el encargado del tratamiento.</strong>{" "}
                 Procesamos esos datos por cuenta del comité y siguiendo sus
                 instrucciones. No los usamos para fines propios, no los vendemos
                 y no los compartimos con terceros salvo lo descrito aquí.
@@ -296,10 +296,10 @@ export default function PrivacidadPage() {
               Para cualquier consulta sobre esta política o sobre tus datos,
               escríbenos a{" "}
               <a
-                href="mailto:hola@facilagua.com"
+                href="mailto:hola@facilapr.cl"
                 className="font-medium text-primary hover:underline"
               >
-                hola@facilagua.com
+                hola@facilapr.cl
               </a>
               .
             </p>

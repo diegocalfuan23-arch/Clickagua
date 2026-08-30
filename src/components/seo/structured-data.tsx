@@ -1,9 +1,9 @@
-const SITE_URL = "https://facilagua.com";
+const SITE_URL = "https://facilapr.cl";
 
 const softwareSchema = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  name: "FacilAgua",
+  name: "Facilapr",
   applicationCategory: "BusinessApplication",
   operatingSystem: "Web",
   url: SITE_URL,

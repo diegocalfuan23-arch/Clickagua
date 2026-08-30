@@ -9,7 +9,7 @@ const pasos = [
   },
   {
     numero: "02",
-    titulo: "FacilAgua identifica y responde",
+    titulo: "Facilapr identifica y responde",
     detalle:
       "Reconoce al socio por su teléfono o RUT y consulta el estado real de su boleta al instante.",
   },

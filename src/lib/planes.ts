@@ -59,7 +59,7 @@ const RESERVADOS = new Set([
   "mail",
   "soporte",
   "ayuda",
-  "facilagua",
+  "facilapr",
 ]);
 
 export function slugDisponible(slug: string): boolean {

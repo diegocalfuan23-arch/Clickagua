@@ -44,7 +44,7 @@ export default function AuthLayout({
             className="inline-flex items-center gap-2 text-base font-semibold"
           >
             <Logo className="size-6.5" />
-            FacilAgua
+            Facilapr
           </Link>
         </header>
 
@@ -55,7 +55,7 @@ export default function AuthLayout({
         </main>
 
         <footer className="px-6 py-6 text-[0.8rem] text-muted-foreground sm:px-10">
-          &copy; 2026 FacilAgua · Para comités de agua potable rural de Chile
+          &copy; 2026 Facilapr · Para comités de agua potable rural de Chile
         </footer>
       </div>
 
