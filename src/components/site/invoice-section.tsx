@@ -1,10 +1,13 @@
-import { Check, Droplet, MapPin } from "lucide-react";
+"use client";
 
-// Patrón fijo (no aleatorio) para simular un código de barras sin desajustes de hidratación SSR.
-const barcodeWidths = [
-  2, 1, 3, 1, 1, 2, 1, 3, 2, 1, 1, 3, 1, 2, 1, 1, 3, 2, 1, 1, 2, 1, 3, 1, 1, 2,
-  1, 1, 3, 2, 1, 2, 1, 3, 1, 1, 2, 1, 1, 3,
-];
+import { useId, useState } from "react";
+import { Check, Droplet } from "lucide-react";
+
+const clp = new Intl.NumberFormat("es-CL", {
+  style: "currency",
+  currency: "CLP",
+  maximumFractionDigits: 0,
+});
 
 const puntos = [
   {
@@ -18,112 +21,142 @@ const puntos = [
       "Si hay más de un mes impago, Facilapr lo suma y lo explica sin que el socio tenga que preguntar dos veces.",
   },
   {
-    titulo: "Identificación por teléfono o RUT",
+    titulo: "Cálculo automático, nunca a mano",
     detalle:
-      "Si el número no está registrado, el bot pide el RUT antes de mostrar cualquier dato — nunca expone información a quien no corresponde.",
+      "Cargas el cargo fijo, el valor del m³ y la lectura del medidor; Facilapr calcula el total y emite la boleta.",
   },
 ];
 
+/** Valores por defecto: un cargo fijo y tarifa típicos de un APR chileno. */
+const CARGO_FIJO_INICIAL = 2100;
+const VALOR_M3_INICIAL = 450;
+const CONSUMO_INICIAL = 14;
+
 export function InvoiceSection() {
+  const idCargoFijo = useId();
+  const idValorM3 = useId();
+  const idConsumo = useId();
+
+  const [cargoFijo, setCargoFijo] = useState(CARGO_FIJO_INICIAL);
+  const [valorM3, setValorM3] = useState(VALOR_M3_INICIAL);
+  const [consumo, setConsumo] = useState(CONSUMO_INICIAL);
+
+  const totalConsumo = valorM3 * consumo;
+  const total = cargoFijo + totalConsumo;
+
   return (
     <section id="boleta" className="border-y border-border bg-muted/40 py-23">
       <div className="mx-auto grid max-w-[1180px] gap-15 px-7 sm:grid-cols-[0.9fr_1.1fr] sm:items-center">
         <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
           <div className="bg-foreground px-5.5 py-4.5 text-background">
-            <div className="flex items-baseline justify-between">
-              <div className="flex items-center gap-2">
-                <span className="flex size-6 items-center justify-center rounded-md bg-primary">
-                  <Droplet className="size-3.5 fill-white text-white" />
-                </span>
-                <span className="text-[0.98rem] font-semibold">
-                  APR Pitrelahué
-                </span>
-              </div>
-              <span className="rounded-full bg-secondary/90 px-2.5 py-1 font-mono text-[0.68rem] font-bold tracking-[0.05em] uppercase">
-                Pendiente
+            <div className="flex items-center gap-2">
+              <span className="flex size-6 items-center justify-center rounded-md bg-primary">
+                <Droplet className="size-3.5 fill-white text-white" />
+              </span>
+              <span className="text-[0.98rem] font-semibold">
+                Simula la boleta de tu APR
               </span>
             </div>
-            <div className="mt-3.5 font-mono text-[0.72rem] font-semibold tracking-[0.09em] opacity-70 uppercase">
-              Boleta N.º 004821 · Período junio 2026
-            </div>
-            <div className="mt-1 text-[1.1rem]">
-              María Huenchuñir
-            </div>
-            <div className="mt-1.5 flex items-center gap-1.5 text-[0.8rem] opacity-75">
-              <MapPin className="size-3.5 shrink-0" />
-              Camino Real 1420, Pitrelahué
-            </div>
+            <p className="mt-2 text-[0.8rem] opacity-75">
+              Pon el cargo fijo y el valor del m³ de tu comité, mueve el
+              consumo y mira el total.
+            </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 border-b border-border px-5.5 py-4.5 text-[0.82rem]">
-            <div>
-              <div className="text-muted-foreground">N.º de cliente</div>
-              <div className="font-semibold tabular-nums">00184-2</div>
-            </div>
-            <div>
-              <div className="text-muted-foreground">N.º de medidor</div>
-              <div className="font-semibold tabular-nums">MD-77341</div>
-            </div>
-            <div>
-              <div className="text-muted-foreground">Lectura anterior</div>
-              <div className="font-semibold tabular-nums">842 m³</div>
-            </div>
-            <div>
-              <div className="text-muted-foreground">Lectura actual</div>
-              <div className="font-semibold tabular-nums">856 m³</div>
-            </div>
-            <div>
-              <div className="text-muted-foreground">Fecha de emisión</div>
-              <div className="font-semibold tabular-nums">01/07/2026</div>
-            </div>
-            <div>
-              <div className="text-muted-foreground">Fecha de vencimiento</div>
-              <div className="font-semibold tabular-nums text-secondary">
-                30/07/2026
+          <div className="flex flex-col gap-4 border-b border-border px-5.5 py-5">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label
+                  htmlFor={idCargoFijo}
+                  className="text-[0.78rem] text-muted-foreground"
+                >
+                  Cargo fijo (CLP)
+                </label>
+                <input
+                  id={idCargoFijo}
+                  type="number"
+                  min={0}
+                  step={50}
+                  value={cargoFijo}
+                  onChange={(e) =>
+                    setCargoFijo(Math.max(0, Number(e.target.value) || 0))
+                  }
+                  className="h-9 w-full rounded-lg border border-input bg-transparent px-2.5 font-mono text-[0.9rem] tabular-nums outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                />
               </div>
+              <div className="flex flex-col gap-1.5">
+                <label
+                  htmlFor={idValorM3}
+                  className="text-[0.78rem] text-muted-foreground"
+                >
+                  Valor del m³ (CLP)
+                </label>
+                <input
+                  id={idValorM3}
+                  type="number"
+                  min={0}
+                  step={10}
+                  value={valorM3}
+                  onChange={(e) =>
+                    setValorM3(Math.max(0, Number(e.target.value) || 0))
+                  }
+                  className="h-9 w-full rounded-lg border border-input bg-transparent px-2.5 font-mono text-[0.9rem] tabular-nums outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-baseline justify-between">
+                <label
+                  htmlFor={idConsumo}
+                  className="text-[0.78rem] text-muted-foreground"
+                >
+                  Consumo simulado
+                </label>
+                <span className="font-mono text-[0.85rem] font-semibold tabular-nums">
+                  {consumo} m³
+                </span>
+              </div>
+              <input
+                id={idConsumo}
+                type="range"
+                min={0}
+                max={60}
+                step={1}
+                value={consumo}
+                onChange={(e) => setConsumo(Number(e.target.value))}
+                className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-border accent-primary"
+              />
             </div>
           </div>
 
           <div className="p-5.5">
             <div className="flex justify-between border-b border-dashed border-border py-3 text-[0.92rem]">
-              <span className="text-muted-foreground">Consumo (14 m³)</span>
-              <span className="font-semibold tabular-nums">$6.350</span>
-            </div>
-            <div className="flex justify-between border-b border-dashed border-border py-3 text-[0.92rem]">
-              <span className="text-muted-foreground">Cargo fijo</span>
-              <span className="font-semibold tabular-nums">$2.100</span>
-            </div>
-            <div className="flex justify-between py-3 text-[0.92rem]">
-              <span className="text-muted-foreground">Reposición de subsidio</span>
-              <span className="font-semibold tabular-nums">$0</span>
-            </div>
-            <div className="mt-2 flex items-baseline justify-between border-t-2 border-foreground pt-4">
-              <span>Total a pagar</span>
-              <span className="font-mono text-[1.6rem] font-bold tabular-nums text-primary">
-                $8.450
+              <span className="text-muted-foreground">
+                Consumo ({consumo} m³)
+              </span>
+              <span className="font-semibold tabular-nums">
+                {clp.format(totalConsumo)}
               </span>
             </div>
-          </div>
-
-          <div className="flex items-center justify-between gap-4 border-t border-border bg-muted/50 px-5.5 py-4">
-            <div className="flex h-8 items-end gap-[2px]" aria-hidden>
-              {barcodeWidths.map((w, i) => (
-                <span
-                  key={i}
-                  className="bg-foreground"
-                  style={{ width: `${w}px`, height: "100%" }}
-                />
-              ))}
+            <div className="flex justify-between py-3 text-[0.92rem]">
+              <span className="text-muted-foreground">Cargo fijo</span>
+              <span className="font-semibold tabular-nums">
+                {clp.format(cargoFijo)}
+              </span>
             </div>
-            <span className="font-mono text-[0.68rem] text-muted-foreground">
-              00184268450300726
-            </span>
+            <div className="mt-2 flex items-baseline justify-between border-t-2 border-foreground pt-4">
+              <span>Total simulado</span>
+              <span className="font-mono text-[1.6rem] font-bold tabular-nums text-primary">
+                {clp.format(total)}
+              </span>
+            </div>
           </div>
         </div>
 
         <div>
           <span className="font-mono text-[0.72rem] font-semibold tracking-[0.09em] text-primary uppercase">
-            La misma boleta, sin la espera
+            Calculadora de boleta APR
           </span>
           <h2 className="mt-3 text-[clamp(1.7rem,2.8vw,2.2rem)] font-semibold text-balance">
             Lo que hoy vive en una planilla, ahora cabe en un mensaje.
