@@ -11,11 +11,11 @@ const enlaces = [
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-40 pt-4">
-      <div className="mx-auto flex max-w-[1180px] justify-center px-7">
+    <header className="sticky top-0 z-40 border-b border-border bg-card/85 backdrop-blur-md">
+      <div className="mx-auto max-w-[1180px] px-7">
         <nav
           aria-label="Navegación principal — software de gestión APR, boletas y pagos online"
-          className="flex w-full max-w-3xl items-center gap-2 rounded-full border border-border/90 bg-card/85 py-2 pr-2 pl-5 shadow-md backdrop-blur-md"
+          className="flex items-center gap-2 py-3.5"
         >
           <Link
             href="#"
