@@ -4,8 +4,9 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const enlaces = [
+  { href: "#boleta", label: "Boletas", title: "Emisión de boletas y pagos online para tu APR" },
+  { href: "#panel", label: "Gestión de socios", title: "Gestión de socios, lecturas y morosidad para tu APR" },
   { href: "#como-funciona", label: "Cómo funciona", title: "Cómo funciona el software de gestión APR" },
-  { href: "#caracteristicas", label: "Beneficios", title: "Boletas, pagos online y control de morosidad para tu APR" },
   { href: "#planes", label: "Planes", title: "Planes y precios para comités de Agua Potable Rural" },
 ];
 
