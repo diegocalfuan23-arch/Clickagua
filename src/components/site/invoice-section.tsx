@@ -32,6 +32,45 @@ const CARGO_FIJO_INICIAL = 2100;
 const VALOR_M3_INICIAL = 450;
 const CONSUMO_INICIAL = 14;
 
+/** Quita ceros a la izquierda mientras se escribe, para que "0" + "2" dé "2" y no "02". */
+function limpiarCeros(valor: string) {
+  const soloDigitos = valor.replace(/\D/g, "");
+  const sinCeros = soloDigitos.replace(/^0+(?=\d)/, "");
+  return sinCeros;
+}
+
+function CampoMonto({
+  id,
+  etiqueta,
+  valor,
+  onCambiar,
+}: {
+  id: string;
+  etiqueta: string;
+  valor: number;
+  onCambiar: (valor: number) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-[0.78rem] text-muted-foreground">
+        {etiqueta}
+      </label>
+      <input
+        id={id}
+        type="text"
+        inputMode="numeric"
+        value={valor === 0 ? "" : String(valor)}
+        placeholder="0"
+        onChange={(e) => {
+          const limpio = limpiarCeros(e.target.value);
+          onCambiar(limpio === "" ? 0 : Number(limpio));
+        }}
+        className="h-9 w-full rounded-lg border border-input bg-transparent px-2.5 font-mono text-[0.9rem] tabular-nums outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+      />
+    </div>
+  );
+}
+
 export function InvoiceSection() {
   const idCargoFijo = useId();
   const idValorM3 = useId();
@@ -65,46 +104,18 @@ export function InvoiceSection() {
 
           <div className="flex flex-col gap-4 border-b border-border px-5.5 py-5">
             <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label
-                  htmlFor={idCargoFijo}
-                  className="text-[0.78rem] text-muted-foreground"
-                >
-                  Cargo fijo (CLP)
-                </label>
-                <input
-                  id={idCargoFijo}
-                  type="number"
-                  min={0}
-                  step={50}
-                  value={cargoFijo}
-                  onChange={(e) =>
-                    setCargoFijo(Math.max(0, Number(e.target.value) || 0))
-                  }
-                  onFocus={(e) => e.target.select()}
-                  className="h-9 w-full rounded-lg border border-input bg-transparent px-2.5 font-mono text-[0.9rem] tabular-nums outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label
-                  htmlFor={idValorM3}
-                  className="text-[0.78rem] text-muted-foreground"
-                >
-                  Valor del m³ (CLP)
-                </label>
-                <input
-                  id={idValorM3}
-                  type="number"
-                  min={0}
-                  step={10}
-                  value={valorM3}
-                  onChange={(e) =>
-                    setValorM3(Math.max(0, Number(e.target.value) || 0))
-                  }
-                  onFocus={(e) => e.target.select()}
-                  className="h-9 w-full rounded-lg border border-input bg-transparent px-2.5 font-mono text-[0.9rem] tabular-nums outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                />
-              </div>
+              <CampoMonto
+                id={idCargoFijo}
+                etiqueta="Cargo fijo (CLP)"
+                valor={cargoFijo}
+                onCambiar={setCargoFijo}
+              />
+              <CampoMonto
+                id={idValorM3}
+                etiqueta="Valor del m³ (CLP)"
+                valor={valorM3}
+                onCambiar={setValorM3}
+              />
             </div>
 
             <div className="flex flex-col gap-1.5">
