@@ -81,6 +81,7 @@ export function InvoiceSection() {
                   onChange={(e) =>
                     setCargoFijo(Math.max(0, Number(e.target.value) || 0))
                   }
+                  onFocus={(e) => e.target.select()}
                   className="h-9 w-full rounded-lg border border-input bg-transparent px-2.5 font-mono text-[0.9rem] tabular-nums outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                 />
               </div>
@@ -100,6 +101,7 @@ export function InvoiceSection() {
                   onChange={(e) =>
                     setValorM3(Math.max(0, Number(e.target.value) || 0))
                   }
+                  onFocus={(e) => e.target.select()}
                   className="h-9 w-full rounded-lg border border-input bg-transparent px-2.5 font-mono text-[0.9rem] tabular-nums outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                 />
               </div>
