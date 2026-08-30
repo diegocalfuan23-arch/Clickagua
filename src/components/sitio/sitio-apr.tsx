@@ -98,7 +98,6 @@ export function SitioApr({
   slug?: string;
   dominio?: string;
 }) {
-  const whatsapp = apr.telefono?.replace(/[^0-9]/g, "");
   const hayTarifas =
     apr.tarifaCargoFijo !== null || apr.tarifaMetroCubico !== null;
   const hayContacto =
@@ -142,17 +141,13 @@ export function SitioApr({
               `Comité de Agua Potable Rural de ${apr.comuna}. Aquí encuentras nuestros datos de contacto, avisos de corte y la información de pago.`}
           </p>
 
-          {whatsapp && (
-            <a
-              href={`https://wa.me/${whatsapp}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex h-11 items-center gap-2 rounded-full bg-primary px-6 text-[0.95rem] font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              <MessageCircle className="size-4" />
-              Consulta tu cuenta por WhatsApp
-            </a>
-          )}
+          <a
+            href="/socio/entrar"
+            className="inline-flex h-11 items-center gap-2 rounded-full bg-primary px-6 text-[0.95rem] font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            <MessageCircle className="size-4" />
+            Consulta tu cuenta
+          </a>
         </div>
       </section>
 
@@ -341,7 +336,6 @@ export function SitioApr({
         nombreApr={apr.nombre}
         slug={slug}
         dominio={dominio}
-        telefono={apr.telefono}
       />
     </div>
   );

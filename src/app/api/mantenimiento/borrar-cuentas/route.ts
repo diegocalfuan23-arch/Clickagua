@@ -1,15 +1,6 @@
 import { and, eq, inArray, isNotNull, lt } from "drizzle-orm";
 import { db } from "@/lib/db";
-import {
-  aprs,
-  avisos,
-  boletas,
-  conversaciones,
-  invitaciones,
-  lecturas,
-  mensajes,
-  socios,
-} from "@/lib/db/schema";
+import { aprs, avisos, boletas, invitaciones, lecturas, socios } from "@/lib/db/schema";
 import { user } from "@/lib/db/auth-schema";
 import { DIAS_HASTA_BORRADO } from "@/lib/retencion";
 
@@ -61,29 +52,14 @@ async function ejecutar(request: Request) {
     ).map((s) => s.id);
 
     if (idsSocios.length > 0) {
-      const idsConversaciones = (
-        await db.query.conversaciones.findMany({
-          where: inArray(conversaciones.socioId, idsSocios),
-          columns: { id: true },
-        })
-      ).map((c) => c.id);
-
-      // Orden inverso a las llaves foráneas: primero lo que apunta a otros.
-      if (idsConversaciones.length > 0) {
-        await db
-          .delete(mensajes)
-          .where(inArray(mensajes.conversacionId, idsConversaciones));
-        await db
-          .delete(conversaciones)
-          .where(inArray(conversaciones.id, idsConversaciones));
-      }
-
       await db.delete(lecturas).where(inArray(lecturas.socioId, idsSocios));
       await db.delete(boletas).where(inArray(boletas.socioId, idsSocios));
     }
 
     await db.delete(avisos).where(eq(avisos.aprId, apr.id));
     await db.delete(invitaciones).where(eq(invitaciones.aprId, apr.id));
+    // Las solicitudes de acceso de sus socios caen en cascada al borrar
+    // socios: SolicitudAcceso.socioId tiene onDelete: "cascade".
     await db.delete(socios).where(eq(socios.aprId, apr.id));
 
     // Las cuentas de acceso del comité: sin ellas nadie podría entrar a un

@@ -7,7 +7,7 @@ import {
   LayoutDashboard,
   Users,
   ReceiptText,
-  MessageSquare,
+  UserCheck,
   Settings,
   Droplets,
 } from "lucide-react";
@@ -34,7 +34,7 @@ const gestion = [
 ];
 
 const atencion = [
-  { href: "/panel/conversaciones", label: "Conversaciones", icon: MessageSquare },
+  { href: "/panel/socios/solicitudes", label: "Solicitudes", icon: UserCheck },
   { href: "/panel/sitio", label: "Sitio público", icon: Globe },
   { href: "/panel/configuracion", label: "Configuración", icon: Settings },
 ];

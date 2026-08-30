@@ -4,9 +4,9 @@ import { cn } from "@/lib/utils";
 const caracteristicas = [
   {
     icon: Smartphone,
-    titulo: "Sin apps nuevas",
+    titulo: "Panel para cada socio",
     detalle:
-      "Corre sobre el WhatsApp que tus socios ya tienen instalado. Cero fricción, cero capacitación para la comunidad.",
+      "Cada socio entra con su RUT y clave a ver su propia deuda, boletas y consumo. Sin llamar, sin esperar respuesta.",
     tono: "bg-primary/12 text-primary",
   },
   {

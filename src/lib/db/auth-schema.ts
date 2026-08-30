@@ -26,6 +26,9 @@ export const user = pgTable("user", {
    * ADMIN: quien registra el comité, ve todo el panel.
    * OPERADOR: técnico de terreno, solo carga lecturas para que el admin
    * las apruebe. Se une siempre a través de una invitación (ver Invitacion).
+   * SOCIO: un socio del comité, solo ve su propio panel (Socio en
+   * schema.ts). Se une a través de una SolicitudAcceso aprobada por la
+   * directiva, nunca se autoasigna este rol al registrarse.
    */
   rol: text("rol").notNull().default("ADMIN"),
 });

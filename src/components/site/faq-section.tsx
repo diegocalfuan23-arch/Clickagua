@@ -12,14 +12,14 @@ const preguntas = [
       "Se importan directamente desde una planilla CSV con el formato que ya suelen usar los APR (socio, RUT, periodo, monto). Te acompañamos en la primera carga.",
   },
   {
-    pregunta: "¿Qué pasa si un socio pregunta algo que el bot no sabe responder?",
+    pregunta: "¿Qué pasa si un socio pregunta algo que el asistente no sabe responder?",
     respuesta:
-      "El bot está limitado a consultas de deuda y boletas. Cualquier otra solicitud se responde derivando amablemente al socio a la oficina o al canal de contacto del comité.",
+      "El asistente está limitado a consultas de su propia deuda y boletas. Cualquier otra solicitud se responde derivando amablemente al socio a la oficina o al canal de contacto del comité.",
   },
   {
-    pregunta: "¿Necesitamos instalar algo o cambiar de número de WhatsApp?",
+    pregunta: "¿El socio necesita instalar algo?",
     respuesta:
-      "No hay que instalar nada. Puedes usar un número nuevo dedicado o migrar el que ya usan los socios para contactar al comité, conectado a la API oficial de WhatsApp de Meta.",
+      "No. Entra desde el navegador de su celular o computador, con el RUT y la clave que crea al pedir acceso — sin apps nuevas.",
   },
   {
     pregunta: "¿El precio incluye IVA?",

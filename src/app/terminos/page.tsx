@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     "Condiciones del servicio Facilapr para comités de Agua Potable Rural de Chile.",
 };
 
-const ACTUALIZADO = "8 de agosto de 2026";
+const ACTUALIZADO = "30 de agosto de 2026";
 
 export default function TerminosPage() {
   return (
@@ -40,7 +40,8 @@ export default function TerminosPage() {
               Facilapr es un servicio de software para comités de Agua Potable
               Rural (APR/SSR) de Chile. Permite administrar el padrón de socios,
               emitir boletas, registrar lecturas y pagos, publicar un sitio
-              público del comité y responder consultas de socios por WhatsApp.
+              público del comité y dar a cada socio un panel propio, con
+              asistente de inteligencia artificial, para consultar su cuenta.
             </p>
             <p className="mt-3">
               Al crear una cuenta y usar el servicio, el comité acepta estos
@@ -109,9 +110,9 @@ export default function TerminosPage() {
               5. El asistente de inteligencia artificial
             </h2>
             <p className="mt-3">
-              El bot de WhatsApp y el asistente del sitio público generan sus
-              respuestas con inteligencia artificial, a partir de los datos que
-              el comité tiene cargados.
+              El asistente del panel de socios y el del sitio público generan
+              sus respuestas con inteligencia artificial, a partir de los
+              datos que el comité tiene cargados.
             </p>
             <ul className="mt-3 flex list-disc flex-col gap-2 pl-5">
               <li>
@@ -121,7 +122,9 @@ export default function TerminosPage() {
               </li>
               <li>
                 El asistente del sitio público no entrega información sobre
-                deudas ni datos personales de ningún socio, por diseño.
+                deudas ni datos personales de ningún socio, por diseño. Solo
+                el asistente del panel de socios responde sobre la deuda del
+                socio que inició sesión, y únicamente la suya.
               </li>
               <li>
                 El servicio depende de proveedores externos de IA; si están
@@ -131,19 +134,7 @@ export default function TerminosPage() {
           </section>
 
           <section>
-            <h2 className="text-[1.2rem] font-semibold">
-              6. WhatsApp y número del comité
-            </h2>
-            <p className="mt-3">
-              La función de WhatsApp requiere que el comité disponga de un
-              número exclusivo para ese fin, que no puede estar en uso en la
-              aplicación normal de WhatsApp. Su habilitación depende de la
-              aprobación de Meta, que no controlamos.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-[1.2rem] font-semibold">7. Planes y pagos</h2>
+            <h2 className="text-[1.2rem] font-semibold">6. Planes y pagos</h2>
             <p className="mt-3">
               Las funciones disponibles dependen del plan contratado. Los
               precios se informan en el sitio y pueden cambiar; cualquier cambio
@@ -153,7 +144,7 @@ export default function TerminosPage() {
 
           <section>
             <h2 className="text-[1.2rem] font-semibold">
-              8. Disponibilidad del servicio
+              7. Disponibilidad del servicio
             </h2>
             <p className="mt-3">
               Trabajamos para mantener el servicio disponible, pero puede haber
@@ -169,7 +160,7 @@ export default function TerminosPage() {
 
           <section>
             <h2 className="text-[1.2rem] font-semibold">
-              9. Término del servicio
+              8. Término del servicio
             </h2>
             <p className="mt-3">
               El comité puede dejar de usar Facilapr cuando quiera. Podemos
@@ -181,7 +172,7 @@ export default function TerminosPage() {
 
           <section>
             <h2 className="text-[1.2rem] font-semibold">
-              10. Cambios y legislación aplicable
+              9. Cambios y legislación aplicable
             </h2>
             <p className="mt-3">
               Podemos actualizar estos términos; los cambios relevantes se
@@ -191,7 +182,7 @@ export default function TerminosPage() {
           </section>
 
           <section>
-            <h2 className="text-[1.2rem] font-semibold">11. Contacto</h2>
+            <h2 className="text-[1.2rem] font-semibold">10. Contacto</h2>
             <p className="mt-3">
               Escríbenos a{" "}
               <a

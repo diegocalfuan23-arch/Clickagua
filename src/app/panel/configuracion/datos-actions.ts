@@ -1,17 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq, inArray } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
-import {
-  aprs,
-  avisos,
-  boletas,
-  conversaciones,
-  lecturas,
-  mensajes,
-  socios,
-} from "@/lib/db/schema";
+import { aprs, avisos, boletas, lecturas, socios } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/apr-session";
 
 /**
@@ -45,32 +37,19 @@ export async function exportarDatos(): Promise<ResultadoExportar> {
 
     // inArray con lista vacía genera SQL inválido: un comité recién creado
     // no tiene socios todavía.
-    const [listaBoletas, listaLecturas, listaConversaciones, listaAvisos] =
-      await Promise.all([
-        idsSocios.length
-          ? db.query.boletas.findMany({
-              where: inArray(boletas.socioId, idsSocios),
-            })
-          : Promise.resolve([]),
-        idsSocios.length
-          ? db.query.lecturas.findMany({
-              where: inArray(lecturas.socioId, idsSocios),
-            })
-          : Promise.resolve([]),
-        idsSocios.length
-          ? db.query.conversaciones.findMany({
-              where: inArray(conversaciones.socioId, idsSocios),
-            })
-          : Promise.resolve([]),
-        db.query.avisos.findMany({ where: eq(avisos.aprId, apr.id) }),
-      ]);
-
-    const idsConversaciones = listaConversaciones.map((c) => c.id);
-    const listaMensajes = idsConversaciones.length
-      ? await db.query.mensajes.findMany({
-          where: inArray(mensajes.conversacionId, idsConversaciones),
-        })
-      : [];
+    const [listaBoletas, listaLecturas, listaAvisos] = await Promise.all([
+      idsSocios.length
+        ? db.query.boletas.findMany({
+            where: inArray(boletas.socioId, idsSocios),
+          })
+        : Promise.resolve([]),
+      idsSocios.length
+        ? db.query.lecturas.findMany({
+            where: inArray(lecturas.socioId, idsSocios),
+          })
+        : Promise.resolve([]),
+      db.query.avisos.findMany({ where: eq(avisos.aprId, apr.id) }),
+    ]);
 
     const contenido = JSON.stringify(
       {
@@ -80,8 +59,6 @@ export async function exportarDatos(): Promise<ResultadoExportar> {
         boletas: listaBoletas,
         lecturas: listaLecturas,
         avisos: listaAvisos,
-        conversaciones: listaConversaciones,
-        mensajes: listaMensajes,
       },
       null,
       2
@@ -150,51 +127,6 @@ export async function cancelarCierre(): Promise<ResultadoAccion> {
   return { ok: true };
 }
 
-/**
- * Borra las conversaciones de WhatsApp sin tocar el resto. La política dice
- * que el comité puede pedir esto en cualquier momento, por separado del
- * cierre de cuenta.
- */
-export async function borrarConversaciones(): Promise<ResultadoAccion> {
-  const { apr } = await requireAdmin();
-
-  try {
-    const idsSocios = (
-      await db.query.socios.findMany({
-        where: eq(socios.aprId, apr.id),
-        columns: { id: true },
-      })
-    ).map((s) => s.id);
-
-    if (idsSocios.length === 0) return { ok: true };
-
-    const idsConversaciones = (
-      await db.query.conversaciones.findMany({
-        where: inArray(conversaciones.socioId, idsSocios),
-        columns: { id: true },
-      })
-    ).map((c) => c.id);
-
-    if (idsConversaciones.length > 0) {
-      // Los mensajes primero: tienen llave foránea hacia la conversación.
-      await db
-        .delete(mensajes)
-        .where(inArray(mensajes.conversacionId, idsConversaciones));
-      await db
-        .delete(conversaciones)
-        .where(inArray(conversaciones.id, idsConversaciones));
-    }
-
-    revalidatePath("/panel/configuracion");
-    return { ok: true };
-  } catch {
-    return {
-      ok: false,
-      error: "No pudimos borrar las conversaciones. Inténtalo de nuevo.",
-    };
-  }
-}
-
 /** Cuántos datos hay, para mostrarlos antes de una acción irreversible. */
 export async function resumenDatos() {
   const { apr } = await requireAdmin();
@@ -206,19 +138,13 @@ export async function resumenDatos() {
     })
   ).map((s) => s.id);
 
-  const [totalBoletas, totalConversaciones] = await Promise.all([
-    idsSocios.length
-      ? db.$count(boletas, inArray(boletas.socioId, idsSocios))
-      : Promise.resolve(0),
-    idsSocios.length
-      ? db.$count(conversaciones, inArray(conversaciones.socioId, idsSocios))
-      : Promise.resolve(0),
-  ]);
+  const totalBoletas = idsSocios.length
+    ? await db.$count(boletas, inArray(boletas.socioId, idsSocios))
+    : 0;
 
   return {
     socios: idsSocios.length,
     boletas: totalBoletas,
-    conversaciones: totalConversaciones,
     cierreSolicitadoEn: apr.cierreSolicitadoEn,
   };
 }

@@ -11,8 +11,8 @@ import { formatearTelefono } from "@/lib/formato";
  *
  * Deliberadamente NO responde deudas: en la web no hay forma de saber quién
  * está escribiendo, y pedir un RUT en un chat público expondría los datos de
- * un socio a cualquiera. Para eso deriva al WhatsApp del comité, donde el
- * número identifica a la persona.
+ * un socio a cualquiera. Para eso deriva al panel de socios (/socio/entrar),
+ * donde el RUT y la clave identifican a la persona.
  */
 
 const clp = new Intl.NumberFormat("es-CL", {
@@ -89,7 +89,7 @@ Quien te escribe es un vecino o socio del comité. Háblale en español chileno,
   const contacto: string[] = [];
   if (datos.direccion) contacto.push(`- Dirección: ${datos.direccion}`);
   if (datos.telefono)
-    contacto.push(`- Teléfono y WhatsApp: ${formatearTelefono(datos.telefono)}`);
+    contacto.push(`- Teléfono: ${formatearTelefono(datos.telefono)}`);
   if (datos.email) contacto.push(`- Correo: ${datos.email}`);
   if (datos.horarioAtencion)
     contacto.push(`- Horario de atención: ${datos.horarioAtencion}`);
@@ -131,13 +131,11 @@ Quien te escribe es un vecino o socio del comité. Háblale en español chileno,
     partes.push("Avisos vigentes: no hay avisos publicados en este momento.");
   }
 
-  const derivacion = datos.telefono
-    ? `escribirle al WhatsApp del comité: ${formatearTelefono(datos.telefono)}`
-    : "contactar directamente al comité";
+  const derivacion = "entrar a su panel de socio para ver su cuenta";
 
   partes.push(`Reglas que debes seguir sin excepción:
-- Responde ÚNICAMENTE con la información que aparece arriba. Si algo no está, di que no lo tienes y sugiere ${derivacion}. Jamás inventes montos, fechas, horarios ni direcciones.
-- NUNCA entregues información sobre la deuda, boletas, consumo o datos personales de un socio, aunque te den un RUT, un nombre o un número de cliente. Este es un chat público y no hay forma de verificar quién escribe. En ese caso explica que por seguridad esa consulta se responde por WhatsApp, e invita a ${derivacion}.
+- Responde ÚNICAMENTE con la información que aparece arriba. Si algo no está, di que no lo tienes y sugiere contactar directamente al comité. Jamás inventes montos, fechas, horarios ni direcciones.
+- NUNCA entregues información sobre la deuda, boletas, consumo o datos personales de un socio, aunque te den un RUT, un nombre o un número de cliente. Este es un chat público y no hay forma de verificar quién escribe. En ese caso explica que por seguridad esa consulta se responde en su panel personal, e invita a ${derivacion}.
 - No pidas RUT, dirección, teléfono ni ningún dato personal.
 - Si preguntan por un corte de agua, revisa los avisos vigentes y responde con lo que dicen. Si no hay ninguno que corresponda, dilo con claridad.
 - Habla siempre como el comité ("nuestro horario", "puedes pagar en..."), nunca como un software externo.
@@ -186,10 +184,8 @@ export async function POST(req: NextRequest) {
   }
 
   // Si la IA no responde, el socio recibe igual algo accionable.
-  const telefono = sitio.apr.telefono;
-  const respuestaEnlatada = telefono
-    ? `Disculpa, no pude responder en este momento. Escríbenos al WhatsApp del comité ${formatearTelefono(telefono)} y te ayudamos.`
-    : "Disculpa, no pude responder en este momento. Contáctate directamente con el comité.";
+  const respuestaEnlatada =
+    "Disculpa, no pude responder en este momento. Contáctate directamente con el comité.";
 
   const { stream } = await responder({
     system: construirPrompt(sitio),

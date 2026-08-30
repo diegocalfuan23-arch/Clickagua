@@ -45,7 +45,7 @@ export default async function SitioPage() {
             `Tu dirección propia: ${generarSlug(apr.nombre)}.${DOMINIO_RAIZ}`,
             "Avisos de corte que publicas desde el panel",
             "Tarifas y formas de pago siempre al día",
-            "Botón directo al WhatsApp del comité",
+            "Acceso directo al panel de socios",
           ].map((item) => (
             <li key={item} className="flex items-start gap-2">
               <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" />

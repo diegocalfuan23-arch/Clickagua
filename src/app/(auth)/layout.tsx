@@ -14,8 +14,8 @@ import { MessageCircle, ReceiptText, Users } from "lucide-react";
 const ARGUMENTOS = [
   {
     icono: MessageCircle,
-    titulo: "Responde solo por WhatsApp",
-    texto: "Tus socios preguntan cuánto deben y el bot contesta al instante.",
+    titulo: "Responde solo a cada socio",
+    texto: "Tu socio entra a su panel y sabe cuánto debe, sin llamar.",
   },
   {
     icono: ReceiptText,
@@ -107,7 +107,7 @@ export default function AuthLayout({
         </div>
 
         <p className="relative text-[0.83rem] text-white/60">
-          Sin instalar nada. Tus socios usan el WhatsApp que ya tienen.
+          Sin instalar nada. Tus socios entran desde el navegador.
         </p>
       </aside>
     </div>

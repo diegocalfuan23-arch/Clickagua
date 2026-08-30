@@ -8,7 +8,7 @@ const softwareSchema = {
   operatingSystem: "Web",
   url: SITE_URL,
   description:
-    "Software de gestión para comités de Agua Potable Rural (APR) y Servicios Sanitarios Rurales (SSR) en Chile. Administra socios, boletas y pagos, y responde consultas de deuda automáticamente por WhatsApp.",
+    "Software de gestión para comités de Agua Potable Rural (APR) y Servicios Sanitarios Rurales (SSR) en Chile. Administra socios, boletas y pagos, con un panel donde cada socio ve su propia deuda al instante.",
   inLanguage: "es-CL",
   areaServed: { "@type": "Country", name: "Chile" },
   offers: [
@@ -53,10 +53,10 @@ const faqSchema = {
     },
     {
       "@type": "Question",
-      name: "¿Necesitamos instalar algo o cambiar de número de WhatsApp?",
+      name: "¿El socio necesita instalar algo?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "No hay que instalar nada. Puedes usar un número nuevo dedicado o migrar el que ya usan los socios para contactar al comité, conectado a la API oficial de WhatsApp de Meta.",
+        text: "No. Entra desde el navegador de su celular o computador, con el RUT y la clave que crea al pedir acceso — sin apps nuevas.",
       },
     },
     {

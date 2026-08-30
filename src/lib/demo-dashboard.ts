@@ -34,14 +34,13 @@ export type DatosDashboard = {
   /** El período que más recaudó y quiénes pagaron en él. */
   mejorPeriodo: { periodo: string; monto: number } | null;
   pagadores: { id: string; nombre: string; pagado: number; boletas: number }[];
-  /** Null mientras WhatsApp no esté conectado: no hay nada que mostrar. */
-  atencion: {
-    total: number;
-    resueltas: number;
-    derivadas: number;
-    serie: { periodo: string; valor: number }[];
-    recientes: { nombre: string; texto: string; hace: string }[];
-  } | null;
+  /** Socios esperando que la directiva apruebe o rechace su acceso al panel. */
+  solicitudesPendientes: {
+    id: string;
+    nombre: string;
+    rut: string;
+    hace: string;
+  }[];
 };
 
 const MESES = ["Dic", "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul"];
@@ -163,27 +162,10 @@ export const DEMO: DatosDashboard = {
     { id: "s5", nombre: "María Huenchuñir", activo: true },
   ],
 
-  atencion: {
-    total: 412,
-    resueltas: 387,
-    derivadas: 25,
-    serie: [
-      { periodo: "Dic", valor: 95 },
-      { periodo: "Ene", valor: 130 },
-      { periodo: "Feb", valor: 118 },
-      { periodo: "Mar", valor: 176 },
-      { periodo: "Abr", valor: 210 },
-      { periodo: "May", valor: 265 },
-      { periodo: "Jun", valor: 310 },
-      { periodo: "Jul", valor: 412 },
-    ],
-    recientes: [
-      { nombre: "María Huenchuñir", texto: "cuánto debo", hace: "hace 5 min" },
-      { nombre: "Pedro Curihual", texto: "ya pagué la de junio?", hace: "hace 22 min" },
-      { nombre: "Rosa Millán", texto: "cuándo vence mi boleta", hace: "hace 1 h" },
-      { nombre: "Luis Painemal", texto: "cuánto debo", hace: "hace 3 h" },
-    ],
-  },
+  solicitudesPendientes: [
+    { id: "sol1", nombre: "Elena Quilaqueo", rut: "9.876.543-2", hace: "hace 5 min" },
+    { id: "sol2", nombre: "Juan Marileo", rut: "11.222.333-4", hace: "hace 1 día" },
+  ],
 };
 
 export { MESES };

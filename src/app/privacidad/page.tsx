@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     "Cómo Facilapr trata los datos personales de socios de comités de Agua Potable Rural, conforme a la Ley 21.719.",
 };
 
-const ACTUALIZADO = "8 de agosto de 2026";
+const ACTUALIZADO = "30 de agosto de 2026";
 
 /**
  * Redactada sobre la Ley 21.719, que moderniza la protección de datos en
@@ -100,9 +100,10 @@ export default function PrivacidadPage() {
                 administra la cuenta.
               </li>
               <li>
-                <strong>Conversaciones de WhatsApp:</strong> cuando un socio le
-                escribe al número del comité, guardamos el número de teléfono,
-                el contenido de los mensajes y la respuesta enviada.
+                <strong>Sesión del panel de socios:</strong> cuando un socio pide
+                acceso a su panel, guardamos su RUT y una clave que solo él
+                conoce (nunca en texto plano). Su directiva debe aprobar el
+                acceso antes de que la cuenta quede activa.
               </li>
             </ul>
           </section>
@@ -126,12 +127,12 @@ export default function PrivacidadPage() {
               <li>
                 El asistente del sitio web está expresamente impedido de
                 responder consultas sobre deudas, aunque le entreguen un RUT o
-                un nombre. Deriva siempre al WhatsApp del comité.
+                un nombre. Deriva siempre al panel de socios.
               </li>
               <li>
-                Por WhatsApp solo respondemos sobre la deuda asociada al número
-                de teléfono desde el que se escribe, previamente registrado por
-                el comité.
+                En el panel de socios solo respondemos sobre la deuda del
+                socio que inició sesión con su RUT y clave, y previa
+                aprobación de su directiva.
               </li>
               <li>
                 Cada comité ve únicamente los datos de sus propios socios.
@@ -146,8 +147,8 @@ export default function PrivacidadPage() {
             <ul className="mt-3 flex list-disc flex-col gap-2 pl-5">
               <li>Emitir boletas y registrar pagos y lecturas del medidor.</li>
               <li>
-                Responder por WhatsApp las consultas de los socios sobre su
-                cuenta.
+                Responder, en el panel de cada socio, sus consultas sobre su
+                propia cuenta.
               </li>
               <li>
                 Publicar avisos de corte, tarifas y datos de contacto en el
@@ -191,11 +192,6 @@ export default function PrivacidadPage() {
                     <td className="py-2.5 pr-4">Alojamiento de la aplicación</td>
                     <td className="py-2.5">Estados Unidos</td>
                   </tr>
-                  <tr className="border-b border-border/60">
-                    <td className="py-2.5 pr-4">Meta (WhatsApp)</td>
-                    <td className="py-2.5 pr-4">Envío y recepción de mensajes</td>
-                    <td className="py-2.5">Estados Unidos</td>
-                  </tr>
                   <tr>
                     <td className="py-2.5 pr-4">Anthropic y OpenAI</td>
                     <td className="py-2.5 pr-4">
@@ -223,11 +219,6 @@ export default function PrivacidadPage() {
                 <strong>Datos de socios, boletas y pagos:</strong> mientras el
                 comité mantenga su cuenta activa, porque son parte de su
                 registro contable.
-              </li>
-              <li>
-                <strong>Conversaciones de WhatsApp:</strong> mientras el comité
-                mantenga su cuenta activa. Puede solicitar su eliminación en
-                cualquier momento.
               </li>
               <li>
                 <strong>Al cerrar la cuenta:</strong> el comité puede exportar

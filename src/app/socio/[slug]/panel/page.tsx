@@ -1,0 +1,135 @@
+import type { Metadata } from "next";
+import { desc, eq } from "drizzle-orm";
+import { requireSocio } from "@/lib/socio-session";
+import { db } from "@/lib/db";
+import { boletas } from "@/lib/db/schema";
+import { saldo, formatearPeriodo } from "@/lib/boletas";
+import { SignOutSocioButton } from "@/components/socio/sign-out-button";
+import { AsistenteSocio } from "@/components/socio/asistente-socio";
+
+type Props = { params: Promise<{ slug: string }> };
+
+export const metadata: Metadata = { title: "Mi cuenta" };
+
+const clp = new Intl.NumberFormat("es-CL", {
+  style: "currency",
+  currency: "CLP",
+  maximumFractionDigits: 0,
+});
+
+const fecha = new Intl.DateTimeFormat("es-CL", {
+  day: "numeric",
+  month: "long",
+});
+
+const ESTADO_ESTILO = {
+  PENDIENTE: "bg-tertiary/15 text-tertiary-foreground",
+  PAGADA: "bg-forest/15 text-forest",
+  VENCIDA: "bg-destructive/15 text-destructive",
+  ANULADA: "bg-muted text-muted-foreground",
+} as const;
+
+const ESTADO_TEXTO = {
+  PENDIENTE: "Pendiente",
+  PAGADA: "Pagada",
+  VENCIDA: "Vencida",
+  ANULADA: "Anulada",
+} as const;
+
+export default async function PanelSocioPage({ params }: Props) {
+  const { slug } = await params;
+  const { socio } = await requireSocio(slug);
+
+  const listaBoletas = await db.query.boletas.findMany({
+    where: eq(boletas.socioId, socio.id),
+    orderBy: [desc(boletas.fechaEmision)],
+    limit: 12,
+  });
+
+  const pendiente = listaBoletas.find(
+    (b) => b.estado === "PENDIENTE" || b.estado === "VENCIDA"
+  );
+  const deudaTotal = listaBoletas
+    .filter((b) => b.estado === "PENDIENTE" || b.estado === "VENCIDA")
+    .reduce((acc, b) => acc + saldo(b.montoTotal, b.montoPagado), 0);
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border">
+        <div className="mx-auto flex max-w-[720px] items-center justify-between px-6 py-4">
+          <div>
+            <div className="font-semibold">{socio.nombre}</div>
+            <div className="text-[0.82rem] text-muted-foreground">
+              {socio.apr.nombre}
+            </div>
+          </div>
+          <SignOutSocioButton />
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-[720px] px-6 py-10">
+        <section
+          className={`rounded-2xl border p-6 ${
+            deudaTotal > 0
+              ? "border-destructive/25 bg-destructive/5"
+              : "border-forest/25 bg-forest/5"
+          }`}
+        >
+          <span className="text-[0.85rem] text-muted-foreground">
+            {deudaTotal > 0 ? "Debes" : "Estás al día"}
+          </span>
+          <div className="mt-1 text-[2rem] font-semibold tabular-nums">
+            {clp.format(deudaTotal)}
+          </div>
+          {pendiente && (
+            <p className="mt-1 text-[0.88rem] text-muted-foreground">
+              Boleta de {formatearPeriodo(pendiente.periodo)}, vence el{" "}
+              {fecha.format(pendiente.fechaVencimiento)}
+            </p>
+          )}
+        </section>
+
+        <section className="mt-10">
+          <h2 className="text-[1.05rem] font-semibold">Tus boletas</h2>
+
+          {listaBoletas.length === 0 ? (
+            <p className="mt-4 rounded-xl border border-dashed border-border px-4 py-8 text-center text-[0.9rem] text-muted-foreground">
+              Todavía no tienes boletas emitidas.
+            </p>
+          ) : (
+            <div className="mt-4 flex flex-col divide-y divide-border/60 rounded-xl border border-border/60 bg-card">
+              {listaBoletas.map((b) => (
+                <div
+                  key={b.id}
+                  className="flex items-center justify-between gap-3 p-4"
+                >
+                  <div>
+                    <div className="font-medium">
+                      {formatearPeriodo(b.periodo)}
+                    </div>
+                    <div className="text-[0.82rem] text-muted-foreground">
+                      Vence el {fecha.format(b.fechaVencimiento)}
+                      {b.consumoM3 !== null && ` · ${b.consumoM3} m³`}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono text-[0.95rem] font-semibold tabular-nums">
+                      {clp.format(b.montoTotal)}
+                    </span>
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-[0.75rem] font-medium ${ESTADO_ESTILO[b.estado]}`}
+                    >
+                      {ESTADO_TEXTO[b.estado]}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </main>
+
+      <AsistenteSocio nombreApr={socio.apr.nombre} slug={slug} />
+    </div>
+  );
+}

@@ -1,26 +1,33 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { MessageCircle, X, Send, Droplet } from "lucide-react";
+import { Droplets, MessageCircle, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 type Mensaje = { rol: "user" | "assistant"; texto: string };
 
-const SUGERENCIAS = [
-  "¿Cuánto cuesta?",
-  "¿Cómo funciona el panel de socios?",
-  "¿Sirve para mi comité?",
-];
+const SUGERENCIAS = ["¿Cuánto debo?", "¿Cuándo vence mi próxima boleta?"];
 
-const SALUDO =
-  "Hola 👋 Soy el asistente de Facilapr. Puedo contarte cómo funciona, qué incluye cada plan o qué necesita tu comité para partir. ¿Qué te gustaría saber?";
+/**
+ * Widget del panel de socio. A diferencia de AsistenteComite (el del sitio
+ * público, que nunca habla de deudas), este SÍ puede: hay sesión de socio
+ * verificada, así que /api/socio/asistente responde con sus datos reales.
+ * No necesita fallback a WhatsApp: ese canal ya no existe en el producto.
+ */
+export function AsistenteSocio({
+  nombreApr,
+  slug,
+}: {
+  nombreApr: string;
+  slug: string;
+}) {
+  const saludo = `Hola 👋 Soy el asistente de ${nombreApr}. Puedo contarte cuánto debes, tu historial de boletas y tu consumo. ¿En qué te ayudo?`;
 
-export function AssistantWidget() {
   const [abierto, setAbierto] = useState(false);
   const [mensajes, setMensajes] = useState<Mensaje[]>([
-    { rol: "assistant", texto: SALUDO },
+    { rol: "assistant", texto: saludo },
   ]);
   const [entrada, setEntrada] = useState("");
   const [respondiendo, setRespondiendo] = useState(false);
@@ -40,16 +47,16 @@ export function AssistantWidget() {
     setRespondiendo(true);
 
     try {
-      const res = await fetch("/api/asistente", {
+      const res = await fetch("/api/socio/asistente", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // El saludo inicial es del cliente, no parte de la conversación real.
-        body: JSON.stringify({ mensajes: historial.slice(1) }),
+        body: JSON.stringify({
+          // El saludo lo pone el cliente: no es parte de la conversación.
+          mensajes: historial.slice(1),
+        }),
       });
 
-      if (!res.ok || !res.body) {
-        throw new Error("respuesta inválida");
-      }
+      if (!res.ok || !res.body) throw new Error("respuesta inválida");
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -67,8 +74,7 @@ export function AssistantWidget() {
         ...historial,
         {
           rol: "assistant",
-          texto:
-            "Disculpa, no pude responder en este momento. Escríbenos por el formulario de contacto y te ayudamos.",
+          texto: "Disculpa, no pude responder en este momento. Intenta de nuevo.",
         },
       ]);
     } finally {
@@ -89,11 +95,11 @@ export function AssistantWidget() {
       {abierto && (
         <div className="fixed right-5 bottom-22 z-50 flex h-[520px] w-[min(380px,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-xl">
           <div className="flex shrink-0 items-center gap-2.5 border-b border-border px-4 py-3.5">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-linear-to-br from-primary to-secondary">
-              <Droplet className="size-4 fill-white text-white" />
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+              <Droplets className="size-4 text-primary" />
             </span>
-            <div>
-              <div className="text-sm font-semibold">Asistente Facilapr</div>
+            <div className="min-w-0">
+              <div className="truncate text-sm font-semibold">{nombreApr}</div>
               <div className="text-[0.75rem] text-muted-foreground">
                 Responde al instante
               </div>
@@ -105,7 +111,7 @@ export function AssistantWidget() {
               <div
                 key={i}
                 className={cn(
-                  "max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[0.88rem] leading-relaxed",
+                  "max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[0.88rem] leading-relaxed whitespace-pre-line",
                   m.rol === "user"
                     ? "self-end rounded-br-md bg-primary text-primary-foreground"
                     : "self-start rounded-bl-md bg-muted text-foreground"
@@ -113,9 +119,9 @@ export function AssistantWidget() {
               >
                 {m.texto || (
                   <span className="inline-flex gap-1">
-                    <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/60" />
-                    <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:0.15s]" />
-                    <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground/60 [animation-delay:0.3s]" />
+                    <span className="size-1.5 animate-pulse rounded-full bg-muted-foreground/60" />
+                    <span className="size-1.5 animate-pulse rounded-full bg-muted-foreground/60 [animation-delay:0.15s]" />
+                    <span className="size-1.5 animate-pulse rounded-full bg-muted-foreground/60 [animation-delay:0.3s]" />
                   </span>
                 )}
               </div>
@@ -149,7 +155,7 @@ export function AssistantWidget() {
               value={entrada}
               onChange={(e) => setEntrada(e.target.value)}
               placeholder="Escribe tu consulta…"
-              maxLength={2000}
+              maxLength={1000}
               aria-label="Tu consulta"
               className="flex-1"
             />

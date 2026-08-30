@@ -2,10 +2,15 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 /**
- * Mapea el subdominio de cada comité a su landing.
+ * Mapea el subdominio de cada comité a su landing y a su panel de socios.
  *
- *   pitrelahue.facilapr.cl/       → /sitio/pitrelahue
- *   pitrelahue.facilapr.cl/avisos → /sitio/pitrelahue/avisos
+ *   pitrelahue.facilapr.cl/             → /sitio/pitrelahue
+ *   pitrelahue.facilapr.cl/avisos       → /sitio/pitrelahue/avisos
+ *   pitrelahue.facilapr.cl/socio/entrar → /socio/pitrelahue/entrar
+ *
+ * /socio/* tiene su propia rama de reescritura (no cuelga de /sitio/[slug])
+ * porque es una app distinta con su propia sesión (rol SOCIO): mezclarla
+ * bajo /sitio confundiría el layout público del comité con el panel privado.
  *
  * El dominio raíz y www siguen sirviendo la app normal. Los dominios propios
  * (plan Premium) se resuelven en la página por el host completo, porque aquí
@@ -52,6 +57,11 @@ export function proxy(request: NextRequest) {
     const slug = host.slice(0, -(DOMINIO_RAIZ.length + 1));
     // Solo el primer nivel: "a.b.facilapr.cl" no es un comité válido.
     if (!slug || slug.includes(".")) return NextResponse.next();
+
+    if (url.pathname.startsWith("/socio")) {
+      url.pathname = `/socio/${slug}${url.pathname.slice("/socio".length)}`;
+      return NextResponse.rewrite(url);
+    }
 
     url.pathname = `/sitio/${slug}${url.pathname === "/" ? "" : url.pathname}`;
     return NextResponse.rewrite(url);

@@ -10,9 +10,8 @@ Quien te escribe es un dirigente de un comité — presidente, tesorero o secret
 
 Qué es Facilapr:
 - Un panel donde la directiva administra socios, boletas, pagos y morosidad del comité.
-- Un bot de WhatsApp que responde automáticamente a los socios cuánto deben, a cualquier hora, sin que nadie del comité conteste.
-- Funciona sobre la API oficial de WhatsApp de Meta, no por métodos no oficiales que arriesgan el bloqueo del número.
-- El socio no instala nada ni crea cuentas: usa el WhatsApp que ya tiene.
+- Un panel propio para cada socio, con asistente de inteligencia artificial: ve su deuda, historial de boletas y consumo al instante, a cualquier hora, sin que nadie del comité conteste.
+- El socio entra con su RUT y una clave que él mismo define, previa aprobación de la directiva. No instala ninguna app.
 
 Planes (valores netos, en UF, más IVA, sin contrato de permanencia):
 - Comité Pequeño: 0,7 UF al mes, hasta 200 socios.

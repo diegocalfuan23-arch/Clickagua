@@ -13,12 +13,12 @@ export function Hero() {
         <h1 className="mt-5.5 mb-5 text-[clamp(2.6rem,5.2vw,4.1rem)] leading-[1.05] font-semibold text-balance">
           El software para tu APR que además
           <br />
-          contesta solo, por <em className="text-primary italic">WhatsApp</em>.
+          responde solo, <em className="text-primary italic">a cada socio</em>.
         </h1>
         <p className="mb-8 max-w-[48ch] text-[1.16rem] leading-relaxed text-muted-foreground">
           Administra los socios, boletas y pagos de tu comité de Agua Potable
-          Rural desde un solo panel — y deja que Facilapr responda por
-          WhatsApp cuánto debe cada socio, a cualquier hora.
+          Rural desde un solo panel — y deja que cada socio entre a su propio
+          panel y sepa cuánto debe, a cualquier hora.
         </p>
         <div className="mb-2 flex flex-wrap justify-center gap-3.5">
           <a
@@ -45,8 +45,8 @@ export function Hero() {
         <div className="absolute top-[38%] left-[3%] hidden items-center gap-3 rounded-2xl border border-border bg-card/92 px-4.5 py-3.5 text-[0.82rem] shadow-md backdrop-blur-sm min-[980px]:flex animate-[flotar_5s_ease-in-out_infinite]">
           <ShieldCheck className="size-4.5 shrink-0 text-primary" />
           <div>
-            <strong className="block text-sm">API oficial de Meta</strong>
-            <span className="text-muted-foreground">Sin apps de terceros</span>
+            <strong className="block text-sm">Datos propios del comité</strong>
+            <span className="text-muted-foreground">Nunca compartidos</span>
           </div>
         </div>
 

@@ -1,4 +1,4 @@
-import { Users, FileSpreadsheet, Wallet, BotMessageSquare } from "lucide-react";
+import { Users, FileSpreadsheet, Wallet, MessageCircle } from "lucide-react";
 
 const funciones = [
   {
@@ -11,7 +11,7 @@ const funciones = [
     icon: FileSpreadsheet,
     titulo: "Carga de boletas por periodo",
     detalle:
-      "Sube las boletas del mes manualmente o importa un CSV completo. El bot responde con esos mismos datos al instante.",
+      "Sube las boletas del mes manualmente o importa un CSV completo. El panel del socio responde con esos mismos datos al instante.",
   },
   {
     icon: Wallet,
@@ -20,10 +20,10 @@ const funciones = [
       "Ve de un vistazo qué socios están al día y cuáles tienen boletas pendientes, sin abrir una planilla aparte.",
   },
   {
-    icon: BotMessageSquare,
-    titulo: "Historial de conversaciones",
+    icon: MessageCircle,
+    titulo: "Solicitudes de acceso",
     detalle:
-      "Revisa qué le preguntó cada socio al bot y qué le respondió, para resolver dudas o reclamos con contexto real.",
+      "Cada socio pide entrar con su RUT; tu directiva aprueba o rechaza desde el panel antes de que la cuenta exista.",
   },
 ];
 
@@ -39,9 +39,9 @@ export function PanelSection() {
             Un panel para que tu directiva administre todo
           </h2>
           <p className="mt-3.5 text-[1.05rem] leading-relaxed text-muted-foreground">
-            El WhatsApp automático es la cara visible, pero detrás hay una
+            El panel de cada socio es la cara visible, pero detrás hay una
             plataforma donde tu comité gestiona socios, boletas y pagos —
-            los datos que el bot usa para responder.
+            los datos que el asistente usa para responder.
           </p>
         </div>
 

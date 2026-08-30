@@ -3,15 +3,15 @@ import { cn } from "@/lib/utils";
 const pasos = [
   {
     numero: "01",
-    titulo: "El socio escribe",
+    titulo: "El socio entra a su panel",
     detalle:
-      "Al número de WhatsApp de tu APR, en cualquier momento — sin agregar contactos ni instalar nada nuevo.",
+      "Con su RUT y una clave propia, desde el sitio de tu APR — en cualquier momento, sin instalar nada nuevo.",
   },
   {
     numero: "02",
-    titulo: "Facilapr identifica y responde",
+    titulo: "Ve su cuenta al instante",
     detalle:
-      "Reconoce al socio por su teléfono o RUT y consulta el estado real de su boleta al instante.",
+      "Deuda, historial de boletas y consumo, calculados desde tu propio registro. También puede preguntarle al asistente.",
   },
   {
     numero: "03",

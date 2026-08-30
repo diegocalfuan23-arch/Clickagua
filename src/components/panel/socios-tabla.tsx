@@ -344,7 +344,7 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
           icono={<MessageCircle />}
           color="bg-tertiary/15 text-tertiary"
           colorValor="text-tertiary-texto"
-          etiqueta="Con WhatsApp"
+          etiqueta="Con teléfono"
           valor={conTelefono}
           nombres={listaConTelefono.map((s) => s.nombre)}
         />
@@ -367,8 +367,8 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
             Carga a tu primer socio
           </h2>
           <p className="mt-2 max-w-[46ch] text-[0.92rem] leading-relaxed text-muted-foreground">
-            El bot de WhatsApp responde solo a los socios que estén registrados
-            aquí, identificándolos por su teléfono o RUT.
+            El panel de socios solo deja entrar a quienes estén registrados
+            aquí, identificándolos por su RUT.
           </p>
           <Button className="mt-5" onClick={() => setCreando(true)}>
             <Plus />
@@ -463,7 +463,7 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
                       cambiarFiltro(() => setSoloConTelefono(Boolean(v)))
                     }
                   >
-                    Con WhatsApp registrado
+                    Con teléfono registrado
                   </DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem
                     checked={soloSinDireccion}
@@ -791,9 +791,8 @@ function ImportarSociosDialog({
               <code className="font-mono">numeroCliente</code>
             </p>
             <p className="mt-2.5 text-muted-foreground">
-              El teléfono es con el que el socio escribe por WhatsApp. Si vuelves
-              a subir el archivo, los socios que ya existen se actualizan en vez
-              de duplicarse.
+              Si vuelves a subir el archivo, los socios que ya existen se
+              actualizan en vez de duplicarse.
             </p>
           </div>
 

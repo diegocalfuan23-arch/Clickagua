@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { AlertTriangle, Download, Loader2, MessageSquareX } from "lucide-react";
+import { AlertTriangle, Download, Loader2 } from "lucide-react";
 import {
-  borrarConversaciones,
   cancelarCierre,
   exportarDatos,
   solicitarCierre,
@@ -16,7 +15,6 @@ import { Label } from "@/components/ui/label";
 export type ResumenDatos = {
   socios: number;
   boletas: number;
-  conversaciones: number;
   cierreSolicitadoEn: Date | null;
 };
 
@@ -54,7 +52,6 @@ export function DatosPrivacidad({
   nombreComite: string;
 }) {
   const [exportando, iniciarExportar] = useTransition();
-  const [borrando, iniciarBorrar] = useTransition();
   const [cerrando, iniciarCerrar] = useTransition();
   const [confirmacion, setConfirmacion] = useState("");
   const [aviso, setAviso] = useState<string | null>(null);
@@ -110,34 +107,11 @@ export function DatosPrivacidad({
 
       <Bloque
         titulo="Exportar todos mis datos"
-        descripcion="Descarga un archivo con el comité, sus socios, boletas, lecturas, avisos y conversaciones. Sirve para guardar un respaldo o llevarlo a otro sistema."
+        descripcion="Descarga un archivo con el comité, sus socios, boletas, lecturas y avisos. Sirve para guardar un respaldo o llevarlo a otro sistema."
       >
         <Button type="button" variant="outline" disabled={exportando} onClick={descargar}>
           {exportando ? <Loader2 className="animate-spin" /> : <Download />}
           Descargar mis datos
-        </Button>
-      </Bloque>
-
-      <Bloque
-        titulo="Borrar conversaciones de WhatsApp"
-        descripcion={`Elimina los mensajes intercambiados con los socios. No afecta al padrón ni a las boletas. Hoy hay ${resumen.conversaciones} conversación(es) guardada(s).`}
-      >
-        <Button
-          type="button"
-          variant="outline"
-          disabled={borrando || resumen.conversaciones === 0}
-          onClick={() => {
-            setError(null);
-            setAviso(null);
-            iniciarBorrar(async () => {
-              const r = await borrarConversaciones();
-              if (r.ok) setAviso("Conversaciones eliminadas.");
-              else setError(r.error);
-            });
-          }}
-        >
-          {borrando ? <Loader2 className="animate-spin" /> : <MessageSquareX />}
-          Borrar conversaciones
         </Button>
       </Bloque>
 

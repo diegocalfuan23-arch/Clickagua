@@ -22,12 +22,10 @@ export function AsistenteComite({
   nombreApr,
   slug,
   dominio,
-  telefono,
 }: {
   nombreApr: string;
   slug?: string;
   dominio?: string;
-  telefono: string | null;
 }) {
   const saludo = `Hola 👋 Soy el asistente de ${nombreApr}. Puedo contarte sobre cortes de agua, horarios de atención, tarifas y cómo pagar. ¿En qué te ayudo?`;
 
@@ -42,8 +40,6 @@ export function AsistenteComite({
   useEffect(() => {
     finRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [mensajes]);
-
-  const whatsapp = telefono?.replace(/[^0-9]/g, "");
 
   async function enviar(texto: string) {
     const pregunta = texto.trim();
@@ -84,9 +80,7 @@ export function AsistenteComite({
         ...historial,
         {
           rol: "assistant",
-          texto: whatsapp
-            ? "Disculpa, no pude responder en este momento. Escríbenos por WhatsApp y te ayudamos."
-            : "Disculpa, no pude responder en este momento. Contáctate directamente con el comité.",
+          texto: "Disculpa, no pude responder en este momento. Contáctate directamente con el comité.",
         },
       ]);
     } finally {
@@ -156,21 +150,17 @@ export function AsistenteComite({
             <div ref={finRef} />
           </div>
 
-          {/* La deuda no se responde aquí: se deriva a WhatsApp, donde el
-              número identifica al socio. */}
-          {whatsapp && (
-            <a
-              href={`https://wa.me/${whatsapp}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="shrink-0 border-t border-border bg-muted/40 px-4 py-2.5 text-center text-[0.8rem] text-muted-foreground transition-colors hover:text-primary"
-            >
-              ¿Consultas sobre tu cuenta?{" "}
-              <span className="font-medium text-primary">
-                Escríbenos por WhatsApp
-              </span>
-            </a>
-          )}
+          {/* La deuda no se responde aquí: este widget no sabe quién eres.
+              Se deriva al panel de socios, donde sí hay sesión. */}
+          <a
+            href="/socio/entrar"
+            className="shrink-0 border-t border-border bg-muted/40 px-4 py-2.5 text-center text-[0.8rem] text-muted-foreground transition-colors hover:text-primary"
+          >
+            ¿Consultas sobre tu cuenta?{" "}
+            <span className="font-medium text-primary">
+              Entra a tu panel de socio
+            </span>
+          </a>
 
           <form
             onSubmit={(e) => {

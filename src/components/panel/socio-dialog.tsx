@@ -53,7 +53,7 @@ export function SocioDialog({
         <DialogHeader>
           <DialogTitle>{editando ? "Editar socio" : "Nuevo socio"}</DialogTitle>
           <DialogDescription>
-            El teléfono es el que usará el socio para consultar por WhatsApp.
+            El teléfono es un dato de contacto del socio.
           </DialogDescription>
         </DialogHeader>
 

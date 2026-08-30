@@ -5,7 +5,6 @@ import {
   integer,
   boolean,
   timestamp,
-  jsonb,
   uniqueIndex,
   index,
 } from "drizzle-orm/pg-core";
@@ -19,14 +18,9 @@ export const estadoBoletaEnum = pgEnum("EstadoBoleta", [
   "ANULADA",
 ]);
 
-export const direccionMensajeEnum = pgEnum("DireccionMensaje", [
-  "ENTRANTE",
-  "SALIENTE",
-]);
-
 /**
  * Plan contratado. Define qué puede hacer el comité:
- * BASICO   → panel + bot de WhatsApp
+ * BASICO   → panel
  * ESTANDAR → + landing pública en subdominio
  * PREMIUM  → + dominio propio
  */
@@ -215,6 +209,13 @@ export const socios = pgTable(
     direccion: text("direccion"),
     numeroCliente: text("numeroCliente"),
     activo: boolean("activo").notNull().default(true),
+    /**
+     * La cuenta de Better Auth del socio, si tiene panel propio. Sin FK
+     * formal a propósito: `user` vive en auth-schema.ts, un módulo aparte
+     * que este archivo no importa (mismo patrón que registradaPorId en
+     * Lectura). Null hasta que se aprueba su SolicitudAcceso.
+     */
+    userId: text("userId"),
     createdAt: timestamp("createdAt", { precision: 3 }).notNull().defaultNow(),
     updatedAt: timestamp("updatedAt", { precision: 3 }).notNull().defaultNow(),
   },
@@ -223,6 +224,9 @@ export const socios = pgTable(
     // distintos con el mismo RUT o teléfono sin colisionar.
     uniqueIndex("Socio_apr_rut_key").on(table.aprId, table.rut),
     uniqueIndex("Socio_apr_telefono_key").on(table.aprId, table.telefono),
+    uniqueIndex("Socio_userId_key")
+      .on(table.userId)
+      .where(sql`${table.userId} IS NOT NULL`),
     index("Socio_aprId_idx").on(table.aprId),
   ]
 );
@@ -234,10 +238,6 @@ export const sociosRelations = relations(socios, ({ many, one }) => ({
   }),
   boletas: many(boletas),
   lecturas: many(lecturas),
-  conversacion: one(conversaciones, {
-    fields: [socios.id],
-    references: [conversaciones.socioId],
-  }),
 }));
 
 export const boletas = pgTable(
@@ -288,59 +288,6 @@ export const boletasRelations = relations(boletas, ({ one }) => ({
   socio: one(socios, {
     fields: [boletas.socioId],
     references: [socios.id],
-  }),
-}));
-
-export const conversaciones = pgTable(
-  "Conversacion",
-  {
-    id: text("id").primaryKey().$defaultFn(() => createId()),
-    telefono: text("telefono").notNull(),
-    socioId: text("socioId").references(() => socios.id),
-    estado: text("estado"),
-    createdAt: timestamp("createdAt", { precision: 3 }).notNull().defaultNow(),
-    updatedAt: timestamp("updatedAt", { precision: 3 }).notNull().defaultNow(),
-  },
-  (table) => [
-    uniqueIndex("Conversacion_telefono_key").on(table.telefono),
-    uniqueIndex("Conversacion_socioId_key").on(table.socioId),
-  ]
-);
-
-export const conversacionesRelations = relations(
-  conversaciones,
-  ({ one, many }) => ({
-    socio: one(socios, {
-      fields: [conversaciones.socioId],
-      references: [socios.id],
-    }),
-    mensajes: many(mensajes),
-  })
-);
-
-export const mensajes = pgTable(
-  "Mensaje",
-  {
-    id: text("id").primaryKey().$defaultFn(() => createId()),
-    conversacionId: text("conversacionId")
-      .notNull()
-      .references(() => conversaciones.id),
-    direccion: direccionMensajeEnum("direccion").notNull(),
-    whatsappMessageId: text("whatsappMessageId"),
-    contenido: text("contenido").notNull(),
-    payloadCrudo: jsonb("payloadCrudo"),
-    createdAt: timestamp("createdAt", { precision: 3 }).notNull().defaultNow(),
-  },
-  (table) => [
-    uniqueIndex("Mensaje_whatsappMessageId_key").on(table.whatsappMessageId),
-    index("Mensaje_conversacionId_idx").on(table.conversacionId),
-  ]
-);
-
-export const mensajesRelations = relations(mensajes, ({ one }) => ({
-  conversacion: one(conversaciones, {
-    fields: [mensajes.conversacionId],
-    references: [conversaciones.id],
   }),
 }));
 
@@ -490,4 +437,57 @@ export const usosIa = pgTable(
     index("UsoIA_aprId_idx").on(table.aprId),
     index("UsoIA_createdAt_idx").on(table.createdAt),
   ]
+);
+
+export const estadoSolicitudEnum = pgEnum("EstadoSolicitud", [
+  "PENDIENTE",
+  "APROBADA",
+  "RECHAZADA",
+]);
+
+/**
+ * Pedido de un socio para acceder a su panel. No crea la cuenta todavía:
+ * el socio define su RUT y clave, pero la directiva tiene que aprobar antes
+ * de que quede activa. Sin esto, cualquiera que sepa el RUT de un socio real
+ * (no es secreto, sale en cualquier boleta) podría autoasignarse acceso a
+ * su deuda, que la Ley 21.719 trata como dato sensible.
+ */
+export const solicitudesAcceso = pgTable(
+  "SolicitudAcceso",
+  {
+    id: text("id").primaryKey().$defaultFn(() => createId()),
+    socioId: text("socioId")
+      .notNull()
+      .references(() => socios.id, { onDelete: "cascade" }),
+    /**
+     * La clave que el socio definió, ya hasheada por Better Auth (nunca en
+     * texto plano). Se copia a la cuenta real recién al aprobar; hasta
+     * entonces vive aquí y no hay ninguna cuenta que permita iniciar sesión.
+     */
+    claveHash: text("claveHash").notNull(),
+    estado: estadoSolicitudEnum("estado").notNull().default("PENDIENTE"),
+    motivoRechazo: text("motivoRechazo"),
+    /** Quién de la directiva la resolvió. */
+    revisadaPorId: text("revisadaPorId"),
+    createdAt: timestamp("createdAt", { precision: 3 }).notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt", { precision: 3 }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("SolicitudAcceso_socioId_idx").on(table.socioId),
+    index("SolicitudAcceso_estado_idx").on(table.estado),
+    // Un socio no puede tener dos solicitudes pendientes a la vez.
+    uniqueIndex("SolicitudAcceso_socio_pendiente_key")
+      .on(table.socioId)
+      .where(sql`${table.estado} = 'PENDIENTE'`),
+  ]
+);
+
+export const solicitudesAccesoRelations = relations(
+  solicitudesAcceso,
+  ({ one }) => ({
+    socio: one(socios, {
+      fields: [solicitudesAcceso.socioId],
+      references: [socios.id],
+    }),
+  })
 );

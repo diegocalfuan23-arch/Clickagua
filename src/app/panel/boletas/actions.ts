@@ -13,6 +13,7 @@ import {
   normalizarPeriodo,
   type EstadoBoleta,
 } from "@/lib/boletas";
+import { normalizarRut } from "@/lib/formato";
 
 export type ResultadoAccion = { ok: true } | { ok: false; error: string };
 
@@ -322,12 +323,6 @@ function partirLinea(linea: string): string[] {
   return campos;
 }
 
-function normalizarRut(valor: string) {
-  const limpio = valor.replace(/[.\s]/g, "").toUpperCase();
-  return limpio.includes("-")
-    ? limpio
-    : limpio.replace(/^(\d+)([\dK])$/, "$1-$2");
-}
 
 /**
  * Importa boletas desde CSV. Columnas: rut, periodo, monto, vencimiento y

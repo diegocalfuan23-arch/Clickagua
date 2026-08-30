@@ -8,13 +8,13 @@ import {
   ArrowUp,
   Droplets,
   FlaskConical,
-  MessageSquare,
+  UserCheck,
   ReceiptText,
   Users,
   Wallet,
 } from "lucide-react";
 import { db } from "@/lib/db";
-import { boletas, socios } from "@/lib/db/schema";
+import { boletas, socios, solicitudesAcceso } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/apr-session";
 import {
   GraficoArea,
@@ -23,7 +23,7 @@ import {
 } from "@/components/panel/graficos";
 import { formatearPeriodo } from "@/lib/boletas";
 import { DEMO, type DatosDashboard } from "@/lib/demo-dashboard";
-import { iniciales } from "@/lib/formato";
+import { iniciales, tiempoRelativo } from "@/lib/formato";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -295,6 +295,21 @@ export default async function PanelPage({
     columns: { id: true, nombre: true, createdAt: true, activo: true },
   });
 
+  const solicitudesPendientesRaw = await db
+    .select({
+      id: solicitudesAcceso.id,
+      nombre: socios.nombre,
+      rut: socios.rut,
+      createdAt: solicitudesAcceso.createdAt,
+    })
+    .from(solicitudesAcceso)
+    .innerJoin(socios, eq(solicitudesAcceso.socioId, socios.id))
+    .where(
+      and(eq(socios.aprId, apr.id), eq(solicitudesAcceso.estado, "PENDIENTE"))
+    )
+    .orderBy(desc(solicitudesAcceso.createdAt))
+    .limit(5);
+
   // A partir de aquí se usa `d`, que es lo real o la muestra según ?demo=1.
   // Nunca por defecto: un panel con cifras inventadas y sin avisarlo haría
   // que un dirigente las tomara por suyas.
@@ -320,7 +335,12 @@ export default async function PanelPage({
         socios: ultimosSocios,
         mejorPeriodo,
         pagadores: pagadoresDelMejor,
-        atencion: null,
+        solicitudesPendientes: solicitudesPendientesRaw.map((s) => ({
+          id: s.id,
+          nombre: s.nombre,
+          rut: s.rut,
+          hace: tiempoRelativo(s.createdAt),
+        })),
       };
 
   const cobertura =
@@ -686,94 +706,61 @@ export default async function PanelPage({
 
         <Tarjeta>
           <div className="flex items-start justify-between gap-2">
-            <h3 className="text-[1rem] font-semibold">Atención por WhatsApp</h3>
-            <MessageSquare className="size-4 text-primary" />
+            <h3 className="text-[1rem] font-semibold">Solicitudes de acceso</h3>
+            <UserCheck className="size-4 text-primary" />
           </div>
 
-          {d.atencion ? (
+          {d.solicitudesPendientes.length > 0 ? (
             <>
               <div className="mt-4 flex flex-wrap items-end justify-between gap-2">
                 <div className="text-[1.8rem] leading-none font-semibold tabular-nums">
-                  {d.atencion.total}
+                  {d.solicitudesPendientes.length}
                   <span className="ml-2 text-[0.85rem] font-normal text-muted-foreground">
-                    consultas
-                  </span>
-                </div>
-                {/* El dato que importa: cuántas se resolvieron sin que nadie
-                    del comité contestara. */}
-                <span className="rounded-full bg-forest/10 px-2.5 py-1 text-[0.78rem] font-medium tabular-nums text-forest">
-                  {Math.round(
-                    (d.atencion.resueltas / Math.max(d.atencion.total, 1)) * 100
-                  )}
-                  % automáticas
-                </span>
-              </div>
-
-              {/* Con más alto la curva deja de verse plana: va de 95 a 412 y
-                  en 48px esa subida no se apreciaba. */}
-              <div className="mt-5 h-24">
-                <GraficoArea
-                  datos={d.atencion.serie}
-                  nombre="Consultas"
-                  color="var(--primary)"
-                  compacto
-                />
-              </div>
-
-              <div className="mt-4 flex flex-col gap-2 border-t border-border pt-3.5 text-[0.87rem]">
-                <div className="flex items-center gap-2.5">
-                  <span className="size-2.5 rounded-[3px] bg-primary" />
-                  <span className="flex-1 text-muted-foreground">
-                    Resueltas por el bot
-                  </span>
-                  <span className="font-medium tabular-nums">
-                    {d.atencion.resueltas}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <span className="size-2.5 rounded-[3px] bg-tertiary" />
-                  <span className="flex-1 text-muted-foreground">
-                    Derivadas a la oficina
-                  </span>
-                  <span className="font-medium tabular-nums">
-                    {d.atencion.derivadas}
+                    pendiente{d.solicitudesPendientes.length === 1 ? "" : "s"}
                   </span>
                 </div>
               </div>
 
               <div className="mt-4 flex flex-col divide-y divide-border/60 border-t border-border pt-1">
-                {d.atencion.recientes.map((r) => (
-                  <div key={r.nombre} className="flex items-center gap-2.5 py-2.5">
+                {d.solicitudesPendientes.map((s) => (
+                  <div key={s.id} className="flex items-center gap-2.5 py-2.5">
                     <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-[0.7rem] font-semibold text-muted-foreground">
-                      {iniciales(r.nombre)}
+                      {iniciales(s.nombre)}
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-[0.85rem] font-medium">
-                        {r.nombre}
+                        {s.nombre}
                       </div>
                       <div className="truncate text-[0.8rem] text-muted-foreground">
-                        «{r.texto}»
+                        {s.rut}
                       </div>
                     </div>
                     <span className="shrink-0 text-[0.75rem] text-muted-foreground">
-                      {r.hace}
+                      {s.hace}
                     </span>
                   </div>
                 ))}
               </div>
+
+              <Link
+                href="/panel/socios/solicitudes"
+                className="mt-4 flex items-center justify-center gap-1.5 rounded-lg border border-border py-2.5 text-[0.85rem] font-medium text-primary transition-colors hover:bg-muted"
+              >
+                Revisar solicitudes
+                <ArrowRight className="size-3.5" />
+              </Link>
             </>
           ) : (
-            /* Honesto sobre el estado real: el bot todavía no está conectado. */
             <div className="mt-8 mb-6 flex flex-col items-center text-center">
               <span className="flex size-11 items-center justify-center rounded-full bg-muted">
-                <MessageSquare className="size-5 text-muted-foreground" />
+                <UserCheck className="size-5 text-muted-foreground" />
               </span>
               <p className="mt-4 text-[0.88rem] font-medium">
-                WhatsApp aún no está conectado
+                No hay solicitudes pendientes
               </p>
               <p className="mt-1.5 text-[0.83rem] leading-relaxed text-muted-foreground">
-                Cuando lo actives, aquí verás las consultas de tus socios y
-                cuántas respondió el bot sin que nadie interviniera.
+                Cuando un socio pida acceso a su panel con su RUT, aparecerá
+                aquí para que lo apruebes.
               </p>
             </div>
           )}

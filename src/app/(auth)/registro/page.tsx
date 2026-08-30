@@ -5,7 +5,7 @@ import { RegisterForm } from "@/components/auth/register-form";
 export const metadata: Metadata = {
   title: "Registrar mi APR — Facilapr",
   description:
-    "Crea la cuenta de tu APR o SSR en Facilapr y empieza a responder consultas de socios por WhatsApp.",
+    "Crea la cuenta de tu APR o SSR en Facilapr y dale a cada socio su propio panel para consultar su deuda.",
 };
 
 export default function RegistroPage() {

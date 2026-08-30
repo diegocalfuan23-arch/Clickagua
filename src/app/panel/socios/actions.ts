@@ -6,6 +6,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { socios } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/apr-session";
+import { normalizarRut } from "@/lib/formato";
 
 const socioSchema = z.object({
   nombre: z.string().trim().min(1, "El nombre es obligatorio."),
@@ -17,10 +18,7 @@ const socioSchema = z.object({
 
 export type ResultadoAccion = { ok: true } | { ok: false; error: string };
 
-/**
- * Deja el teléfono en formato E.164 (+56...), que es como llegan los
- * números desde WhatsApp. Sin esto, el bot no encuentra al socio.
- */
+/** Deja el teléfono en formato E.164 (+56...) para guardarlo consistente. */
 function normalizarTelefono(valor: string) {
   const digitos = valor.replace(/[^\d]/g, "");
 
@@ -32,13 +30,6 @@ function normalizarTelefono(valor: string) {
   return `+${digitos}`;
 }
 
-/** Normaliza el RUT a 12345678-9, sin puntos y con dígito verificador en mayúscula. */
-function normalizarRut(valor: string) {
-  const limpio = valor.replace(/[.\s]/g, "").toUpperCase();
-  return limpio.includes("-")
-    ? limpio
-    : limpio.replace(/^(\d+)([\dK])$/, "$1-$2");
-}
 
 export async function crearSocio(
   _prev: ResultadoAccion | null,
