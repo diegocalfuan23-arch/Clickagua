@@ -22,6 +22,11 @@ const preguntas = [
       "No. Entra desde el navegador de su celular o computador, con el RUT y la clave que crea al pedir acceso — sin apps nuevas.",
   },
   {
+    pregunta: "¿Se pueden registrar lecturas de medidor y ver la morosidad?",
+    respuesta:
+      "Sí. Puedes cargar la lectura anterior y actual de cada socio para calcular el consumo, y el panel muestra de un vistazo qué socios están al día y cuáles tienen boletas vencidas.",
+  },
+  {
     pregunta: "¿El precio incluye IVA?",
     respuesta:
       "Los valores publicados son netos, en UF, más IVA — igual que la mayoría de los servicios contratados por un APR o SSR.",

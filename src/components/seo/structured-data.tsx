@@ -8,7 +8,7 @@ const softwareSchema = {
   operatingSystem: "Web",
   url: SITE_URL,
   description:
-    "Software de gestión para comités de Agua Potable Rural (APR) y Servicios Sanitarios Rurales (SSR) en Chile. Administra socios, boletas y pagos, con un panel donde cada socio ve su propia deuda al instante.",
+    "Software de gestión para comités de Agua Potable Rural (APR) y Servicios Sanitarios Rurales (SSR) en Chile. Administra socios, boletas, pagos, lecturas de medidor y morosidad, con un panel donde cada socio ve su propia deuda al instante.",
   inLanguage: "es-CL",
   areaServed: { "@type": "Country", name: "Chile" },
   offers: [
@@ -57,6 +57,14 @@ const faqSchema = {
       acceptedAnswer: {
         "@type": "Answer",
         text: "No. Entra desde el navegador de su celular o computador, con el RUT y la clave que crea al pedir acceso — sin apps nuevas.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "¿Se pueden registrar lecturas de medidor y ver la morosidad?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Sí. Puedes cargar la lectura anterior y actual de cada socio para calcular el consumo, y el panel muestra de un vistazo qué socios están al día y cuáles tienen boletas vencidas.",
       },
     },
     {

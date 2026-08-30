@@ -9,9 +9,9 @@ const funciones = [
   },
   {
     icon: FileSpreadsheet,
-    titulo: "Carga de boletas por periodo",
+    titulo: "Lecturas y boletas por periodo",
     detalle:
-      "Sube las boletas del mes manualmente o importa un CSV completo. El panel del socio responde con esos mismos datos al instante.",
+      "Registra la lectura del medidor de cada socio y emite las boletas del mes manualmente o por CSV. El panel del socio responde con esos mismos datos al instante.",
   },
   {
     icon: Wallet,
