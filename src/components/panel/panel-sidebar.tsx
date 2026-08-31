@@ -10,6 +10,7 @@ import {
   UserCheck,
   Settings,
   Droplets,
+  HardHat,
 } from "lucide-react";
 import { Logo } from "@/components/marca/logo";
 import {
@@ -31,6 +32,7 @@ const gestion = [
   { href: "/panel/socios", label: "Socios", icon: Users },
   { href: "/panel/boletas", label: "Boletas", icon: ReceiptText },
   { href: "/panel/lecturas", label: "Lecturas", icon: Droplets },
+  { href: "/panel/tecnicos", label: "Técnicos", icon: HardHat },
 ];
 
 const atencion = [

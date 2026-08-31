@@ -2,13 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Copy, Loader2, UserPlus, X } from "lucide-react";
-import {
-  aprobarLectura,
-  generarInvitacionOperador,
-  rechazarLectura,
-} from "@/app/panel/lecturas/actions";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { Check, Loader2, Users, X } from "lucide-react";
+import { aprobarLectura, rechazarLectura } from "@/app/panel/lecturas/actions";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
 export type LecturaPendiente = {
   id: string;
@@ -55,7 +53,13 @@ export function LecturasCola({
             Cada lectura aprobada genera o actualiza la boleta del período.
           </p>
         </div>
-        <InvitarOperador />
+        <Link
+          href="/panel/tecnicos"
+          className={cn(buttonVariants({ variant: "outline" }))}
+        >
+          <Users />
+          Técnicos
+        </Link>
       </div>
 
       {pendientes.length === 0 ? (
@@ -210,73 +214,5 @@ function RechazarDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function InvitarOperador() {
-  const [abierto, setAbierto] = useState(false);
-  const [url, setUrl] = useState<string | null>(null);
-  const [copiado, setCopiado] = useState(false);
-  const [generando, iniciar] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-
-  function abrir() {
-    setAbierto(true);
-    setUrl(null);
-    setError(null);
-    iniciar(async () => {
-      const r = await generarInvitacionOperador();
-      if (r.ok) setUrl(r.url);
-      else setError(r.error);
-    });
-  }
-
-  async function copiar() {
-    if (!url) return;
-    await navigator.clipboard.writeText(url);
-    setCopiado(true);
-    setTimeout(() => setCopiado(false), 2000);
-  }
-
-  return (
-    <>
-      <Button type="button" variant="outline" onClick={abrir}>
-        <UserPlus />
-        Invitar operador
-      </Button>
-
-      <Dialog open={abierto} onOpenChange={setAbierto}>
-        <DialogContent className="sm:max-w-[440px]">
-          <DialogHeader>
-            <DialogTitle>Invitar operador</DialogTitle>
-            <DialogDescription>
-              Comparte este enlace por WhatsApp o correo con el técnico. Sirve
-              una sola vez y vence en 7 días.
-            </DialogDescription>
-          </DialogHeader>
-
-          {generando && (
-            <div className="flex items-center gap-2 text-[0.9rem] text-muted-foreground">
-              <Loader2 className="size-4 animate-spin" />
-              Generando enlace…
-            </div>
-          )}
-
-          {error && <p className="text-[0.88rem] text-destructive">{error}</p>}
-
-          {url && (
-            <div className="flex items-center gap-2 rounded-lg border border-input bg-muted/40 px-3 py-2">
-              <span className="min-w-0 flex-1 truncate text-[0.87rem]">
-                {url}
-              </span>
-              <Button type="button" variant="outline" size="sm" onClick={copiar}>
-                {copiado ? <Check className="text-forest" /> : <Copy />}
-                {copiado ? "Copiado" : "Copiar"}
-              </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </>
   );
 }
