@@ -1,4 +1,4 @@
-import { Users, FileSpreadsheet, Wallet, MessageCircle } from "lucide-react";
+import { Users, FileSpreadsheet, Wallet, MessageCircle, Gauge } from "lucide-react";
 
 const funciones = [
   {
@@ -12,6 +12,12 @@ const funciones = [
     titulo: "Lecturas y boletas por periodo",
     detalle:
       "Registra la lectura del medidor de cada socio y emite las boletas del mes manualmente o por CSV. El panel del socio responde con esos mismos datos al instante.",
+  },
+  {
+    icon: Gauge,
+    titulo: "Técnico en terreno",
+    detalle:
+      "El técnico sube las lecturas desde su propio módulo, en el mismo terreno, sin acceso a socios ni boletas. La directiva las revisa y aprueba antes de emitir.",
   },
   {
     icon: Wallet,
@@ -46,10 +52,14 @@ export function PanelSection() {
         </div>
 
         <div className="grid gap-5.5 sm:grid-cols-2">
-          {funciones.map(({ icon: Icon, titulo, detalle }) => (
+          {funciones.map(({ icon: Icon, titulo, detalle }, i) => (
             <div
               key={titulo}
-              className="rounded-2xl border border-border bg-card p-6.5"
+              className={
+                i === funciones.length - 1 && funciones.length % 2 === 1
+                  ? "rounded-2xl border border-border bg-card p-6.5 sm:col-span-2"
+                  : "rounded-2xl border border-border bg-card p-6.5"
+              }
             >
               <div className="mb-4.5 flex size-10 items-center justify-center rounded-[10px] bg-primary/12 text-primary">
                 <Icon className="size-5" />
