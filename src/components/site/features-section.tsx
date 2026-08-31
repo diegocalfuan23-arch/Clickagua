@@ -1,4 +1,4 @@
-import { Smartphone, Building2, ShieldCheck } from "lucide-react";
+import { Smartphone, Building2, Gauge } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const caracteristicas = [
@@ -17,10 +17,10 @@ const caracteristicas = [
     tono: "bg-secondary/12 text-secondary",
   },
   {
-    icon: ShieldCheck,
-    titulo: "Datos que no se inventan",
+    icon: Gauge,
+    titulo: "Lectura de medidor sin planilla",
     detalle:
-      "Cada respuesta se calcula desde tu propio registro de boletas — nunca un monto aproximado ni una respuesta genérica.",
+      "Registra la lectura anterior y actual de cada socio; Facilapr calcula el consumo y arma la boleta con esos mismos datos.",
     tono: "bg-tertiary/20 text-tertiary-foreground",
   },
 ];
