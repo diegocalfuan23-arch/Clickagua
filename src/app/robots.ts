@@ -33,6 +33,8 @@ export default function robots(): MetadataRoute.Robots {
         "/register",
         "/superadmin-login",
         "/admin/",
+        "/olvide-clave",
+        "/reset-password",
       ],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,

@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import * as schema from "@/lib/db/auth-schema";
 import { aprs } from "@/lib/db/schema";
 import { user as userTable } from "@/lib/db/auth-schema";
+import { enviarCorreoResetPassword } from "@/lib/correo/reset-password";
 
 /**
  * Orígenes aceptados. Sin esto, Better Auth solo confía en BETTER_AUTH_URL y
@@ -65,6 +66,16 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
+    sendResetPassword: async ({ user, url }) => {
+      await enviarCorreoResetPassword({
+        destinatario: user.email,
+        nombre: user.name,
+        url,
+      });
+    },
+    // Si alguien pide un reset, es razonable cerrar cualquier sesión activa
+    // que no sea la suya — evita que una sesión robada sobreviva al cambio.
+    revokeSessionsOnPasswordReset: true,
   },
   user: {
     additionalFields: {
