@@ -6,6 +6,7 @@ import { boletas } from "@/lib/db/schema";
 import { saldo, formatearPeriodo } from "@/lib/boletas";
 import { SignOutSocioButton } from "@/components/socio/sign-out-button";
 import { AsistenteSocio } from "@/components/socio/asistente-socio";
+import { ChatComite } from "@/components/socio/chat-comite";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -130,6 +131,7 @@ export default async function PanelSocioPage({ params }: Props) {
       </main>
 
       <AsistenteSocio nombreApr={socio.apr.nombre} slug={slug} />
+      <ChatComite socioId={socio.id} slug={slug} nombreApr={socio.apr.nombre} />
     </div>
   );
 }

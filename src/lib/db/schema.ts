@@ -238,6 +238,7 @@ export const sociosRelations = relations(socios, ({ many, one }) => ({
   }),
   boletas: many(boletas),
   lecturas: many(lecturas),
+  mensajes: many(mensajesSocio),
 }));
 
 export const boletas = pgTable(
@@ -491,3 +492,44 @@ export const solicitudesAccesoRelations = relations(
     }),
   })
 );
+
+export const remitenteMensajeEnum = pgEnum("RemitenteMensaje", [
+  "SOCIO",
+  "DIRECTIVA",
+]);
+
+/**
+ * Chat directo entre un socio y la directiva de su comité — reemplaza al
+ * bot de WhatsApp que se eliminó del producto. Un socio tiene un único
+ * hilo con su comité (no hace falta una tabla de "conversación" aparte:
+ * el hilo completo es "los mensajes de este socioId"). Cualquiera de la
+ * directiva (ADMIN) puede responder; no hay IA de por medio en este canal,
+ * a diferencia del asistente del panel de socio.
+ */
+export const mensajesSocio = pgTable(
+  "MensajeSocio",
+  {
+    id: text("id").primaryKey().$defaultFn(() => createId()),
+    socioId: text("socioId")
+      .notNull()
+      .references(() => socios.id, { onDelete: "cascade" }),
+    remitente: remitenteMensajeEnum("remitente").notNull(),
+    /** Quién de la directiva escribió, si remitente = DIRECTIVA. Null si es el socio. */
+    autorId: text("autorId"),
+    contenido: text("contenido").notNull(),
+    leidoPorSocio: boolean("leidoPorSocio").notNull().default(false),
+    leidoPorDirectiva: boolean("leidoPorDirectiva").notNull().default(false),
+    createdAt: timestamp("createdAt", { precision: 3 }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("MensajeSocio_socioId_idx").on(table.socioId),
+    index("MensajeSocio_createdAt_idx").on(table.createdAt),
+  ]
+);
+
+export const mensajesSocioRelations = relations(mensajesSocio, ({ one }) => ({
+  socio: one(socios, {
+    fields: [mensajesSocio.socioId],
+    references: [socios.id],
+  }),
+}));

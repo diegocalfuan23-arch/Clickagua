@@ -11,6 +11,7 @@ import {
   Settings,
   Droplets,
   HardHat,
+  MessageCircle,
 } from "lucide-react";
 import { Logo } from "@/components/marca/logo";
 import {
@@ -36,6 +37,7 @@ const gestion = [
 ];
 
 const atencion = [
+  { href: "/panel/conversaciones", label: "Conversaciones", icon: MessageCircle },
   { href: "/panel/socios/solicitudes", label: "Solicitudes", icon: UserCheck },
   { href: "/panel/sitio", label: "Sitio público", icon: Globe },
   { href: "/panel/configuracion", label: "Configuración", icon: Settings },
