@@ -1,4 +1,4 @@
-import { Smartphone, Building2, Gauge } from "lucide-react";
+import { Smartphone, Building2, Gauge, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const caracteristicas = [
@@ -23,6 +23,13 @@ const caracteristicas = [
       "Registra la lectura anterior y actual de cada socio; Facilapr calcula el consumo y arma la boleta con esos mismos datos.",
     tono: "bg-tertiary/20 text-tertiary-foreground",
   },
+  {
+    icon: Globe,
+    titulo: "Sitio web y avisos de corte",
+    detalle:
+      "Tu APR tiene su propio sitio público (subdominio, o dominio propio en el plan grande) donde publicas avisos de corte, tarifas y datos de contacto.",
+    tono: "bg-forest/12 text-forest",
+  },
 ];
 
 export function FeaturesSection() {
@@ -38,7 +45,7 @@ export function FeaturesSection() {
           </h2>
         </div>
 
-        <div className="grid gap-5.5 sm:grid-cols-3">
+        <div className="grid gap-5.5 sm:grid-cols-2 lg:grid-cols-4">
           {caracteristicas.map(({ icon: Icon, titulo, detalle, tono }) => (
             <div
               key={titulo}

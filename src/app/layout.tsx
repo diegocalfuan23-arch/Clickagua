@@ -46,6 +46,8 @@ export const metadata: Metadata = {
     "lecturas de medidor APR",
     "app técnico terreno APR",
     "control de morosidad APR",
+    "avisos de corte de agua",
+    "sitio web para APR",
     "comité de agua potable rural",
     "sistema para comité de agua",
   ],
