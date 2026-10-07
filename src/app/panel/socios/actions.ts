@@ -11,7 +11,9 @@ import { normalizarRut } from "@/lib/formato";
 const socioSchema = z.object({
   nombre: z.string().trim().min(1, "El nombre es obligatorio."),
   rut: z.string().trim().min(1, "El RUT es obligatorio."),
-  telefono: z.string().trim().min(1, "El teléfono es obligatorio."),
+  // Opcional: hay comités donde parte de los socios no ha entregado su número.
+  // Sin teléfono el socio igual tiene boletas y panel; solo no recibe WhatsApp.
+  telefono: z.string().trim().optional(),
   direccion: z.string().trim().optional(),
   numeroCliente: z.string().trim().optional(),
 });
@@ -30,6 +32,10 @@ function normalizarTelefono(valor: string) {
   return `+${digitos}`;
 }
 
+/** Vacío = sin teléfono (null); lo demás se normaliza a E.164. */
+function telefonoOpcional(valor: string | undefined) {
+  return valor ? normalizarTelefono(valor) : null;
+}
 
 export async function crearSocio(
   _prev: ResultadoAccion | null,
@@ -40,7 +46,7 @@ export async function crearSocio(
   const parsed = socioSchema.safeParse({
     nombre: formData.get("nombre"),
     rut: formData.get("rut"),
-    telefono: formData.get("telefono"),
+    telefono: formData.get("telefono") || undefined,
     direccion: formData.get("direccion") || undefined,
     numeroCliente: formData.get("numeroCliente") || undefined,
   });
@@ -56,7 +62,7 @@ export async function crearSocio(
       aprId: apr.id,
       nombre: datos.nombre,
       rut: normalizarRut(datos.rut),
-      telefono: normalizarTelefono(datos.telefono),
+      telefono: telefonoOpcional(datos.telefono),
       direccion: datos.direccion,
       numeroCliente: datos.numeroCliente,
     });
@@ -91,7 +97,7 @@ export async function editarSocio(
   const parsed = socioSchema.safeParse({
     nombre: formData.get("nombre"),
     rut: formData.get("rut"),
-    telefono: formData.get("telefono"),
+    telefono: formData.get("telefono") || undefined,
     direccion: formData.get("direccion") || undefined,
     numeroCliente: formData.get("numeroCliente") || undefined,
   });
@@ -108,7 +114,7 @@ export async function editarSocio(
       .set({
         nombre: datos.nombre,
         rut: normalizarRut(datos.rut),
-        telefono: normalizarTelefono(datos.telefono),
+        telefono: telefonoOpcional(datos.telefono),
         direccion: datos.direccion ?? null,
         numeroCliente: datos.numeroCliente ?? null,
         updatedAt: new Date(),
@@ -198,8 +204,8 @@ function partirLinea(linea: string): string[] {
 }
 
 /**
- * Importa socios desde CSV. Columnas: nombre, rut, telefono y opcionalmente
- * direccion y numeroCliente.
+ * Importa socios desde CSV. Columnas: nombre y rut; opcionalmente telefono
+ * (puede venir vacío en algunas filas), direccion y numeroCliente.
  *
  * Reimportar actualiza al socio en vez de duplicarlo: el padrón de un comité
  * se corrige y se vuelve a subir, y esperar que eso cree copias sería un
@@ -243,11 +249,10 @@ export async function importarSocios(
   const iDireccion = col("direccion", "domicilio");
   const iNumero = col("numerocliente", "numero cliente", "n cliente", "numero");
 
-  if (iNombre < 0 || iRut < 0 || iTelefono < 0) {
+  if (iNombre < 0 || iRut < 0) {
     return {
       ok: false,
-      error:
-        "El CSV debe tener las columnas: nombre, rut y telefono.",
+      error: "El CSV debe tener al menos las columnas: nombre y rut.",
     };
   }
 
@@ -259,7 +264,9 @@ export async function importarSocios(
   // El teléfono también es único por comité: hay que detectar el choque antes
   // de insertar, o la fila muere con un error de base de datos sin explicación.
   const porTelefono = new Map(
-    existentes.map((s) => [normalizarTelefono(s.telefono), s])
+    existentes.flatMap((s) =>
+      s.telefono ? [[normalizarTelefono(s.telefono), s] as const] : []
+    )
   );
 
   const omitidos: { linea: number; motivo: string }[] = [];
@@ -275,17 +282,18 @@ export async function importarSocios(
 
     const nombre = (campos[iNombre] ?? "").trim();
     const rutCrudo = (campos[iRut] ?? "").trim();
-    const telCrudo = (campos[iTelefono] ?? "").trim();
+    const telCrudo = iTelefono >= 0 ? (campos[iTelefono] ?? "").trim() : "";
 
-    if (!nombre || !rutCrudo || !telCrudo) {
-      omitidos.push({ linea: nLinea, motivo: "Falta nombre, RUT o teléfono" });
+    if (!nombre || !rutCrudo) {
+      omitidos.push({ linea: nLinea, motivo: "Falta nombre o RUT" });
       continue;
     }
 
     const rut = normalizarRut(rutCrudo);
-    const telefono = normalizarTelefono(telCrudo);
+    // Teléfono vacío es válido: el socio entra al padrón sin WhatsApp.
+    const telefono = telCrudo ? normalizarTelefono(telCrudo) : null;
 
-    if (!/^\+\d{8,15}$/.test(telefono)) {
+    if (telefono && !/^\+\d{8,15}$/.test(telefono)) {
       omitidos.push({ linea: nLinea, motivo: `Teléfono inválido: ${telCrudo}` });
       continue;
     }
@@ -294,13 +302,13 @@ export async function importarSocios(
       omitidos.push({ linea: nLinea, motivo: `RUT repetido en el archivo: ${rutCrudo}` });
       continue;
     }
-    if (telefonosVistos.has(telefono)) {
+    if (telefono && telefonosVistos.has(telefono)) {
       omitidos.push({ linea: nLinea, motivo: `Teléfono repetido en el archivo: ${telCrudo}` });
       continue;
     }
 
     const yaExiste = porRut.get(rut);
-    const choqueTelefono = porTelefono.get(telefono);
+    const choqueTelefono = telefono ? porTelefono.get(telefono) : undefined;
 
     // El teléfono ya es de OTRO socio del padrón: no lo pisamos en silencio.
     if (choqueTelefono && choqueTelefono.id !== yaExiste?.id) {
@@ -312,12 +320,13 @@ export async function importarSocios(
     }
 
     rutsVistos.add(rut);
-    telefonosVistos.add(telefono);
+    if (telefono) telefonosVistos.add(telefono);
 
     const datos = {
       nombre,
       rut,
-      telefono,
+      // Al reimportar, una celda vacía no borra el teléfono que ya tenía.
+      ...(telefono ? { telefono } : {}),
       direccion: iDireccion >= 0 ? campos[iDireccion] || null : null,
       numeroCliente: iNumero >= 0 ? campos[iNumero] || null : null,
     };

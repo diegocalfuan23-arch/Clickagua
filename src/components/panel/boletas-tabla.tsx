@@ -74,7 +74,7 @@ export type BoletaFila = {
   socioId: string;
   socioNombre: string;
   socioRut: string;
-  socioTelefono: string;
+  socioTelefono: string | null;
   periodo: string;
   montoTotal: number;
   montoPagado: number;
@@ -208,6 +208,7 @@ export function BoletasTabla({
   const [pendiente, iniciar] = useTransition();
 
   function enviarPorWhatsApp(b: BoletaFila) {
+    if (!b.socioTelefono) return;
     window.open(
       enlaceWhatsApp(b.socioTelefono, mensajeBoleta(comite, b)),
       "_blank",
@@ -972,7 +973,7 @@ function EnviarWhatsAppDialog({
                     <div className="min-w-0">
                       <div className="truncate font-medium">{b.socioNombre}</div>
                       <div className="text-[0.78rem] tabular-nums text-muted-foreground">
-                        {formatearTelefono(b.socioTelefono)} ·{" "}
+                        {b.socioTelefono && formatearTelefono(b.socioTelefono)} ·{" "}
                         {formatearPeriodo(b.periodo)} ·{" "}
                         {clp.format(saldo(b.montoTotal, b.montoPagado))}
                       </div>

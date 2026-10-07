@@ -212,16 +212,23 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
 
       if (!termino) return true;
 
-      return [socio.nombre, socio.rut, socio.telefono, socio.numeroCliente ?? ""]
+      return [
+        socio.nombre,
+        socio.rut,
+        socio.telefono ?? "",
+        socio.numeroCliente ?? "",
+      ]
         .join(" ")
         .toLowerCase()
         .includes(termino);
     });
 
     return [...base].sort((a, b) => {
-      const cmp = a[orden.columna].localeCompare(b[orden.columna], "es", {
-        numeric: true,
-      });
+      const cmp = (a[orden.columna] ?? "").localeCompare(
+        b[orden.columna] ?? "",
+        "es",
+        { numeric: true }
+      );
       return orden.asc ? cmp : -cmp;
     });
   }, [
@@ -244,7 +251,7 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
       ...filtrados.map((s) => [
         s.nombre,
         s.rut,
-        s.telefono,
+        s.telefono ?? "",
         s.direccion ?? "",
         s.numeroCliente ?? "",
         s.activo ? "si" : "no",
@@ -607,7 +614,7 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
                         </span>
                       </TableCell>
                       <TableCell className="px-4 py-3.5 tabular-nums text-muted-foreground">
-                        {formatearTelefono(socio.telefono)}
+                        {socio.telefono ? formatearTelefono(socio.telefono) : "—"}
                       </TableCell>
                       <TableCell className="px-4 py-3.5 text-muted-foreground">
                         {socio.direccion ?? "—"}
@@ -783,11 +790,11 @@ function ImportarSociosDialog({
             <p className="font-medium">Columnas del archivo</p>
             <p className="mt-1.5 text-muted-foreground">
               Obligatorias: <code className="font-mono">nombre</code>,{" "}
-              <code className="font-mono">rut</code>,{" "}
-              <code className="font-mono">telefono</code>
+              <code className="font-mono">rut</code>
             </p>
             <p className="mt-1 text-muted-foreground">
-              Opcionales: <code className="font-mono">direccion</code>,{" "}
+              Opcionales: <code className="font-mono">telefono</code> (puede
+              ir vacío en algunas filas), <code className="font-mono">direccion</code>,{" "}
               <code className="font-mono">numeroCliente</code>
             </p>
             <p className="mt-2.5 text-muted-foreground">

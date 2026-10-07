@@ -205,7 +205,9 @@ export const socios = pgTable(
       .references(() => aprs.id, { onDelete: "cascade" }),
     nombre: text("nombre").notNull(),
     rut: text("rut").notNull(),
-    telefono: text("telefono").notNull(),
+    /** E.164. Opcional: un socio sin número igual tiene boletas y panel. En
+        Postgres varios NULL no chocan en el índice único por comité. */
+    telefono: text("telefono"),
     direccion: text("direccion"),
     numeroCliente: text("numeroCliente"),
     activo: boolean("activo").notNull().default(true),

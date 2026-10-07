@@ -23,7 +23,7 @@ export type SocioEditable = {
   id: string;
   nombre: string;
   rut: string;
-  telefono: string;
+  telefono: string | null;
   direccion: string | null;
   numeroCliente: string | null;
 };
@@ -53,7 +53,8 @@ export function SocioDialog({
         <DialogHeader>
           <DialogTitle>{editando ? "Editar socio" : "Nuevo socio"}</DialogTitle>
           <DialogDescription>
-            El teléfono es un dato de contacto del socio.
+            Con teléfono, el socio puede recibir su boleta por WhatsApp. Si
+            todavía no lo tienes, déjalo vacío y agrégalo después.
           </DialogDescription>
         </DialogHeader>
 
@@ -84,13 +85,12 @@ export function SocioDialog({
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="telefono">Teléfono</Label>
+              <Label htmlFor="telefono">Teléfono (opcional)</Label>
               <Input
                 id="telefono"
                 name="telefono"
-                defaultValue={socio?.telefono}
+                defaultValue={socio?.telefono ?? ""}
                 placeholder="9 1234 5678"
-                required
               />
             </div>
           </div>
