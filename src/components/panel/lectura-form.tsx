@@ -38,8 +38,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { formatearPeriodo } from "@/lib/boletas";
 
-type Socio = { id: string; nombre: string; rut: string };
+/** `anterior`: la última lectura aprobada del socio, la base del consumo. */
+type Socio = {
+  id: string;
+  nombre: string;
+  rut: string;
+  anterior: { valor: number; periodo: string } | null;
+};
 
 type LecturaReciente = {
   id: string;
@@ -65,7 +72,10 @@ const ESTADO_META = {
 
 // Controles grandes: se usan de pie, con una mano y a veces con guantes. Con
 // text-base (16px) iOS tampoco hace zoom al tocar un campo.
-const CAMPO = "h-12 text-base md:text-base";
+// En escritorio vuelven al tamaño normal del panel (md:).
+const CAMPO = "h-12 text-base md:h-8 md:text-sm";
+
+const numero = new Intl.NumberFormat("es-CL");
 
 const periodoActual = () => {
   const hoy = new Date();
@@ -76,7 +86,13 @@ const periodoActual = () => {
  * Buscador de socio: con 150 socios, un <select> de una sola columna es
  * inmanejable en el teléfono. Se escribe parte del nombre o RUT y se toca.
  */
-function SocioPicker({ socios }: { socios: Socio[] }) {
+function SocioPicker({
+  socios,
+  onElegir,
+}: {
+  socios: Socio[];
+  onElegir: (socio: Socio | null) => void;
+}) {
   const [texto, setTexto] = useState("");
   const [elegido, setElegido] = useState<Socio | null>(null);
   const [abierto, setAbierto] = useState(false);
@@ -100,6 +116,7 @@ function SocioPicker({ socios }: { socios: Socio[] }) {
           value={elegido ? elegido.nombre : texto}
           onChange={(e) => {
             setElegido(null);
+            onElegir(null);
             setTexto(e.target.value);
             setAbierto(true);
           }}
@@ -117,6 +134,7 @@ function SocioPicker({ socios }: { socios: Socio[] }) {
             aria-label="Quitar socio elegido"
             onClick={() => {
               setElegido(null);
+              onElegir(null);
               setTexto("");
               setAbierto(true);
             }}
@@ -143,6 +161,7 @@ function SocioPicker({ socios }: { socios: Socio[] }) {
                   type="button"
                   onClick={() => {
                     setElegido(s);
+                    onElegir(s);
                     setAbierto(false);
                   }}
                   className="flex min-h-12 w-full flex-col items-start justify-center border-b border-border/50 px-4 py-2 text-left last:border-b-0 active:bg-muted"
@@ -174,6 +193,8 @@ export function LecturaForm({
   const [pestana, setPestana] = useState<"cargar" | "historial">("cargar");
   // Cambiar la clave vuelve a montar el buscador de socio tras cada envío.
   const [claveForm, setClaveForm] = useState(0);
+  const [socio, setSocio] = useState<Socio | null>(null);
+  const [valorTxt, setValorTxt] = useState("");
   const [rechazadas, setRechazadas] = useState<Rechazada[]>([]);
 
   const crudoCola = useSyncExternalStore(
@@ -183,6 +204,12 @@ export function LecturaForm({
   );
   const cola = useMemo(() => parsearCola(crudoCola), [crudoCola]);
   const enLinea = useSyncExternalStore(suscribirConexion, hayConexion, () => true);
+
+  // Consumo en vivo: lo que el técnico escribe menos la última aprobada.
+  // Solo orienta; el administrador sigue revisando antes de generar la boleta.
+  const anterior = socio?.anterior ?? null;
+  const actual = valorTxt === "" ? null : Number(valorTxt);
+  const consumo = actual !== null ? actual - (anterior?.valor ?? 0) : null;
 
   function guardarSinConexion(formData: FormData): EstadoForm {
     const socioId = String(formData.get("socioId") ?? "");
@@ -272,10 +299,17 @@ export function LecturaForm({
 
   return (
     <>
-      {pestana === "cargar" ? (
-        <div className="flex flex-col gap-4">
+      {/* Celular: una pestaña a la vez, como app. Escritorio (md:): todo junto,
+          el formulario y debajo las últimas lecturas, como siempre. */}
+      <div className="mx-auto flex w-full max-w-[560px] flex-col gap-5">
+        <div
+          className={cn(
+            "flex-col gap-4",
+            pestana === "cargar" ? "flex" : "hidden md:flex"
+          )}
+        >
           <div>
-            <h1 className="text-[1.5rem] font-semibold tracking-tight">
+            <h1 className="text-[1.5rem] font-semibold tracking-tight md:text-[1.35rem]">
               Cargar lectura
             </h1>
             <p className="mt-0.5 text-[0.9rem] text-muted-foreground">
@@ -302,10 +336,36 @@ export function LecturaForm({
           <form
             ref={formRef}
             action={accion}
-            onReset={() => setClaveForm((k) => k + 1)}
-            className="flex flex-col gap-4 rounded-2xl border border-border/60 bg-card p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+            onReset={() => {
+              setClaveForm((k) => k + 1);
+              setSocio(null);
+              setValorTxt("");
+            }}
+            className="flex flex-col gap-4 rounded-2xl border border-border/60 bg-card p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] md:rounded-xl md:p-5"
           >
-            <SocioPicker key={claveForm} socios={socios} />
+            <SocioPicker key={claveForm} socios={socios} onElegir={setSocio} />
+
+            {socio && (
+              <div className="flex items-center justify-between rounded-xl bg-muted/60 px-4 py-3">
+                <span className="text-[0.85rem] text-muted-foreground">
+                  Lectura anterior
+                </span>
+                {anterior ? (
+                  <span className="text-right">
+                    <span className="text-[1.15rem] font-semibold tabular-nums">
+                      {numero.format(anterior.valor)}
+                    </span>
+                    <span className="block text-[0.75rem] text-muted-foreground">
+                      {formatearPeriodo(anterior.periodo)}
+                    </span>
+                  </span>
+                ) : (
+                  <span className="text-[0.85rem] text-muted-foreground">
+                    Sin lectura anterior · parte de 0
+                  </span>
+                )}
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
@@ -320,17 +380,33 @@ export function LecturaForm({
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="valor">Lectura</Label>
+                <Label htmlFor="valor">Lectura actual</Label>
                 <Input
                   id="valor"
                   name="valor"
                   inputMode="numeric"
                   placeholder="1250"
                   required
+                  value={valorTxt}
+                  onChange={(e) =>
+                    setValorTxt(e.target.value.replace(/[^\d]/g, ""))
+                  }
                   className={cn(CAMPO, "font-semibold tabular-nums")}
                 />
               </div>
             </div>
+
+            {consumo !== null &&
+              (consumo < 0 ? (
+                <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-[0.88rem] text-destructive">
+                  Es menor que la anterior ({numero.format(anterior?.valor ?? 0)}
+                  ). Revisa el número antes de enviar.
+                </p>
+              ) : (
+                <p className="rounded-lg border border-forest/30 bg-forest/5 px-4 py-3 text-[0.88rem] text-forest">
+                  Consumo: <strong className="tabular-nums">{numero.format(consumo)} m³</strong>
+                </p>
+              ))}
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="observacion">Observación (opcional)</Label>
@@ -340,7 +416,7 @@ export function LecturaForm({
                 rows={2}
                 maxLength={300}
                 placeholder="Medidor con humedad, difícil de leer con precisión…"
-                className="text-base md:text-base"
+                className="text-base md:text-sm"
               />
             </div>
 
@@ -361,7 +437,7 @@ export function LecturaForm({
               type="submit"
               size="lg"
               disabled={pendiente}
-              className="h-12 w-full text-base"
+              className="h-12 w-full text-base md:h-8 md:text-sm"
             >
               {pendiente && <Loader2 className="animate-spin" />}
               Registrar lectura
@@ -419,9 +495,14 @@ export function LecturaForm({
             </section>
           )}
         </div>
-      ) : (
-        <section className="flex flex-col gap-4">
-          <h1 className="text-[1.5rem] font-semibold tracking-tight">
+
+        <section
+          className={cn(
+            "flex-col gap-4",
+            pestana === "historial" ? "flex" : "hidden md:flex"
+          )}
+        >
+          <h1 className="text-[1.5rem] font-semibold tracking-tight md:text-[0.95rem]">
             Tus lecturas
           </h1>
           {recientes.length === 0 ? (
@@ -460,13 +541,13 @@ export function LecturaForm({
             </div>
           )}
         </section>
-      )}
+      </div>
 
       {/* Barra de pestañas fija abajo, como una app nativa. El relleno inferior
           respeta la barra de gestos de iPhone. */}
       <nav
         aria-label="Secciones"
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
+        className="fixed inset-x-0 bottom-0 z-30 md:hidden border-t border-border/60 bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
       >
         <div className="mx-auto grid w-full max-w-[480px] grid-cols-2">
           {(

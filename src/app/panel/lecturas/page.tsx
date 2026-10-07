@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { lecturas, socios } from "@/lib/db/schema";
 import { user as userTable } from "@/lib/db/auth-schema";
@@ -29,13 +29,31 @@ export default async function LecturasPage() {
       with: { socio: { columns: { nombre: true } } },
     });
 
+    // Última lectura aprobada de cada socio: la misma que usa el servidor
+    // al aprobar para calcular el consumo (la más reciente por fecha de carga).
+    const anteriores = await db
+      .selectDistinctOn([lecturas.socioId], {
+        socioId: lecturas.socioId,
+        valor: lecturas.valor,
+        periodo: lecturas.periodo,
+      })
+      .from(lecturas)
+      .innerJoin(socios, eq(lecturas.socioId, socios.id))
+      .where(and(eq(socios.aprId, apr.id), eq(lecturas.estado, "APROBADA")))
+      .orderBy(lecturas.socioId, desc(lecturas.createdAt));
+    const anteriorPorSocio = new Map(anteriores.map((a) => [a.socioId, a]));
+
     return (
       <LecturaForm
-        socios={listaSocios.map((s) => ({
-          id: s.id,
-          nombre: s.nombre,
-          rut: formatearRut(s.rut),
-        }))}
+        socios={listaSocios.map((s) => {
+          const a = anteriorPorSocio.get(s.id);
+          return {
+            id: s.id,
+            nombre: s.nombre,
+            rut: formatearRut(s.rut),
+            anterior: a ? { valor: a.valor, periodo: a.periodo } : null,
+          };
+        })}
         recientes={propias.map((l) => ({
           id: l.id,
           socio: l.socio.nombre,

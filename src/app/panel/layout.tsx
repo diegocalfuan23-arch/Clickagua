@@ -1,6 +1,7 @@
 import { requireApr } from "@/lib/apr-session";
 import { PanelSidebar } from "@/components/panel/panel-sidebar";
-import { AppTecnicoShell } from "@/components/panel/app-tecnico-shell";
+import { Logo } from "@/components/marca/logo";
+import { cn } from "@/lib/utils";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import {
   SidebarInset,
@@ -17,11 +18,10 @@ export default async function PanelLayout({
 }) {
   const { user, apr } = await requireApr();
   const rol = user.rol === "OPERADOR" ? "OPERADOR" : "ADMIN";
-
-  // El técnico trabaja desde el teléfono en terreno: ve una app, no el panel.
-  if (rol === "OPERADOR") {
-    return <AppTecnicoShell comite={apr.nombre}>{children}</AppTecnicoShell>;
-  }
+  // El técnico trabaja desde el teléfono en terreno: en pantalla chica el
+  // marco se vuelve una app (encabezado compacto fijo, sin menú lateral); en
+  // escritorio (md:) queda el panel de siempre.
+  const esOperador = rol === "OPERADOR";
 
   return (
     <TooltipProvider>
@@ -32,16 +32,51 @@ export default async function PanelLayout({
             cubre también el header. Centrado en 50% 50% para que el velo quede
             al medio de la pantalla y se desvanezca hacia los bordes. */}
         <SidebarInset className="bg-[radial-gradient(90%_70%_at_50%_50%,color-mix(in_oklch,var(--primary),transparent_90%),transparent_75%)]">
-          <header className="flex h-14 shrink-0 items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-1 h-4" />
-            <span className="text-sm font-medium">{apr.nombre}</span>
-            <div className="ml-auto">
-              <SignOutButton />
+          <header
+            className={cn(
+              "flex h-14 shrink-0 items-center gap-2 px-4",
+              esOperador &&
+                "sticky top-0 z-30 border-b border-border/60 bg-background/90 backdrop-blur md:static md:border-b-0 md:bg-transparent md:backdrop-blur-none"
+            )}
+          >
+            {esOperador && (
+              <div className="flex min-w-0 flex-1 items-center gap-3 md:hidden">
+                <Logo className="size-8" />
+                <div className="min-w-0 flex-1 leading-tight">
+                  <div className="truncate text-[0.95rem] font-semibold">
+                    {apr.nombre}
+                  </div>
+                  <div className="text-[0.75rem] text-muted-foreground">
+                    Técnico de terreno
+                  </div>
+                </div>
+                <SignOutButton compacto />
+              </div>
+            )}
+
+            <div
+              className={cn(
+                "flex min-w-0 flex-1 items-center gap-2",
+                esOperador && "hidden md:flex"
+              )}
+            >
+              <SidebarTrigger className="-ml-1" />
+              <Separator orientation="vertical" className="mr-1 h-4" />
+              <span className="text-sm font-medium">{apr.nombre}</span>
+              <div className="ml-auto">
+                <SignOutButton />
+              </div>
             </div>
           </header>
 
-          <div className="flex flex-1 flex-col gap-5 p-6">{children}</div>
+          <div
+            className={cn(
+              "flex flex-1 flex-col gap-5 p-6",
+              esOperador && "p-4 pb-28 md:p-6"
+            )}
+          >
+            {children}
+          </div>
         </SidebarInset>
       </SidebarProvider>
     </TooltipProvider>
