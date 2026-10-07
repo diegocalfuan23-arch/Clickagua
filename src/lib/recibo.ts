@@ -1,0 +1,129 @@
+import { and, asc, eq, ne, type SQL } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { aprs, boletas, socios } from "@/lib/db/schema";
+
+/**
+ * Todo lo que necesita imprimir un recibo, ya resuelto. El recibo es el
+ * comprobante de cobro del comité (lo que antes iba en el talonario); no es un
+ * documento tributario del SII.
+ */
+export type ReciboDatos = {
+  id: string;
+  comite: {
+    nombre: string;
+    razonSocial: string | null;
+    rut: string;
+    direccion: string | null;
+    comuna: string;
+    telefono: string | null;
+    infoPago: string | null;
+  };
+  socio: {
+    nombre: string;
+    rut: string;
+    numeroCliente: string | null;
+    direccion: string | null;
+  };
+  periodo: string;
+  fechaEmision: Date;
+  fechaVencimiento: Date;
+  lecturaAnterior: number | null;
+  lecturaActual: number | null;
+  consumoM3: number | null;
+  cargoFijo: number | null;
+  valorM3: number | null;
+  montoTotal: number;
+  montoPagado: number;
+  estado: "PENDIENTE" | "PAGADA" | "VENCIDA" | "ANULADA";
+};
+
+async function consultar(condicion: SQL | undefined): Promise<ReciboDatos[]> {
+  const filas = await db
+    .select({
+      id: boletas.id,
+      periodo: boletas.periodo,
+      fechaEmision: boletas.fechaEmision,
+      fechaVencimiento: boletas.fechaVencimiento,
+      lecturaAnterior: boletas.lecturaAnterior,
+      lecturaActual: boletas.lecturaActual,
+      consumoM3: boletas.consumoM3,
+      cargoFijo: boletas.cargoFijo,
+      valorM3: boletas.valorM3,
+      montoTotal: boletas.montoTotal,
+      montoPagado: boletas.montoPagado,
+      estado: boletas.estado,
+      socioNombre: socios.nombre,
+      socioRut: socios.rut,
+      socioNumero: socios.numeroCliente,
+      socioDireccion: socios.direccion,
+      comiteNombre: aprs.nombre,
+      comiteRazonSocial: aprs.razonSocial,
+      comiteRut: aprs.rut,
+      comiteDireccion: aprs.direccion,
+      comiteComuna: aprs.comuna,
+      comiteTelefono: aprs.telefono,
+      comiteInfoPago: aprs.infoPago,
+    })
+    .from(boletas)
+    .innerJoin(socios, eq(boletas.socioId, socios.id))
+    .innerJoin(aprs, eq(socios.aprId, aprs.id))
+    .where(condicion)
+    .orderBy(asc(socios.nombre));
+
+  return filas.map((f) => ({
+    id: f.id,
+    comite: {
+      nombre: f.comiteNombre,
+      razonSocial: f.comiteRazonSocial,
+      rut: f.comiteRut,
+      direccion: f.comiteDireccion,
+      comuna: f.comiteComuna,
+      telefono: f.comiteTelefono,
+      infoPago: f.comiteInfoPago,
+    },
+    socio: {
+      nombre: f.socioNombre,
+      rut: f.socioRut,
+      numeroCliente: f.socioNumero,
+      direccion: f.socioDireccion,
+    },
+    periodo: f.periodo,
+    fechaEmision: f.fechaEmision,
+    fechaVencimiento: f.fechaVencimiento,
+    lecturaAnterior: f.lecturaAnterior,
+    lecturaActual: f.lecturaActual,
+    consumoM3: f.consumoM3,
+    cargoFijo: f.cargoFijo,
+    valorM3: f.valorM3,
+    montoTotal: f.montoTotal,
+    montoPagado: f.montoPagado,
+    estado: f.estado,
+  }));
+}
+
+/** Un recibo del comité (la directiva puede ver cualquier estado, incluso anulada). */
+export async function reciboDeComite(aprId: string, boletaId: string) {
+  const [recibo] = await consultar(
+    and(eq(socios.aprId, aprId), eq(boletas.id, boletaId))
+  );
+  return recibo ?? null;
+}
+
+/** La hoja de talonario de un período: todas las boletas no anuladas. */
+export function recibosDelPeriodo(aprId: string, periodo: string) {
+  return consultar(
+    and(
+      eq(socios.aprId, aprId),
+      eq(boletas.periodo, periodo),
+      ne(boletas.estado, "ANULADA")
+    )
+  );
+}
+
+/** Un recibo del propio socio: el filtro por socioId impide ver el de otro. */
+export async function reciboDeSocio(socioId: string, boletaId: string) {
+  const [recibo] = await consultar(
+    and(eq(boletas.socioId, socioId), eq(boletas.id, boletaId))
+  );
+  return recibo ?? null;
+}

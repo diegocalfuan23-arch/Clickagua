@@ -22,6 +22,7 @@ import {
   MoreHorizontal,
   Pencil,
   Plus,
+  Printer,
   ReceiptText,
   Search,
   Trash2,
@@ -312,6 +313,21 @@ export function BoletasTabla({
         <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
+            disabled={periodos.length === 0}
+            title="Hoja de recibos para imprimir: el período filtrado, o el más reciente"
+            onClick={() =>
+              window.open(
+                `/recibos/periodo/${periodo !== "todos" ? periodo : periodos[0]}`,
+                "_blank",
+                "noopener"
+              )
+            }
+          >
+            <Printer />
+            Imprimir recibos
+          </Button>
+          <Button
+            variant="outline"
             onClick={() => setParaEnviar(filtradas.filter(cobrable))}
             disabled={boletas.length === 0}
           >
@@ -555,6 +571,14 @@ export function BoletasTabla({
                                       : "Enviar por WhatsApp"}
                                   </DropdownMenuItem>
                                 )}
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  window.open(`/recibos/${b.id}`, "_blank", "noopener")
+                                }
+                              >
+                                <FileText />
+                                Ver recibo
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => setCobrando(b)}>
                                 <Coins />
                                 Registrar pago

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
 import { requireSocio } from "@/lib/socio-session";
 import { db } from "@/lib/db";
@@ -115,6 +116,14 @@ export default async function PanelSocioPage({ params }: Props) {
                       Vence el {fecha.format(b.fechaVencimiento)}
                       {b.consumoM3 !== null && ` · ${b.consumoM3} m³`}
                     </div>
+                    {b.estado !== "ANULADA" && (
+                      <Link
+                        href={`/socio/recibo/${b.id}`}
+                        className="text-[0.82rem] font-medium text-primary hover:underline"
+                      >
+                        Ver recibo
+                      </Link>
+                    )}
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="font-mono text-[0.95rem] font-semibold tabular-nums">
