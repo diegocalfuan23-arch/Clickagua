@@ -1,6 +1,12 @@
 "use client";
 
-import { useActionState, useMemo, useState, useTransition } from "react";
+import {
+  useActionState,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import {
   AlertCircle,
   Ban,
@@ -63,7 +69,9 @@ import { formatearRut, formatearTelefono } from "@/lib/formato";
 import {
   enlaceWhatsApp,
   mensajeBoleta,
+  PLANTILLA_POR_DEFECTO,
   telefonoValidoParaWhatsApp,
+  VARIABLES_PLANTILLA,
   type DatosComiteWhatsApp,
 } from "@/lib/whatsapp";
 
@@ -97,6 +105,18 @@ const POR_PAGINA = 12;
  * cambio de esquema; si hace falta compartirlo entre usuarios, pasa a columna.
  */
 const CLAVE_ENVIADAS = "facilapr-boletas-wa-enviadas";
+
+/** El mensaje editado se recuerda en este navegador, igual que las enviadas. */
+const CLAVE_PLANTILLA = "facilapr-boletas-wa-plantilla";
+
+function leerPlantilla(): string {
+  if (typeof window === "undefined") return PLANTILLA_POR_DEFECTO;
+  try {
+    return localStorage.getItem(CLAVE_PLANTILLA) ?? PLANTILLA_POR_DEFECTO;
+  } catch {
+    return PLANTILLA_POR_DEFECTO;
+  }
+}
 
 function leerEnviadas(): Set<string> {
   if (typeof window === "undefined") return new Set();
@@ -203,14 +223,26 @@ export function BoletasTabla({
   const [cobrando, setCobrando] = useState<BoletaFila | null>(null);
   const [porEliminar, setPorEliminar] = useState<BoletaFila | null>(null);
   const [importando, setImportando] = useState(false);
-  const [enviandoWa, setEnviandoWa] = useState(false);
+  // Boletas que se están por enviar; null = modal cerrado. Una sola desde el
+  // menú de la fila, o todas las por cobrar del filtro desde el botón de arriba.
+  const [paraEnviar, setParaEnviar] = useState<BoletaFila[] | null>(null);
+  const [plantilla, setPlantillaEstado] = useState<string>(leerPlantilla);
   const [enviadas, setEnviadas] = useState<Set<string>>(leerEnviadas);
+
+  function cambiarPlantilla(texto: string) {
+    setPlantillaEstado(texto);
+    try {
+      localStorage.setItem(CLAVE_PLANTILLA, texto);
+    } catch {
+      // Sin almacenamiento el cambio vale solo mientras la página siga abierta.
+    }
+  }
   const [pendiente, iniciar] = useTransition();
 
   function enviarPorWhatsApp(b: BoletaFila) {
     if (!b.socioTelefono) return;
     window.open(
-      enlaceWhatsApp(b.socioTelefono, mensajeBoleta(comite, b)),
+      enlaceWhatsApp(b.socioTelefono, mensajeBoleta(comite, b, plantilla)),
       "_blank",
       "noopener"
     );
@@ -280,7 +312,7 @@ export function BoletasTabla({
         <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
-            onClick={() => setEnviandoWa(true)}
+            onClick={() => setParaEnviar(filtradas.filter(cobrable))}
             disabled={boletas.length === 0}
           >
             <MessageCircle />
@@ -515,7 +547,7 @@ export function BoletasTabla({
                               {cobrable(b) &&
                                 telefonoValidoParaWhatsApp(b.socioTelefono) && (
                                   <DropdownMenuItem
-                                    onClick={() => enviarPorWhatsApp(b)}
+                                    onClick={() => setParaEnviar([b])}
                                   >
                                     <MessageCircle />
                                     {enviadas.has(b.id)
@@ -625,11 +657,14 @@ export function BoletasTabla({
       <ImportarDialog abierto={importando} onAbiertoChange={setImportando} />
 
       <EnviarWhatsAppDialog
-        abierto={enviandoWa}
-        onAbiertoChange={setEnviandoWa}
-        boletas={filtradas.filter(cobrable)}
+        abierto={paraEnviar !== null}
+        onAbiertoChange={(v) => !v && setParaEnviar(null)}
+        boletas={paraEnviar ?? []}
         enviadas={enviadas}
         onEnviar={enviarPorWhatsApp}
+        comite={comite}
+        plantilla={plantilla}
+        onPlantilla={cambiarPlantilla}
       />
 
       <Dialog
@@ -925,36 +960,106 @@ function EnviarWhatsAppDialog({
   boletas,
   enviadas,
   onEnviar,
+  comite,
+  plantilla,
+  onPlantilla,
 }: {
   abierto: boolean;
   onAbiertoChange: (v: boolean) => void;
   boletas: BoletaFila[];
   enviadas: Set<string>;
   onEnviar: (b: BoletaFila) => void;
+  comite: DatosComiteWhatsApp;
+  plantilla: string;
+  onPlantilla: (texto: string) => void;
 }) {
+  const areaRef = useRef<HTMLTextAreaElement>(null);
+
   const conTelefono = boletas.filter((b) =>
     telefonoValidoParaWhatsApp(b.socioTelefono)
   );
   const sinTelefono = boletas.length - conTelefono.length;
   const porEnviar = conTelefono.filter((b) => !enviadas.has(b.id)).length;
+  const unica = boletas.length === 1 ? boletas[0] : null;
+  const ejemplo = conTelefono[0] ?? boletas[0];
+
+  function insertar(variable: string) {
+    const area = areaRef.current;
+    const token = `{${variable}}`;
+    if (!area) {
+      onPlantilla(plantilla + token);
+      return;
+    }
+    const desde = area.selectionStart ?? plantilla.length;
+    const hasta = area.selectionEnd ?? desde;
+    onPlantilla(plantilla.slice(0, desde) + token + plantilla.slice(hasta));
+    // El cursor queda justo después de lo insertado.
+    requestAnimationFrame(() => {
+      area.focus();
+      area.setSelectionRange(desde + token.length, desde + token.length);
+    });
+  }
 
   return (
     <Dialog open={abierto} onOpenChange={onAbiertoChange}>
-      <DialogContent className="sm:max-w-[560px]">
+      <DialogContent className="sm:max-w-140">
         <DialogHeader>
-          <DialogTitle>Enviar boletas por WhatsApp</DialogTitle>
+          <DialogTitle>Enviar por WhatsApp</DialogTitle>
           <DialogDescription>
-            Se abre WhatsApp con el mensaje ya escrito; solo toca enviar. Salen
-            las boletas con saldo por pagar del filtro que tienes activo
-            (período, estado o búsqueda).
+            {unica
+              ? `Boleta de ${unica.socioNombre}. Edita el mensaje si quieres y envíalo.`
+              : "Edita el mensaje una vez y se usa para todos. Cada socio recibe el suyo con sus datos."}
           </DialogDescription>
         </DialogHeader>
 
-        {conTelefono.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-[0.9rem] text-muted-foreground">
-            No hay boletas por cobrar con teléfono en este filtro.
-          </p>
-        ) : (
+        <div className="flex min-w-0 flex-col gap-2">
+          <div className="flex items-center justify-between gap-2">
+            <Label htmlFor="mensaje-wa">Mensaje</Label>
+            {plantilla !== PLANTILLA_POR_DEFECTO && (
+              <button
+                type="button"
+                onClick={() => onPlantilla(PLANTILLA_POR_DEFECTO)}
+                className="text-[0.8rem] text-primary hover:underline"
+              >
+                Restablecer mensaje
+              </button>
+            )}
+          </div>
+          <Textarea
+            id="mensaje-wa"
+            ref={areaRef}
+            rows={10}
+            value={plantilla}
+            onChange={(e) => onPlantilla(e.target.value)}
+            className="font-mono text-[0.82rem] leading-relaxed"
+          />
+          <div className="flex flex-wrap gap-1.5">
+            {VARIABLES_PLANTILLA.map((v) => (
+              <button
+                key={v.nombre}
+                type="button"
+                title={v.ayuda}
+                onClick={() => insertar(v.nombre)}
+                className="rounded-full border border-border bg-muted/50 px-2.5 py-0.5 font-mono text-[0.75rem] text-muted-foreground hover:bg-muted"
+              >
+                {`{${v.nombre}}`}
+              </button>
+            ))}
+          </div>
+
+          {ejemplo && (
+            <div className="mt-1">
+              <p className="text-[0.8rem] text-muted-foreground">
+                Así lo recibirá {ejemplo.socioNombre.split(" ")[0]}:
+              </p>
+              <pre className="mt-1 max-h-48 overflow-y-auto rounded-lg bg-muted/50 p-3 font-sans text-[0.82rem] leading-relaxed whitespace-pre-wrap">
+                {mensajeBoleta(comite, ejemplo, plantilla)}
+              </pre>
+            </div>
+          )}
+        </div>
+
+        {!unica && conTelefono.length > 0 && (
           <>
             <p className="text-[0.85rem] text-muted-foreground">
               <span className="font-medium tabular-nums text-foreground">
@@ -962,7 +1067,7 @@ function EnviarWhatsAppDialog({
               </span>{" "}
               por enviar · {conTelefono.length - porEnviar} ya enviadas
             </p>
-            <div className="flex max-h-[50vh] flex-col divide-y divide-border/60 overflow-y-auto rounded-lg border border-border/60">
+            <div className="flex max-h-[30vh] flex-col divide-y divide-border/60 overflow-y-auto rounded-lg border border-border/60">
               {conTelefono.map((b) => {
                 const yaEnviada = enviadas.has(b.id);
                 return (
@@ -993,7 +1098,15 @@ function EnviarWhatsAppDialog({
           </>
         )}
 
-        {sinTelefono > 0 && (
+        {boletas.length > 0 && conTelefono.length === 0 && (
+          <p className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-[0.9rem] text-muted-foreground">
+            {unica
+              ? "Este socio no tiene un teléfono válido. Agrégalo en Socios para poder enviarle la boleta."
+              : "No hay boletas por cobrar con teléfono en este filtro."}
+          </p>
+        )}
+
+        {!unica && sinTelefono > 0 && conTelefono.length > 0 && (
           <p className="text-[0.82rem] text-destructive">
             {sinTelefono}{" "}
             {sinTelefono === 1 ? "socio no tiene" : "socios no tienen"} un
@@ -1006,6 +1119,12 @@ function EnviarWhatsAppDialog({
           <Button variant="outline" onClick={() => onAbiertoChange(false)}>
             Cerrar
           </Button>
+          {unica && conTelefono.length === 1 && (
+            <Button onClick={() => onEnviar(unica)}>
+              <MessageCircle />
+              Enviar por WhatsApp
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

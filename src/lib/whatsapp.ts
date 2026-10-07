@@ -2,11 +2,13 @@ import { formatearPeriodo, saldo } from "@/lib/boletas";
 
 /**
  * Envío de boletas por WhatsApp SIN la API de Meta: armamos un link wa.me con
- * el mensaje ya escrito y la directiva solo toca "enviar". Es a propósito: la
- * API oficial exige verificación del negocio y plantillas aprobadas, y el
- * producto ya descartó ese trámite (ver facilapr-sin-whatsapp). Si algún día
- * 150 toques al mes pesan, el reemplazo es enviar desde un worker; el texto
- * de `mensajeBoleta` se reutiliza tal cual.
+ * el mensaje ya escrito y la directiva solo toca "enviar" en WhatsApp. Es a
+ * propósito: la API oficial exige verificación del negocio y plantillas
+ * aprobadas, y el producto ya descartó ese trámite (ver facilapr-sin-whatsapp).
+ * Si algún día los toques pesan, el reemplazo es enviar desde un worker; la
+ * plantilla y `mensajeBoleta` se reutilizan tal cual.
+ *
+ * El texto es una plantilla editable con variables entre llaves.
  */
 
 const DOMINIO_RAIZ = process.env.NEXT_PUBLIC_DOMINIO_RAIZ ?? "facilapr.cl";
@@ -21,6 +23,37 @@ const diaMes = new Intl.DateTimeFormat("es-CL", {
   day: "numeric",
   month: "long",
 });
+
+/** Variables que la directiva puede usar al editar el mensaje. */
+export const VARIABLES_PLANTILLA = [
+  { nombre: "nombre", ayuda: "Primer nombre del socio" },
+  { nombre: "comite", ayuda: "Nombre del comité" },
+  { nombre: "periodo", ayuda: "Mes de la boleta" },
+  { nombre: "consumo", ayuda: "Consumo en m³" },
+  { nombre: "monto", ayuda: "Total de la boleta" },
+  { nombre: "saldo", ayuda: "Lo que queda por pagar (solo si hubo abono)" },
+  { nombre: "vence", ayuda: "Fecha de vencimiento" },
+  { nombre: "como_pagar", ayuda: "Dónde y cómo pagar (de Configuración)" },
+  { nombre: "link", ayuda: "Enlace al panel del socio" },
+] as const;
+
+/**
+ * Una línea que usa una variable sin valor (p. ej. {consumo} cuando la boleta
+ * no tiene lecturas) se omite entera, para no mandar "• Consumo: " vacío.
+ */
+export const PLANTILLA_POR_DEFECTO = `Hola {nombre}, te escribe {comite}.
+
+Tu boleta de agua de {periodo} está lista:
+• Consumo: {consumo}
+• Monto: {monto}
+• Te quedan por pagar: {saldo}
+• Vence el {vence}
+
+Cómo pagar: {como_pagar}
+
+Cuando pagues, envíanos el comprobante por este mismo WhatsApp y lo registramos.
+
+Revisa tu cuenta cuando quieras: {link}`;
 
 /** El teléfono se guarda en E.164 (+56912345678). Cualquier otra cosa no sirve para wa.me. */
 export function telefonoValidoParaWhatsApp(telefono: string | null | undefined) {
@@ -46,37 +79,43 @@ export type DatosBoletaWhatsApp = {
   consumoM3: number | null;
 };
 
-export function mensajeBoleta(
-  comite: DatosComiteWhatsApp,
-  boleta: DatosBoletaWhatsApp
-) {
+function valoresDe(comite: DatosComiteWhatsApp, boleta: DatosBoletaWhatsApp) {
   const porPagar = saldo(boleta.montoTotal, boleta.montoPagado);
   const abonada = boleta.montoPagado > 0 && porPagar > 0;
-  const primerNombre = boleta.socioNombre.trim().split(/\s+/)[0];
 
-  const lineas = [
-    `Hola ${primerNombre}, te escribe ${comite.nombre}.`,
-    "",
-    `Tu boleta de agua de ${formatearPeriodo(boleta.periodo)} está lista:`,
-  ];
-  if (boleta.consumoM3 !== null) lineas.push(`• Consumo: ${boleta.consumoM3} m³`);
-  lineas.push(`• Monto: ${clp.format(boleta.montoTotal)}`);
-  if (abonada) lineas.push(`• Te quedan por pagar: ${clp.format(porPagar)}`);
-  lineas.push(`• Vence el ${diaMes.format(boleta.fechaVencimiento)}`);
+  return {
+    nombre: boleta.socioNombre.trim().split(/\s+/)[0] ?? "",
+    comite: comite.nombre,
+    periodo: formatearPeriodo(boleta.periodo),
+    consumo: boleta.consumoM3 !== null ? `${boleta.consumoM3} m³` : "",
+    monto: clp.format(boleta.montoTotal),
+    saldo: abonada ? clp.format(porPagar) : "",
+    vence: diaMes.format(boleta.fechaVencimiento),
+    como_pagar: comite.infoPago?.trim() ?? "",
+    link: comite.slug ? `https://${comite.slug}.${DOMINIO_RAIZ}/socio/entrar` : "",
+  } as Record<string, string>;
+}
 
-  if (comite.infoPago?.trim()) {
-    lineas.push("", `Cómo pagar: ${comite.infoPago.trim()}`);
-  }
-  lineas.push(
-    "",
-    "Cuando pagues, envíanos el comprobante por este mismo WhatsApp y lo registramos."
-  );
-  if (comite.slug) {
-    lineas.push(
-      "",
-      `Revisa tu cuenta cuando quieras: https://${comite.slug}.${DOMINIO_RAIZ}/socio/entrar`
-    );
-  }
+/** Rellena la plantilla para una boleta. Variables desconocidas quedan tal cual. */
+export function mensajeBoleta(
+  comite: DatosComiteWhatsApp,
+  boleta: DatosBoletaWhatsApp,
+  plantilla: string = PLANTILLA_POR_DEFECTO
+) {
+  const valores = valoresDe(comite, boleta);
 
-  return lineas.join("\n");
+  const lineas = plantilla
+    .split("\n")
+    .flatMap((linea) => {
+      let sinValor = false;
+      const resuelta = linea.replace(/\{(\w+)\}/g, (completo, clave: string) => {
+        if (!(clave in valores)) return completo;
+        if (valores[clave] === "") sinValor = true;
+        return valores[clave];
+      });
+      return sinValor ? [] : [resuelta];
+    });
+
+  // Si se omitieron líneas entre párrafos pueden quedar varios saltos seguidos.
+  return lineas.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }
