@@ -1173,7 +1173,7 @@ function ImportarDialog({
         <DialogHeader>
           <DialogTitle>Importar boletas</DialogTitle>
           <DialogDescription>
-            Sube la planilla del período en formato CSV.
+            Sube la planilla del período en CSV o Excel (.xlsx).
           </DialogDescription>
         </DialogHeader>
 
@@ -1199,12 +1199,12 @@ function ImportarDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="archivo">Archivo CSV</Label>
+            <Label htmlFor="archivo">Archivo (CSV o Excel)</Label>
             <Input
               id="archivo"
               name="archivo"
               type="file"
-              accept=".csv,text/csv"
+              accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
               required
             />
           </div>

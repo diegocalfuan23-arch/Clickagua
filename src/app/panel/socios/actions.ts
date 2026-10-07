@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { socios } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/apr-session";
 import { normalizarRut } from "@/lib/formato";
+import { leerTabla } from "@/lib/tabla";
 
 const socioSchema = z.object({
   nombre: z.string().trim().min(1, "El nombre es obligatorio."),
@@ -177,32 +178,6 @@ export type ResultadoImportacion =
     }
   | { ok: false; error: string };
 
-/** Divide una línea de CSV respetando comillas. */
-function partirLinea(linea: string): string[] {
-  const campos: string[] = [];
-  let actual = "";
-  let entreComillas = false;
-
-  for (let i = 0; i < linea.length; i++) {
-    const c = linea[i];
-    if (c === '"') {
-      if (entreComillas && linea[i + 1] === '"') {
-        actual += '"';
-        i++;
-      } else {
-        entreComillas = !entreComillas;
-      }
-    } else if ((c === "," || c === ";") && !entreComillas) {
-      campos.push(actual.trim());
-      actual = "";
-    } else {
-      actual += c;
-    }
-  }
-  campos.push(actual.trim());
-  return campos;
-}
-
 /**
  * Importa socios desde CSV. Columnas: nombre y rut; opcionalmente telefono
  * (puede venir vacío en algunas filas), direccion y numeroCliente.
@@ -219,21 +194,19 @@ export async function importarSocios(
 
   const archivo = formData.get("archivo");
   if (!(archivo instanceof File) || archivo.size === 0) {
-    return { ok: false, error: "Elige un archivo CSV." };
+    return { ok: false, error: "Elige un archivo CSV o Excel (.xlsx)." };
   }
 
   if (archivo.size > 2_000_000) {
     return { ok: false, error: "El archivo es demasiado grande (máximo 2 MB)." };
   }
 
-  const texto = await archivo.text();
-  const lineas = texto.split(/\r?\n/).filter((l) => l.trim() !== "");
+  // CSV o Excel (.xlsx): desde aquí todo trabaja sobre filas de texto.
+  const tabla = await leerTabla(archivo);
+  if (!tabla.ok) return { ok: false, error: tabla.error };
+  const filas = tabla.filas;
 
-  if (lineas.length < 2) {
-    return { ok: false, error: "El archivo no tiene filas de datos." };
-  }
-
-  const encabezado = partirLinea(lineas[0]).map((h) =>
+  const encabezado = filas[0].map((h) =>
     h
       .toLowerCase()
       .normalize("NFD")
@@ -252,7 +225,7 @@ export async function importarSocios(
   if (iNombre < 0 || iRut < 0) {
     return {
       ok: false,
-      error: "El CSV debe tener al menos las columnas: nombre y rut.",
+      error: "El archivo debe tener al menos las columnas: nombre y rut.",
     };
   }
 
@@ -276,8 +249,8 @@ export async function importarSocios(
   const rutsVistos = new Set<string>();
   const telefonosVistos = new Set<string>();
 
-  for (let i = 1; i < lineas.length; i++) {
-    const campos = partirLinea(lineas[i]);
+  for (let i = 1; i < filas.length; i++) {
+    const campos = filas[i];
     const nLinea = i + 1;
 
     const nombre = (campos[iNombre] ?? "").trim();

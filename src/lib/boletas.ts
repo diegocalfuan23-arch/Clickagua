@@ -90,6 +90,13 @@ export function normalizarPeriodo(valor: string): string | null {
   const limpio = valor.trim().toLowerCase();
   if (!limpio) return null;
 
+  // Excel convierte "2026-07" en una fecha y la planilla llega como 2026-07-01.
+  const fechaCompleta = limpio.match(/^(\d{4})-(\d{2})-\d{2}$/);
+  if (fechaCompleta) {
+    const mes = Number(fechaCompleta[2]);
+    return mes >= 1 && mes <= 12 ? `${fechaCompleta[1]}-${fechaCompleta[2]}` : null;
+  }
+
   // 2026-07 o 2026/07
   const iso = limpio.match(/^(\d{4})[-/](\d{1,2})$/);
   if (iso) {

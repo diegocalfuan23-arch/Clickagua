@@ -781,7 +781,7 @@ function ImportarSociosDialog({
         <DialogHeader>
           <DialogTitle>Importar socios</DialogTitle>
           <DialogDescription>
-            Sube el padrón de tu comité en formato CSV.
+            Sube el padrón de tu comité en CSV o Excel (.xlsx).
           </DialogDescription>
         </DialogHeader>
 
@@ -804,12 +804,12 @@ function ImportarSociosDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="archivoSocios">Archivo CSV</Label>
+            <Label htmlFor="archivoSocios">Archivo (CSV o Excel)</Label>
             <Input
               id="archivoSocios"
               name="archivo"
               type="file"
-              accept=".csv,text/csv"
+              accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
               required
             />
           </div>

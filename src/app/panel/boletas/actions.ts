@@ -6,6 +6,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { boletas, socios } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/apr-session";
+import { leerTabla } from "@/lib/tabla";
 import {
   aMonto,
   calcularDesdeLecturas,
@@ -45,6 +46,19 @@ function aEntero(valor: FormDataEntryValue | null): number | null {
 function aFecha(valor: FormDataEntryValue | null): Date | null {
   const texto = String(valor ?? "").trim();
   if (!texto) return null;
+
+  // En Chile se escribe día/mes/año: new Date("06/11/2026") lo leería como
+  // 11 de junio. Se arma a mediodía UTC para que la zona horaria no corra el día.
+  const dma = texto.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
+  const iso = texto.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (dma || iso) {
+    const [anio, mes, dia] = dma
+      ? [dma[3], dma[2], dma[1]]
+      : [iso![1], iso![2], iso![3]];
+    const f = new Date(Date.UTC(Number(anio), Number(mes) - 1, Number(dia), 12));
+    return Number.isNaN(f.getTime()) ? null : f;
+  }
+
   const f = new Date(texto);
   return Number.isNaN(f.getTime()) ? null : f;
 }
@@ -297,32 +311,6 @@ export async function eliminarBoleta(
   return { ok: true };
 }
 
-/** Divide una línea de CSV respetando comillas. */
-function partirLinea(linea: string): string[] {
-  const campos: string[] = [];
-  let actual = "";
-  let entreComillas = false;
-
-  for (let i = 0; i < linea.length; i++) {
-    const c = linea[i];
-    if (c === '"') {
-      if (entreComillas && linea[i + 1] === '"') {
-        actual += '"';
-        i++;
-      } else {
-        entreComillas = !entreComillas;
-      }
-    } else if ((c === "," || c === ";") && !entreComillas) {
-      campos.push(actual.trim());
-      actual = "";
-    } else {
-      actual += c;
-    }
-  }
-  campos.push(actual.trim());
-  return campos;
-}
-
 
 /**
  * Importa boletas desde CSV. Columnas: rut, periodo, monto, vencimiento y
@@ -339,21 +327,19 @@ export async function importarBoletas(
 
   const archivo = formData.get("archivo");
   if (!(archivo instanceof File) || archivo.size === 0) {
-    return { ok: false, error: "Elige un archivo CSV." };
+    return { ok: false, error: "Elige un archivo CSV o Excel (.xlsx)." };
   }
 
   if (archivo.size > 2_000_000) {
     return { ok: false, error: "El archivo es demasiado grande (máximo 2 MB)." };
   }
 
-  const texto = await archivo.text();
-  const lineas = texto.split(/\r?\n/).filter((l) => l.trim() !== "");
+  // CSV o Excel (.xlsx): desde aquí todo trabaja sobre filas de texto.
+  const tabla = await leerTabla(archivo);
+  if (!tabla.ok) return { ok: false, error: tabla.error };
+  const filas = tabla.filas;
 
-  if (lineas.length < 2) {
-    return { ok: false, error: "El archivo no tiene filas de datos." };
-  }
-
-  const encabezado = partirLinea(lineas[0]).map((h) =>
+  const encabezado = filas[0].map((h) =>
     h
       .toLowerCase()
       .normalize("NFD")
@@ -374,7 +360,7 @@ export async function importarBoletas(
   if (iRut < 0 || iPeriodo < 0) {
     return {
       ok: false,
-      error: "El CSV debe tener al menos las columnas: rut y periodo.",
+      error: "El archivo debe tener al menos las columnas: rut y periodo.",
     };
   }
 
@@ -389,8 +375,8 @@ export async function importarBoletas(
   const aInsertar: (typeof boletas.$inferInsert)[] = [];
   const vistos = new Set<string>();
 
-  for (let i = 1; i < lineas.length; i++) {
-    const campos = partirLinea(lineas[i]);
+  for (let i = 1; i < filas.length; i++) {
+    const campos = filas[i];
     const nLinea = i + 1;
 
     const socioId = porRut.get(normalizarRut(campos[iRut] ?? ""));
