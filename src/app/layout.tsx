@@ -52,7 +52,6 @@ export const metadata: Metadata = {
     "sistema para comité de agua",
   ],
   applicationName: "Facilapr",
-  icons: { apple: "/apple-touch-icon.png" },
   appleWebApp: { capable: true, title: "Mi APR", statusBarStyle: "default" },
   authors: [{ name: "Facilapr" }],
   alternates: {
