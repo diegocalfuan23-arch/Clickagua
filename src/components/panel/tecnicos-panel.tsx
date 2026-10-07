@@ -196,11 +196,23 @@ function InvitarTecnico() {
           {error && <p className="text-[0.88rem] text-destructive">{error}</p>}
 
           {url && (
-            <div className="flex items-center gap-2 rounded-lg border border-input bg-muted/40 px-3 py-2">
-              <span className="min-w-0 flex-1 truncate text-[0.87rem]">
+            // min-w-0: el modal es un grid y sus hijos no se achican por debajo
+            // del contenido; sin esto el enlace largo ensancha todo y el botón
+            // queda fuera del recuadro.
+            <div className="flex min-w-0 items-center gap-2 rounded-lg border border-input bg-muted/40 px-3 py-2">
+              <span
+                title={url}
+                className="min-w-0 flex-1 truncate text-[0.87rem]"
+              >
                 {url}
               </span>
-              <Button type="button" variant="outline" size="sm" onClick={copiar}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                onClick={copiar}
+              >
                 {copiado ? <Check className="text-forest" /> : <Copy />}
                 {copiado ? "Copiado" : "Copiar"}
               </Button>
