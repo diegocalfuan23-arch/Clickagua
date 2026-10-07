@@ -1,15 +1,19 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { LogOut } from "lucide-react";
 import { signOut } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 
-export function SignOutButton() {
+/** `compacto`: solo el ícono, para el encabezado de la app del técnico. */
+export function SignOutButton({ compacto = false }: { compacto?: boolean }) {
   const router = useRouter();
 
   return (
     <Button
       variant="outline"
+      size={compacto ? "icon-lg" : "default"}
+      aria-label="Cerrar sesión"
       onClick={async () => {
         await signOut();
         // Borra la copia de la pantalla de lecturas que guarda el service
@@ -22,7 +26,7 @@ export function SignOutButton() {
         router.push("/login");
       }}
     >
-      Cerrar sesión
+      {compacto ? <LogOut /> : "Cerrar sesión"}
     </Button>
   );
 }

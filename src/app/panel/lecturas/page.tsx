@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { asc, desc, eq, and } from "drizzle-orm";
+import { asc, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { lecturas, socios } from "@/lib/db/schema";
+import { user as userTable } from "@/lib/db/auth-schema";
 import { requireApr } from "@/lib/apr-session";
 import { formatearRut } from "@/lib/formato";
 import { LecturaForm } from "@/components/panel/lectura-form";
-import { LecturasCola } from "@/components/panel/lecturas-cola";
+import { LecturasTabla } from "@/components/panel/lecturas-tabla";
 
 export const metadata: Metadata = {
   title: "Lecturas",
@@ -47,30 +48,45 @@ export default async function LecturasPage() {
     );
   }
 
-  const pendientes = await db
+  // Todas las lecturas del comité, no solo las pendientes: la directiva
+  // necesita ver también lo ya resuelto. Tope alto por si el padrón es grande.
+  const todas = await db
     .select({
       id: lecturas.id,
       periodo: lecturas.periodo,
       valor: lecturas.valor,
       observacion: lecturas.observacion,
+      estado: lecturas.estado,
+      motivoRechazo: lecturas.motivoRechazo,
       createdAt: lecturas.createdAt,
       socioNombre: socios.nombre,
       socioRut: socios.rut,
+      registradaPor: userTable.name,
     })
     .from(lecturas)
     .innerJoin(socios, eq(lecturas.socioId, socios.id))
-    .where(and(eq(lecturas.estado, "PENDIENTE"), eq(socios.aprId, apr.id)))
-    .orderBy(asc(lecturas.createdAt));
+    .leftJoin(userTable, eq(lecturas.registradaPorId, userTable.id))
+    .where(eq(socios.aprId, apr.id))
+    .orderBy(desc(lecturas.createdAt))
+    .limit(1500);
 
   return (
-    <LecturasCola
-      pendientes={pendientes.map((l) => ({
+    <LecturasTabla
+      socios={listaSocios.map((s) => ({
+        id: s.id,
+        nombre: s.nombre,
+        rut: formatearRut(s.rut),
+      }))}
+      lecturas={todas.map((l) => ({
         id: l.id,
         socio: l.socioNombre,
         rut: formatearRut(l.socioRut),
         periodo: l.periodo,
         valor: l.valor,
         observacion: l.observacion,
+        estado: l.estado,
+        motivoRechazo: l.motivoRechazo,
+        registradaPor: l.registradaPor,
         createdAt: l.createdAt,
       }))}
     />

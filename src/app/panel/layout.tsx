@@ -1,5 +1,6 @@
 import { requireApr } from "@/lib/apr-session";
 import { PanelSidebar } from "@/components/panel/panel-sidebar";
+import { AppTecnicoShell } from "@/components/panel/app-tecnico-shell";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import {
   SidebarInset,
@@ -16,6 +17,11 @@ export default async function PanelLayout({
 }) {
   const { user, apr } = await requireApr();
   const rol = user.rol === "OPERADOR" ? "OPERADOR" : "ADMIN";
+
+  // El técnico trabaja desde el teléfono en terreno: ve una app, no el panel.
+  if (rol === "OPERADOR") {
+    return <AppTecnicoShell comite={apr.nombre}>{children}</AppTecnicoShell>;
+  }
 
   return (
     <TooltipProvider>
