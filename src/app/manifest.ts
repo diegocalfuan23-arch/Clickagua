@@ -55,7 +55,10 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
       name: "Facilapr",
       short_name: "Facilapr",
       description: "Software de gestión para APR y SSR con panel para socios.",
-      start_url: "/",
+      // Quien instala desde el dominio raíz es el equipo del comité (el
+      // técnico de terreno): abre directo en cargar lecturas, que es la
+      // pantalla que funciona sin señal (public/sw.js).
+      start_url: "/panel/lecturas",
     };
   }
 

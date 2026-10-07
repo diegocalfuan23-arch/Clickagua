@@ -459,19 +459,13 @@ export function ConfiguracionForm({
             </Campo>
           </div>
 
-          <label className="flex items-start gap-2.5 text-[0.9rem]">
-            <Checkbox
-              name="requiereFotoLectura"
-              defaultChecked={datos.requiereFotoLectura}
-              className="mt-0.5"
-            />
-            <span>
-              Pedir foto del medidor al registrar la lectura
-              <span className="mt-0.5 block text-[0.8rem] text-muted-foreground">
-                Sirve como respaldo si un socio reclama su consumo.
-              </span>
-            </span>
-          </label>
+          {/* "Pedir foto del medidor" está oculto a propósito: el formulario del
+              técnico todavía no pide ni guarda la foto, así que el interruptor
+              prometía algo que no pasaba. Se vuelve a mostrar cuando exista la
+              subida de fotos. Mientras, el valor guardado se conserva tal cual. */}
+          {datos.requiereFotoLectura && (
+            <input type="hidden" name="requiereFotoLectura" value="on" />
+          )}
         </Bloque>
       )}
 

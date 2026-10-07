@@ -1,8 +1,34 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
-import { CheckCircle2, Clock, Loader2, XCircle } from "lucide-react";
-import { registrarLectura, type ResultadoAccion } from "@/app/panel/lecturas/actions";
+import {
+  useActionState,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import { useRouter } from "next/navigation";
+import {
+  CheckCircle2,
+  Clock,
+  Loader2,
+  WifiOff,
+  XCircle,
+} from "lucide-react";
+import { registrarLectura } from "@/app/panel/lecturas/actions";
+import { InstalarApp } from "@/components/socio/instalar-app";
+import {
+  COLA_VACIA,
+  encolarLectura,
+  hayConexion,
+  parsearCola,
+  quitarDeCola,
+  snapshotCola,
+  suscribirCola,
+  suscribirConexion,
+  type LecturaEnCola,
+} from "@/lib/lecturas-offline";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +52,13 @@ const ESTADO_META = {
   RECHAZADA: { texto: "Rechazada", icono: XCircle, color: "text-destructive" },
 } as const;
 
+type EstadoForm =
+  | { ok: true; enCola?: boolean }
+  | { ok: false; error: string };
+
+/** Lecturas que el servidor rechazó al sincronizar (p. ej. período inválido). */
+type Rechazada = { lectura: LecturaEnCola; error: string };
+
 const periodoActual = () => {
   const hoy = new Date();
   return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}`;
@@ -38,16 +71,101 @@ export function LecturaForm({
   socios: Socio[];
   recientes: LecturaReciente[];
 }) {
-  const [estado, accion, pendiente] = useActionState<
-    ResultadoAccion | null,
-    FormData
-  >(registrarLectura, null);
-
+  const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
+  const enviandoCola = useRef(false);
+  const [rechazadas, setRechazadas] = useState<Rechazada[]>([]);
+
+  const crudoCola = useSyncExternalStore(
+    suscribirCola,
+    snapshotCola,
+    () => COLA_VACIA
+  );
+  const cola = useMemo(() => parsearCola(crudoCola), [crudoCola]);
+  const enLinea = useSyncExternalStore(suscribirConexion, hayConexion, () => true);
+
+  function guardarSinConexion(formData: FormData): EstadoForm {
+    const socioId = String(formData.get("socioId") ?? "");
+    const guardada = encolarLectura({
+      socioId,
+      socioNombre: socios.find((s) => s.id === socioId)?.nombre ?? "Socio",
+      periodo: String(formData.get("periodo") ?? ""),
+      valor: String(formData.get("valor") ?? ""),
+      observacion: String(formData.get("observacion") ?? ""),
+    });
+    return guardada
+      ? { ok: true, enCola: true }
+      : {
+          ok: false,
+          error:
+            "No hay señal y este teléfono no dejó guardar la lectura. Anótala y envíala cuando tengas conexión.",
+        };
+  }
+
+  const [estado, accion, pendiente] = useActionState<EstadoForm | null, FormData>(
+    async (_prev, formData) => {
+      if (!hayConexion()) return guardarSinConexion(formData);
+      try {
+        return await registrarLectura(null, formData);
+      } catch (error) {
+        // Señal que se cayó justo al enviar. Cualquier otro error es un bug
+        // real y no debe esconderse en la cola.
+        if (error instanceof TypeError || !hayConexion()) {
+          return guardarSinConexion(formData);
+        }
+        throw error;
+      }
+    },
+    null
+  );
 
   useEffect(() => {
     if (estado?.ok) formRef.current?.reset();
   }, [estado]);
+
+  // El service worker deja abierta esta pantalla sin señal. Sin soporte o con
+  // un fallo al registrarlo, el formulario sigue funcionando: solo no abre
+  // offline desde cero.
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+    navigator.serviceWorker
+      .register("/sw.js", { scope: "/panel/lecturas" })
+      .catch(() => {});
+  }, []);
+
+  async function enviarCola() {
+    if (enviandoCola.current) return;
+    enviandoCola.current = true;
+    let enviadas = 0;
+    try {
+      for (const lectura of parsearCola(snapshotCola())) {
+        const datos = new FormData();
+        datos.set("socioId", lectura.socioId);
+        datos.set("periodo", lectura.periodo);
+        datos.set("valor", lectura.valor);
+        if (lectura.observacion) datos.set("observacion", lectura.observacion);
+
+        try {
+          const r = await registrarLectura(null, datos);
+          quitarDeCola(lectura.idLocal);
+          if (r.ok) enviadas++;
+          else setRechazadas((prev) => [...prev, { lectura, error: r.error }]);
+        } catch {
+          break; // sigue sin señal: se reintenta al volver la conexión
+        }
+      }
+    } finally {
+      enviandoCola.current = false;
+    }
+    if (enviadas > 0) router.refresh();
+  }
+
+  // Al volver la señal (o al abrir la pantalla con conexión) se vacía la cola.
+  useEffect(() => {
+    if (enLinea && cola.length > 0) void enviarCola();
+    // enviarCola solo usa refs y el store local: no depende del render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enLinea, cola.length]);
 
   return (
     <div className="mx-auto flex w-full max-w-[560px] flex-col gap-5">
@@ -59,6 +177,22 @@ export function LecturaForm({
           Queda pendiente hasta que el administrador la revise.
         </p>
       </div>
+
+      <InstalarApp
+        titulo="Lleva la app a terreno"
+        descripcion="Instálala en tu celular: abre más rápido y puedes cargar lecturas aunque no haya señal."
+      />
+
+      {!enLinea && (
+        <div className="flex items-start gap-2.5 rounded-xl border border-tertiary/40 bg-tertiary/10 px-4 py-3">
+          <WifiOff className="mt-0.5 size-4 shrink-0 text-tertiary" />
+          <p className="text-[0.88rem] leading-relaxed">
+            <strong>Sin conexión.</strong> Sigue cargando lecturas: quedan
+            guardadas en este teléfono y se envían solas cuando vuelva la
+            señal.
+          </p>
+        </div>
+      )}
 
       <form
         ref={formRef}
@@ -126,7 +260,9 @@ export function LecturaForm({
         )}
         {estado?.ok && (
           <p className="rounded-lg border border-forest/30 bg-forest/5 px-4 py-3 text-[0.88rem] text-forest">
-            Lectura registrada. Queda pendiente de revisión.
+            {estado.enCola
+              ? "Guardada en este teléfono. Se enviará sola cuando vuelva la señal."
+              : "Lectura registrada. Queda pendiente de revisión."}
           </p>
         )}
 
@@ -135,6 +271,59 @@ export function LecturaForm({
           Registrar lectura
         </Button>
       </form>
+
+      {cola.length > 0 && (
+        <section className="rounded-xl border border-tertiary/40 bg-tertiary/5 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-[0.95rem] font-semibold">
+              {cola.length}{" "}
+              {cola.length === 1 ? "lectura esperando" : "lecturas esperando"}{" "}
+              envío
+            </h2>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={!enLinea}
+              onClick={() => void enviarCola()}
+            >
+              Enviar ahora
+            </Button>
+          </div>
+          <ul className="mt-2 flex flex-col gap-1 text-[0.85rem] text-muted-foreground">
+            {cola.map((l) => (
+              <li key={l.idLocal}>
+                {l.socioNombre} · {l.periodo} · lectura {l.valor}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {rechazadas.length > 0 && (
+        <section className="rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+          <h2 className="text-[0.95rem] font-semibold text-destructive">
+            No se pudieron registrar
+          </h2>
+          <ul className="mt-2 flex flex-col gap-1 text-[0.85rem]">
+            {rechazadas.map((r) => (
+              <li key={r.lectura.idLocal}>
+                {r.lectura.socioNombre} · {r.lectura.periodo} · lectura{" "}
+                {r.lectura.valor}: {r.error}
+              </li>
+            ))}
+          </ul>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="mt-3"
+            onClick={() => setRechazadas([])}
+          >
+            Entendido
+          </Button>
+        </section>
+      )}
 
       <section>
         <h2 className="text-[0.95rem] font-semibold">Tus últimas lecturas</h2>

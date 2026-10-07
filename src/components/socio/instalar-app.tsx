@@ -44,7 +44,13 @@ function fueDescartada() {
  * explica el gesto (Compartir → Añadir a pantalla de inicio). Si ya está
  * instalada o el socio la descartó, no aparece.
  */
-export function InstalarApp() {
+export function InstalarApp({
+  titulo = "Ten tu cuenta a mano",
+  descripcion = "Instálala en tu celular y ábrela como cualquier app, sin buscar el link.",
+}: {
+  titulo?: string;
+  descripcion?: string;
+}) {
   const montado = useMontado();
   const [evento, setEvento] = useState<BeforeInstallPromptEvent | null>(null);
   const [cerrado, setCerrado] = useState(false);
@@ -84,11 +90,10 @@ export function InstalarApp() {
   return (
     <div className="mb-8 flex items-start gap-3 rounded-2xl border border-primary/25 bg-primary/5 p-4">
       <div className="flex-1">
-        <div className="font-semibold">Ten tu cuenta a mano</div>
+        <div className="font-semibold">{titulo}</div>
         {evento ? (
           <p className="mt-1 text-[0.88rem] text-muted-foreground">
-            Instálala en tu celular y ábrela como cualquier app, sin buscar el
-            link.
+            {descripcion}
           </p>
         ) : (
           <p className="mt-1 text-[0.88rem] text-muted-foreground">
