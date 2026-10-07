@@ -4,6 +4,7 @@ import { useActionState, useMemo, useState, useTransition } from "react";
 import {
   AlertCircle,
   Ban,
+  Check,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -11,6 +12,7 @@ import {
   Coins,
   FileText,
   Loader2,
+  MessageCircle,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -57,7 +59,13 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { formatearPeriodo, saldo } from "@/lib/boletas";
-import { formatearRut } from "@/lib/formato";
+import { formatearRut, formatearTelefono } from "@/lib/formato";
+import {
+  enlaceWhatsApp,
+  mensajeBoleta,
+  telefonoValidoParaWhatsApp,
+  type DatosComiteWhatsApp,
+} from "@/lib/whatsapp";
 
 type Estado = "PENDIENTE" | "PAGADA" | "VENCIDA" | "ANULADA";
 
@@ -66,6 +74,7 @@ export type BoletaFila = {
   socioId: string;
   socioNombre: string;
   socioRut: string;
+  socioTelefono: string;
   periodo: string;
   montoTotal: number;
   montoPagado: number;
@@ -81,6 +90,31 @@ export type BoletaFila = {
 export type SocioOpcion = { id: string; nombre: string; rut: string };
 
 const POR_PAGINA = 12;
+
+/**
+ * wa.me no avisa si el mensaje salió, así que "enviada" es lo que la directiva
+ * tocó desde este navegador. Se guarda aquí (no en la base) para no exigir un
+ * cambio de esquema; si hace falta compartirlo entre usuarios, pasa a columna.
+ */
+const CLAVE_ENVIADAS = "facilapr-boletas-wa-enviadas";
+
+function leerEnviadas(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const crudo = localStorage.getItem(CLAVE_ENVIADAS);
+    return new Set(crudo ? (JSON.parse(crudo) as string[]) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+/** Una boleta sin saldo por pagar no se cobra por WhatsApp. */
+function cobrable(b: BoletaFila) {
+  return (
+    (b.estado === "PENDIENTE" || b.estado === "VENCIDA") &&
+    saldo(b.montoTotal, b.montoPagado) > 0
+  );
+}
 
 const clp = new Intl.NumberFormat("es-CL", {
   style: "currency",
@@ -153,10 +187,12 @@ export function BoletasTabla({
   boletas,
   socios,
   tieneTarifas,
+  comite,
 }: {
   boletas: BoletaFila[];
   socios: SocioOpcion[];
   tieneTarifas: boolean;
+  comite: DatosComiteWhatsApp;
 }) {
   const [busqueda, setBusqueda] = useState("");
   const [pestana, setPestana] = useState<"todas" | Estado>("todas");
@@ -167,7 +203,26 @@ export function BoletasTabla({
   const [cobrando, setCobrando] = useState<BoletaFila | null>(null);
   const [porEliminar, setPorEliminar] = useState<BoletaFila | null>(null);
   const [importando, setImportando] = useState(false);
+  const [enviandoWa, setEnviandoWa] = useState(false);
+  const [enviadas, setEnviadas] = useState<Set<string>>(leerEnviadas);
   const [pendiente, iniciar] = useTransition();
+
+  function enviarPorWhatsApp(b: BoletaFila) {
+    window.open(
+      enlaceWhatsApp(b.socioTelefono, mensajeBoleta(comite, b)),
+      "_blank",
+      "noopener"
+    );
+    setEnviadas((prev) => {
+      const sig = new Set(prev).add(b.id);
+      try {
+        localStorage.setItem(CLAVE_ENVIADAS, JSON.stringify([...sig]));
+      } catch {
+        // Sin almacenamiento: el estado vive solo mientras la página siga abierta.
+      }
+      return sig;
+    });
+  }
 
   const periodos = useMemo(
     () => [...new Set(boletas.map((b) => b.periodo))].sort().reverse(),
@@ -221,7 +276,15 @@ export function BoletasTabla({
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-[1.35rem] font-semibold tracking-tight">Boletas</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setEnviandoWa(true)}
+            disabled={boletas.length === 0}
+          >
+            <MessageCircle />
+            Enviar por WhatsApp
+          </Button>
           <Button variant="outline" onClick={() => setImportando(true)}>
             <Upload />
             Importar CSV
@@ -448,6 +511,17 @@ export function BoletasTabla({
                               }
                             />
                             <DropdownMenuContent align="end">
+                              {cobrable(b) &&
+                                telefonoValidoParaWhatsApp(b.socioTelefono) && (
+                                  <DropdownMenuItem
+                                    onClick={() => enviarPorWhatsApp(b)}
+                                  >
+                                    <MessageCircle />
+                                    {enviadas.has(b.id)
+                                      ? "Reenviar por WhatsApp"
+                                      : "Enviar por WhatsApp"}
+                                  </DropdownMenuItem>
+                                )}
                               <DropdownMenuItem onClick={() => setCobrando(b)}>
                                 <Coins />
                                 Registrar pago
@@ -548,6 +622,14 @@ export function BoletasTabla({
       )}
 
       <ImportarDialog abierto={importando} onAbiertoChange={setImportando} />
+
+      <EnviarWhatsAppDialog
+        abierto={enviandoWa}
+        onAbiertoChange={setEnviandoWa}
+        boletas={filtradas.filter(cobrable)}
+        enviadas={enviadas}
+        onEnviar={enviarPorWhatsApp}
+      />
 
       <Dialog
         open={Boolean(porEliminar)}
@@ -829,6 +911,99 @@ function PagoDialog({
           >
             {pendiente && <Loader2 className="animate-spin" />}
             Guardar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EnviarWhatsAppDialog({
+  abierto,
+  onAbiertoChange,
+  boletas,
+  enviadas,
+  onEnviar,
+}: {
+  abierto: boolean;
+  onAbiertoChange: (v: boolean) => void;
+  boletas: BoletaFila[];
+  enviadas: Set<string>;
+  onEnviar: (b: BoletaFila) => void;
+}) {
+  const conTelefono = boletas.filter((b) =>
+    telefonoValidoParaWhatsApp(b.socioTelefono)
+  );
+  const sinTelefono = boletas.length - conTelefono.length;
+  const porEnviar = conTelefono.filter((b) => !enviadas.has(b.id)).length;
+
+  return (
+    <Dialog open={abierto} onOpenChange={onAbiertoChange}>
+      <DialogContent className="sm:max-w-[560px]">
+        <DialogHeader>
+          <DialogTitle>Enviar boletas por WhatsApp</DialogTitle>
+          <DialogDescription>
+            Se abre WhatsApp con el mensaje ya escrito; solo toca enviar. Salen
+            las boletas con saldo por pagar del filtro que tienes activo
+            (período, estado o búsqueda).
+          </DialogDescription>
+        </DialogHeader>
+
+        {conTelefono.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-[0.9rem] text-muted-foreground">
+            No hay boletas por cobrar con teléfono en este filtro.
+          </p>
+        ) : (
+          <>
+            <p className="text-[0.85rem] text-muted-foreground">
+              <span className="font-medium tabular-nums text-foreground">
+                {porEnviar}
+              </span>{" "}
+              por enviar · {conTelefono.length - porEnviar} ya enviadas
+            </p>
+            <div className="flex max-h-[50vh] flex-col divide-y divide-border/60 overflow-y-auto rounded-lg border border-border/60">
+              {conTelefono.map((b) => {
+                const yaEnviada = enviadas.has(b.id);
+                return (
+                  <div
+                    key={b.id}
+                    className="flex items-center justify-between gap-3 px-4 py-3"
+                  >
+                    <div className="min-w-0">
+                      <div className="truncate font-medium">{b.socioNombre}</div>
+                      <div className="text-[0.78rem] tabular-nums text-muted-foreground">
+                        {formatearTelefono(b.socioTelefono)} ·{" "}
+                        {formatearPeriodo(b.periodo)} ·{" "}
+                        {clp.format(saldo(b.montoTotal, b.montoPagado))}
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant={yaEnviada ? "outline" : "default"}
+                      onClick={() => onEnviar(b)}
+                    >
+                      {yaEnviada ? <Check /> : <MessageCircle />}
+                      {yaEnviada ? "Reenviar" : "Enviar"}
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {sinTelefono > 0 && (
+          <p className="text-[0.82rem] text-destructive">
+            {sinTelefono}{" "}
+            {sinTelefono === 1 ? "socio no tiene" : "socios no tienen"} un
+            teléfono válido y no aparece{sinTelefono === 1 ? "" : "n"} en la
+            lista.
+          </p>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onAbiertoChange(false)}>
+            Cerrar
           </Button>
         </DialogFooter>
       </DialogContent>

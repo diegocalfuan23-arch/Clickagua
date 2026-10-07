@@ -7,6 +7,7 @@ import { saldo, formatearPeriodo } from "@/lib/boletas";
 import { SignOutSocioButton } from "@/components/socio/sign-out-button";
 import { AsistenteSocio } from "@/components/socio/asistente-socio";
 import { ChatComite } from "@/components/socio/chat-comite";
+import { InstalarApp } from "@/components/socio/instalar-app";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -69,6 +70,8 @@ export default async function PanelSocioPage({ params }: Props) {
       </header>
 
       <main className="mx-auto max-w-[720px] px-6 py-10">
+        <InstalarApp />
+
         <section
           className={`rounded-2xl border p-6 ${
             deudaTotal > 0

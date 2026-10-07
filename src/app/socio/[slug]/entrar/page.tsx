@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { headers } from "next/headers";
+import { notFound, redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
+import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { aprs } from "@/lib/db/schema";
+import { aprs, socios } from "@/lib/db/schema";
 import { EntrarSocioForm } from "@/components/socio/entrar-form";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -21,6 +23,17 @@ export default async function EntrarSocioPage({ params }: Props) {
     columns: { nombre: true },
   });
   if (!apr) notFound();
+
+  // La PWA abre siempre en /socio/entrar: con sesión activa el socio debe caer
+  // directo en su cuenta, no volver a escribir RUT y clave.
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (session?.user.rol === "SOCIO") {
+    const socio = await db.query.socios.findFirst({
+      where: eq(socios.userId, session.user.id),
+      with: { apr: { columns: { slug: true } } },
+    });
+    if (socio?.apr.slug === slug) redirect("/socio/panel");
+  }
 
   return (
     <div className="mx-auto flex min-h-screen max-w-[420px] flex-col justify-center px-6 py-16">

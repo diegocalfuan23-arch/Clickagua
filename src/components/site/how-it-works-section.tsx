@@ -5,7 +5,7 @@ const pasos = [
     numero: "01",
     titulo: "El socio entra a su panel",
     detalle:
-      "Con su RUT y una clave propia, desde el sitio de tu APR — en cualquier momento, sin instalar nada nuevo.",
+      "Con su RUT y una clave propia, desde el sitio de tu APR — en cualquier momento, desde el navegador o instalado en su celular como una app.",
   },
   {
     numero: "02",

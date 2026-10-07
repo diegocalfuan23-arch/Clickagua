@@ -18,6 +18,7 @@ export default async function BoletasPage() {
       socioId: boletas.socioId,
       socioNombre: socios.nombre,
       socioRut: socios.rut,
+      socioTelefono: socios.telefono,
       periodo: boletas.periodo,
       montoTotal: boletas.montoTotal,
       montoPagado: boletas.montoPagado,
@@ -47,6 +48,11 @@ export default async function BoletasPage() {
       tieneTarifas={
         apr.tarifaCargoFijo !== null && apr.tarifaMetroCubico !== null
       }
+      comite={{
+        nombre: apr.nombre,
+        slug: apr.slug,
+        infoPago: apr.infoPago,
+      }}
     />
   );
 }

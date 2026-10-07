@@ -19,7 +19,7 @@ const preguntas = [
   {
     pregunta: "¿El socio necesita instalar algo?",
     respuesta:
-      "No. Entra desde el navegador de su celular o computador, con el RUT y la clave que crea al pedir acceso — sin apps nuevas.",
+      "No es obligatorio. Entra desde el navegador de su celular o computador, con el RUT y la clave que crea al pedir acceso. Si quiere, puede instalar su panel en la pantalla de inicio del teléfono y abrirlo como una app, sin pasar por la tienda de aplicaciones.",
   },
   {
     pregunta: "¿Se pueden registrar lecturas de medidor y ver la morosidad?",
