@@ -322,10 +322,16 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
     <>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-[1.35rem] font-semibold tracking-tight">Socios</h1>
-        <Button onClick={() => setCreando(true)}>
-          <Plus />
-          Nuevo socio
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" onClick={() => setImportando(true)}>
+            <Upload />
+            Importar
+          </Button>
+          <Button onClick={() => setCreando(true)}>
+            <Plus />
+            Nuevo socio
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -369,16 +375,23 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
             <UserRound className="size-5 text-muted-foreground" />
           </span>
           <h2 className="mt-4 text-[1rem] font-semibold">
-            Carga a tu primer socio
+            Carga a tus socios
           </h2>
-          <p className="mt-2 max-w-[46ch] text-[0.92rem] leading-relaxed text-muted-foreground">
-            El panel de socios solo deja entrar a quienes estén registrados
-            aquí, identificándolos por su RUT.
+          <p className="mt-2 max-w-[50ch] text-[0.92rem] leading-relaxed text-muted-foreground">
+            Sube tu padrón en Excel, CSV o PDF y lo reviso contigo antes de
+            cargarlo, o agrégalos uno por uno. El panel de socios solo deja
+            entrar a quienes estén registrados aquí, identificándolos por su RUT.
           </p>
-          <Button className="mt-5" onClick={() => setCreando(true)}>
-            <Plus />
-            Nuevo socio
-          </Button>
+          <div className="mt-5 flex flex-wrap justify-center gap-2">
+            <Button onClick={() => setImportando(true)}>
+              <Upload />
+              Importar desde archivo
+            </Button>
+            <Button variant="outline" onClick={() => setCreando(true)}>
+              <Plus />
+              Nuevo socio
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="rounded-xl border border-border bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
@@ -437,7 +450,7 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => setImportando(true)}>
                     <Upload />
-                    Importar desde CSV
+                    Importar desde archivo
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={exportarCsv}>
                     <Download />
