@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { boletas, socios } from "@/lib/db/schema";
+import { boletas, lecturas, socios } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/apr-session";
 import { BoletasTabla } from "@/components/panel/boletas-tabla";
 
@@ -41,12 +41,26 @@ export default async function BoletasPage() {
     columns: { id: true, nombre: true, rut: true, numeroCliente: true, tipo: true },
   });
 
+  // Ultima lectura aprobada de cada arranque: sugiere la anterior al crear una boleta.
+  const anteriores = await db
+    .selectDistinctOn([lecturas.socioId], {
+      socioId: lecturas.socioId,
+      valor: lecturas.valor,
+    })
+    .from(lecturas)
+    .innerJoin(socios, eq(lecturas.socioId, socios.id))
+    .where(and(eq(socios.aprId, apr.id), eq(lecturas.estado, "APROBADA")))
+    .orderBy(lecturas.socioId, desc(lecturas.createdAt));
+  const anteriorDe = new Map(anteriores.map((a) => [a.socioId, a.valor]));
+
   return (
     <BoletasTabla
       boletas={listado}
-      socios={padron}
-      tieneTarifas={
+      socios={padron.map((p) => ({ ...p, ultimaLectura: anteriorDe.get(p.id) ?? null }))}
+      tarifas={
         apr.tarifaCargoFijo !== null && apr.tarifaMetroCubico !== null
+          ? { cargoFijo: apr.tarifaCargoFijo, valorM3: apr.tarifaMetroCubico }
+          : null
       }
       comite={{
         nombre: apr.nombre,

@@ -208,12 +208,12 @@ function TarjetaResumen({
 export function BoletasTabla({
   boletas,
   socios,
-  tieneTarifas,
+  tarifas,
   comite,
 }: {
   boletas: BoletaFila[];
   socios: SocioOpcion[];
-  tieneTarifas: boolean;
+  tarifas: { cargoFijo: number; valorM3: number } | null;
   comite: DatosComiteWhatsApp;
 }) {
   const [busqueda, setBusqueda] = useState("");
@@ -670,7 +670,7 @@ export function BoletasTabla({
         abierto={creando}
         onAbiertoChange={setCreando}
         socios={socios}
-        tieneTarifas={tieneTarifas}
+        tarifas={tarifas}
       />
 
       {editando && (
@@ -678,7 +678,7 @@ export function BoletasTabla({
           abierto
           onAbiertoChange={(v) => !v && setEditando(null)}
           socios={socios}
-          tieneTarifas={tieneTarifas}
+          tarifas={tarifas}
           boleta={editando}
         />
       )}
@@ -743,15 +743,21 @@ function BoletaDialog({
   abierto,
   onAbiertoChange,
   socios,
-  tieneTarifas,
+  tarifas,
   boleta,
 }: {
   abierto: boolean;
   onAbiertoChange: (v: boolean) => void;
   socios: SocioOpcion[];
-  tieneTarifas: boolean;
+  tarifas: { cargoFijo: number; valorM3: number } | null;
   boleta?: BoletaFila;
 }) {
+  // Las lecturas se controlan para mostrar el consumo y el monto mientras se escribe.
+  const [lecAnt, setLecAnt] = useState(String(boleta?.lecturaAnterior ?? ""));
+  const [lecAct, setLecAct] = useState(String(boleta?.lecturaActual ?? ""));
+  const soloDigitos = (v: string) => v.replace(/[^\d]/g, "");
+  const consumo =
+    lecAnt !== "" && lecAct !== "" ? Number(lecAct) - Number(lecAnt) : null;
   const [estado, accion, pendiente] = useActionState<
     ResultadoAccion | null,
     FormData
@@ -776,16 +782,23 @@ function BoletaDialog({
             {boleta ? "Editar boleta" : "Nueva boleta"}
           </DialogTitle>
           <DialogDescription>
-            {tieneTarifas
-              ? "Ingresa las lecturas del medidor para calcular el monto, o escríbelo directamente."
-              : "Ingresa el monto de la boleta."}
+            {tarifas
+              ? "Escribe las lecturas del medidor y el monto se calcula solo, o ingrésalo directamente."
+              : "Escribe las lecturas del medidor para registrar los m³ y el monto de la boleta."}
           </DialogDescription>
         </DialogHeader>
 
         <form action={accion} className="flex flex-col gap-4">
           {boleta && <input type="hidden" name="boletaId" value={boleta.id} />}
 
-          <SocioBuscador socios={socios} defaultId={boleta?.socioId} />
+          <SocioBuscador
+            socios={socios}
+            defaultId={boleta?.socioId}
+            // Al elegir un arranque en una boleta nueva, se sugiere su ultima lectura.
+            onElegir={(s) => {
+              if (!boleta) setLecAnt(s?.ultimaLectura != null ? String(s.ultimaLectura) : "");
+            }}
+          />
 
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="flex flex-col gap-1.5">
@@ -820,34 +833,55 @@ function BoletaDialog({
             </div>
           </div>
 
-          {tieneTarifas && (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="lecturaAnterior">Lectura anterior</Label>
-                <Input
-                  id="lecturaAnterior"
-                  name="lecturaAnterior"
-                  inputMode="numeric"
-                  defaultValue={boleta?.lecturaAnterior ?? ""}
-                  placeholder="1200"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="lecturaActual">Lectura actual</Label>
-                <Input
-                  id="lecturaActual"
-                  name="lecturaActual"
-                  inputMode="numeric"
-                  defaultValue={boleta?.lecturaActual ?? ""}
-                  placeholder="1215"
-                />
-              </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="lecturaAnterior">Lectura anterior</Label>
+              <Input
+                id="lecturaAnterior"
+                name="lecturaAnterior"
+                inputMode="numeric"
+                value={lecAnt}
+                onChange={(e) => setLecAnt(soloDigitos(e.target.value))}
+                placeholder="1200"
+              />
             </div>
-          )}
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="lecturaActual">Lectura actual</Label>
+              <Input
+                id="lecturaActual"
+                name="lecturaActual"
+                inputMode="numeric"
+                value={lecAct}
+                onChange={(e) => setLecAct(soloDigitos(e.target.value))}
+                placeholder="1215"
+              />
+            </div>
+          </div>
+
+          {consumo !== null &&
+            (consumo < 0 ? (
+              <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-3.5 py-2.5 text-[0.85rem] text-destructive">
+                La lectura actual es menor que la anterior. Revisa los valores.
+              </p>
+            ) : (
+              <p className="rounded-lg border border-forest/30 bg-forest/5 px-3.5 py-2.5 text-[0.85rem] text-forest">
+                Consumo: <strong className="tabular-nums">{consumo} m³</strong>
+                {tarifas && (
+                  <>
+                    {" "}
+                    · monto{" "}
+                    <strong className="tabular-nums">
+                      {clp.format(tarifas.cargoFijo + consumo * tarifas.valorM3)}
+                    </strong>{" "}
+                    (se calcula solo)
+                  </>
+                )}
+              </p>
+            ))}
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="montoTotal">
-              Monto {tieneTarifas && "(si no usas lecturas)"}
+              Monto {tarifas && "(si no usas lecturas)"}
             </Label>
             <Input
               id="montoTotal"

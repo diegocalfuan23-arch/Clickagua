@@ -133,12 +133,39 @@ export async function guardarBoleta(
     };
   }
 
-  // Si hay lecturas, el monto se calcula; si no, se usa el que cargaron.
-  const calculo = calcularDesdeLecturas(
-    datos.lecturaAnterior,
-    datos.lecturaActual,
-    { cargoFijo: apr.tarifaCargoFijo, valorM3: apr.tarifaMetroCubico }
-  );
+  // Las lecturas van las dos o ninguna: con una sola no hay consumo que calcular.
+  const conLecturas =
+    datos.lecturaAnterior !== null && datos.lecturaActual !== null;
+  if ((datos.lecturaAnterior === null) !== (datos.lecturaActual === null)) {
+    return {
+      ok: false,
+      error: "Escribe las dos lecturas del medidor (anterior y actual), o ninguna.",
+    };
+  }
+
+  // Un medidor no retrocede: casi siempre es un error de tipeo o un cambio de medidor.
+  if (conLecturas && datos.lecturaActual! < datos.lecturaAnterior!) {
+    return {
+      ok: false,
+      error:
+        "La lectura actual es menor que la anterior. Revisa los valores o registra el cambio de medidor.",
+    };
+  }
+
+  // El consumo (m3) se guarda siempre que haya dos lecturas. Si además hay
+  // tarifas, el monto se calcula con ellas; si no, se usa el que escribieron.
+  const consumoDirecto = conLecturas
+    ? datos.lecturaActual! - datos.lecturaAnterior!
+    : null;
+  const hayTarifas =
+    apr.tarifaCargoFijo !== null && apr.tarifaMetroCubico !== null;
+  const calculo =
+    conLecturas && hayTarifas
+      ? calcularDesdeLecturas(datos.lecturaAnterior, datos.lecturaActual, {
+          cargoFijo: apr.tarifaCargoFijo,
+          valorM3: apr.tarifaMetroCubico,
+        })
+      : null;
 
   if (calculo && "error" in calculo) {
     return { ok: false, error: calculo.error };
@@ -162,7 +189,7 @@ export async function guardarBoleta(
     fechaVencimiento: datos.fechaVencimiento,
     lecturaAnterior: datos.lecturaAnterior,
     lecturaActual: datos.lecturaActual,
-    consumoM3: calculo ? calculo.consumoM3 : null,
+    consumoM3: calculo ? calculo.consumoM3 : consumoDirecto,
     cargoFijo: calculo ? calculo.cargoFijo : null,
     valorM3: calculo ? calculo.valorM3 : null,
     observacion: datos.observacion ?? null,

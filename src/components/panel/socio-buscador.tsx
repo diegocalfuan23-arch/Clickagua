@@ -13,6 +13,8 @@ export type OpcionSocio = {
   rut: string | null;
   numeroCliente?: string | null;
   tipo?: "SOCIO" | "USUARIO";
+  /** Su ultima lectura aprobada, si la pantalla la necesita (p. ej. nueva boleta). */
+  ultimaLectura?: number | null;
 };
 
 const sinTildes = (t: string) =>
