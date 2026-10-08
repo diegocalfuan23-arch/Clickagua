@@ -1,10 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { socios } from "@/lib/db/schema";
+import { boletas, lecturas, socios } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/apr-session";
 import { normalizarRut, normalizarTelefono } from "@/lib/formato";
 
@@ -155,4 +155,85 @@ export async function eliminarSocio(socioId: string): Promise<ResultadoAccion> {
 
   revalidatePath("/panel/socios");
   return { ok: true };
+}
+
+export type ResultadoMasivoSocios =
+  | { ok: true; hechos: number; omitidos: number }
+  | { ok: false; error: string };
+
+const MAX_MASIVO = 2000;
+
+function idsValidos(ids: unknown): string[] | null {
+  if (!Array.isArray(ids) || ids.length === 0 || ids.length > MAX_MASIVO) return null;
+  return [...new Set(ids.map((i) => String(i)))];
+}
+
+/** Desactiva varios arranques de una vez. No borra nada: conservan su historial. */
+export async function desactivarSocios(
+  ids: string[]
+): Promise<ResultadoMasivoSocios> {
+  const { apr } = await requireAdmin();
+  const lista = idsValidos(ids);
+  if (!lista) return { ok: false, error: "Elige entre 1 y 2.000 socios." };
+
+  const hechos = await db
+    .update(socios)
+    .set({ activo: false, updatedAt: new Date() })
+    .where(and(eq(socios.aprId, apr.id), inArray(socios.id, lista)))
+    .returning({ id: socios.id });
+
+  revalidatePath("/panel/socios");
+  revalidatePath("/panel");
+  return { ok: true, hechos: hechos.length, omitidos: lista.length - hechos.length };
+}
+
+/**
+ * Elimina varios arranques, pero SOLO los que no tienen lecturas ni boletas ni
+ * una cuenta de portal: los demás se saltan (para esos, usa Desactivar). Así una
+ * limpieza masiva nunca se lleva el historial de cobros.
+ */
+export async function eliminarSociosSinMovimientos(
+  ids: string[]
+): Promise<ResultadoMasivoSocios> {
+  const { apr } = await requireAdmin();
+  const lista = idsValidos(ids);
+  if (!lista) return { ok: false, error: "Elige entre 1 y 2.000 socios." };
+
+  const propios = await db.query.socios.findMany({
+    where: and(eq(socios.aprId, apr.id), inArray(socios.id, lista)),
+    columns: { id: true, userId: true },
+  });
+  const idsPropios = propios.map((s) => s.id);
+  if (idsPropios.length === 0) return { ok: true, hechos: 0, omitidos: lista.length };
+
+  const conBoletas = await db
+    .selectDistinct({ id: boletas.socioId })
+    .from(boletas)
+    .where(inArray(boletas.socioId, idsPropios));
+  const conLecturas = await db
+    .selectDistinct({ id: lecturas.socioId })
+    .from(lecturas)
+    .where(inArray(lecturas.socioId, idsPropios));
+  const conMovimientos = new Set([
+    ...conBoletas.map((b) => b.id),
+    ...conLecturas.map((l) => l.id),
+  ]);
+
+  const borrables = propios
+    .filter((s) => !s.userId && !conMovimientos.has(s.id))
+    .map((s) => s.id);
+
+  if (borrables.length > 0) {
+    await db
+      .delete(socios)
+      .where(and(eq(socios.aprId, apr.id), inArray(socios.id, borrables)));
+  }
+
+  revalidatePath("/panel/socios");
+  revalidatePath("/panel");
+  return {
+    ok: true,
+    hechos: borrables.length,
+    omitidos: lista.length - borrables.length,
+  };
 }

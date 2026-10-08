@@ -46,6 +46,7 @@ export function ImportarSociosDialog({
   const [resultado, setResultado] = useState<{
     creados: number;
     actualizados: number;
+    desactivados: number;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [leyendo, iniciarLectura] = useTransition();
@@ -95,7 +96,16 @@ export function ImportarSociosDialog({
                 <strong>{resultado.creados}</strong>{" "}
                 {resultado.creados === 1 ? "cuenta creada" : "cuentas creadas"} y{" "}
                 <strong>{resultado.actualizados}</strong>{" "}
-                {resultado.actualizados === 1 ? "actualizada" : "actualizadas"}.
+                {resultado.actualizados === 1 ? "actualizada" : "actualizadas"}
+                {resultado.desactivados > 0 && (
+                  <>
+                    {" "}
+                    y <strong>{resultado.desactivados}</strong>{" "}
+                    {resultado.desactivados === 1 ? "desactivada" : "desactivadas"} por no
+                    venir en la lista
+                  </>
+                )}
+                .
               </p>
             </div>
             <DialogFooter>
@@ -177,7 +187,7 @@ function Revision({
 }: {
   vista: Vista;
   onVolver: () => void;
-  onListo: (r: { creados: number; actualizados: number }) => void;
+  onListo: (r: { creados: number; actualizados: number; desactivados: number }) => void;
 }) {
   const [filas, setFilas] = useState<FilaEditable[]>(() => {
     // Lo que no tiene errores entra marcado; lo con errores, fuera hasta corregirlo.
@@ -188,6 +198,7 @@ function Revision({
     }));
   });
   const [soloProblemas, setSoloProblemas] = useState(false);
+  const [desactivarAusentes, setDesactivarAusentes] = useState(false);
   const [enviando, iniciarEnvio] = useTransition();
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
 
@@ -218,6 +229,15 @@ function Revision({
   const socios = incluidas.filter((f) => f.tipo === "SOCIO").length;
   const usuarios = incluidas.length - socios;
 
+  // Cuentas activas del sistema que no están entre las filas a cargar.
+  const tocados = new Set(
+    incluidas.flatMap((f) => {
+      const id = veredictos.get(f.id)?.existenteId;
+      return id ? [id] : [];
+    })
+  );
+  const ausentes = vista.existentes.filter((e) => e.activo && !tocados.has(e.id));
+
   const visibles = soloProblemas
     ? filas.filter(
         (f) => !f.incluida || (veredictos.get(f.id)?.errores.length ?? 0) > 0
@@ -237,7 +257,8 @@ function Revision({
           telefono: f.telefono,
           direccion: f.direccion,
           numeroCliente: f.numeroCliente,
-        }))
+        })),
+        { desactivarAusentes }
       );
       if (r.ok) onListo(r);
       else setErrorEnvio(r.error);
@@ -379,6 +400,25 @@ function Revision({
           </tbody>
         </table>
       </div>
+
+      {ausentes.length > 0 && (
+        <label className="flex items-start gap-2.5 rounded-lg border border-border/60 bg-muted/40 px-4 py-3 text-[0.88rem]">
+          <Checkbox
+            checked={desactivarAusentes}
+            onCheckedChange={(v) => setDesactivarAusentes(Boolean(v))}
+            className="mt-0.5"
+          />
+          <span>
+            Desactivar los <strong className="tabular-nums">{ausentes.length}</strong> que están
+            en el sistema pero no en esta lista
+            <span className="mt-0.5 block text-[0.8rem] text-muted-foreground">
+              Por ejemplo fallecidos o sin servicio. No se borran: conservan su historial y se
+              pueden reactivar. {ausentes.slice(0, 4).map((e) => e.nombre).join(", ")}
+              {ausentes.length > 4 && "…"}
+            </span>
+          </span>
+        </label>
+      )}
 
       {conError.length > 0 && (
         <p className="text-[0.85rem] text-destructive">

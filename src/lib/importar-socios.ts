@@ -34,6 +34,7 @@ export type Existente = {
   numeroCliente: string | null;
   rut: string | null;
   nombre: string;
+  activo: boolean;
 };
 
 export type Veredicto = {
@@ -301,6 +302,16 @@ export function validarFilas(
 
     const existente = existentePorClave.get(clave) ?? null;
     if (existente) avisos.push("Ya está en tu padrón: se actualizarán sus datos");
+
+    // Mismo N.º pero otra persona: casi siempre es una numeración que cambió, y
+    // actualizar pisaría el nombre de alguien que ya no corresponde.
+    if (
+      existente &&
+      f.numeroCliente.trim() &&
+      sinTildes(limpiar(existente.nombre)) !== sinTildes(limpiar(nombre))
+    ) {
+      avisos.push(`Hoy ese N.º es «${existente.nombre}»: se le cambiará el nombre`);
+    }
 
     return {
       errores,

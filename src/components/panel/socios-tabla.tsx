@@ -9,6 +9,7 @@ import {
   ChevronsUpDown,
   Download,
   FilterX,
+  Loader2,
   MapPinOff,
   MessageCircle,
   MoreHorizontal,
@@ -26,7 +27,9 @@ import {
 } from "lucide-react";
 import {
   alternarActivo,
+  desactivarSocios,
   eliminarSocio,
+  eliminarSociosSinMovimientos,
 } from "@/app/panel/socios/actions";
 import { SocioDialog, type SocioEditable } from "./socio-dialog";
 import { Button } from "@/components/ui/button";
@@ -175,6 +178,7 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
   });
   const [pagina, setPagina] = useState(1);
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set());
+  const [accionMasiva, setAccionMasiva] = useState<"desactivar" | "eliminar" | null>(null);
   const [soloConTelefono, setSoloConTelefono] = useState(false);
   const [soloSinDireccion, setSoloSinDireccion] = useState(false);
   const [soloSinNumero, setSoloSinNumero] = useState(false);
@@ -518,6 +522,37 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
             </div>
           </div>
 
+          {seleccion.size > 0 && (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-y border-border/60 bg-primary/5 px-5 py-2.5 text-[0.88rem]">
+              <span>
+                <strong className="tabular-nums">{seleccion.size}</strong>{" "}
+                {seleccion.size === 1 ? "seleccionado" : "seleccionados"}
+              </span>
+              {seleccion.size < filtrados.length && (
+                <button
+                  type="button"
+                  onClick={() => setSeleccion(new Set(filtrados.map((x) => x.id)))}
+                  className="font-medium text-primary hover:underline"
+                >
+                  Seleccionar los {filtrados.length}
+                </button>
+              )}
+              <span className="ml-auto flex flex-wrap items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => setAccionMasiva("desactivar")}>
+                  <UserX />
+                  Desactivar
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setAccionMasiva("eliminar")}>
+                  <Trash2 />
+                  Eliminar
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setSeleccion(new Set())}>
+                  Quitar selección
+                </Button>
+              </span>
+            </div>
+          )}
+
           {/* TableHeader fuerza [&_tr]:border-b y TableRow trae el suyo: las
               dos se apilan en la misma fila y se ven como una línea gruesa.
               Un solo borde suave, declarado aquí, gana a ambas. */}
@@ -726,6 +761,17 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
         </div>
       )}
 
+      <AccionMasivaDialog
+        accion={accionMasiva}
+        cantidad={seleccion.size}
+        onCerrar={() => setAccionMasiva(null)}
+        onHecho={() => {
+          setAccionMasiva(null);
+          setSeleccion(new Set());
+        }}
+        ids={[...seleccion]}
+      />
+
       <ImportarSociosDialog
         abierto={importando}
         onAbiertoChange={setImportando}
@@ -773,5 +819,106 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+/**
+ * Desactivar o eliminar varios arranques a la vez. Eliminar es deliberadamente
+ * conservador: solo borra los que no tienen lecturas ni boletas ni cuenta de
+ * portal, y avisa cuántos se saltó (para esos, Desactivar).
+ */
+function AccionMasivaDialog({
+  accion,
+  cantidad,
+  ids,
+  onCerrar,
+  onHecho,
+}: {
+  accion: "desactivar" | "eliminar" | null;
+  cantidad: number;
+  ids: string[];
+  onCerrar: () => void;
+  onHecho: () => void;
+}) {
+  const [trabajando, iniciar] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [resultado, setResultado] = useState<{ hechos: number; omitidos: number } | null>(null);
+
+  const eliminar = accion === "eliminar";
+
+  function cerrar() {
+    const hubo = resultado !== null;
+    setError(null);
+    setResultado(null);
+    if (hubo) onHecho();
+    else onCerrar();
+  }
+
+  function confirmar() {
+    setError(null);
+    iniciar(async () => {
+      const r = eliminar
+        ? await eliminarSociosSinMovimientos(ids)
+        : await desactivarSocios(ids);
+      if (r.ok) setResultado({ hechos: r.hechos, omitidos: r.omitidos });
+      else setError(r.error);
+    });
+  }
+
+  return (
+    <Dialog open={accion !== null} onOpenChange={(v) => !v && cerrar()}>
+      <DialogContent className="sm:max-w-110">
+        <DialogHeader>
+          <DialogTitle>
+            {eliminar ? "Eliminar" : "Desactivar"} {cantidad}{" "}
+            {cantidad === 1 ? "arranque" : "arranques"}
+          </DialogTitle>
+          <DialogDescription>
+            {resultado
+              ? "Listo."
+              : eliminar
+                ? "Solo se eliminan los que no tienen lecturas ni boletas ni cuenta de portal."
+                : "Dejan de aparecer para cargar lecturas y boletas, pero conservan su historial."}
+          </DialogDescription>
+        </DialogHeader>
+
+        {resultado ? (
+          <p className="text-[0.9rem] leading-relaxed">
+            <strong>{resultado.hechos}</strong>{" "}
+            {eliminar
+              ? resultado.hechos === 1 ? "eliminado" : "eliminados"
+              : resultado.hechos === 1 ? "desactivado" : "desactivados"}
+            {resultado.omitidos > 0 &&
+              `, ${resultado.omitidos} se ${resultado.omitidos === 1 ? "saltó" : "saltaron"}${
+                eliminar ? " por tener historial: para esos usa Desactivar" : ""
+              }`}
+            .
+          </p>
+        ) : (
+          <p className="text-[0.9rem] leading-relaxed">
+            {eliminar
+              ? "Los eliminados no se pueden recuperar."
+              : "Puedes volver a activarlos cuando quieras."}
+          </p>
+        )}
+        {error && <p className="text-[0.85rem] text-destructive">{error}</p>}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={cerrar} disabled={trabajando}>
+            {resultado ? "Cerrar" : "Cancelar"}
+          </Button>
+          {!resultado && (
+            <Button
+              variant={eliminar ? "destructive" : "default"}
+              onClick={confirmar}
+              disabled={trabajando}
+            >
+              {trabajando && <Loader2 className="animate-spin" />}
+              {eliminar ? "Eliminar" : "Desactivar"}
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { socios } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/apr-session";
@@ -28,13 +28,20 @@ export type Previsualizacion =
   | { ok: false; error: string };
 
 export type ResultadoConfirmacion =
-  | { ok: true; creados: number; actualizados: number }
+  | { ok: true; creados: number; actualizados: number; desactivados: number }
   | { ok: false; error: string };
 
 async function existentesDe(aprId: string): Promise<Existente[]> {
   return db.query.socios.findMany({
     where: eq(socios.aprId, aprId),
-    columns: { id: true, tipo: true, numeroCliente: true, rut: true, nombre: true },
+    columns: {
+      id: true,
+      tipo: true,
+      numeroCliente: true,
+      rut: true,
+      nombre: true,
+      activo: true,
+    },
   });
 }
 
@@ -77,7 +84,8 @@ export async function previsualizarSocios(
  * lo que llega del navegador no se da por bueno.
  */
 export async function importarSociosRevisados(
-  filas: FilaSocio[]
+  filas: FilaSocio[],
+  opciones: { desactivarAusentes?: boolean } = {}
 ): Promise<ResultadoConfirmacion> {
   const { apr } = await requireAdmin();
 
@@ -130,6 +138,8 @@ export async function importarSociosRevisados(
         datos: {
           nombre: f.nombre,
           tipo: f.tipo,
+          // Si estaba desactivado y vuelve a aparecer en la lista, se reactiva.
+          activo: true,
           ...(rut ? { rut } : {}),
           ...opcionales,
         },
@@ -139,9 +149,25 @@ export async function importarSociosRevisados(
     }
   });
 
+  // Cuentas del sistema que no están entre las filas a cargar (fallecidos, sin
+  // agua, números que ya no existen). Solo se desactivan si se pide: no se borra
+  // nada, así conservan su historial y se pueden reactivar.
+  const tocados = new Set(
+    veredictos.flatMap((v) => (v.existenteId ? [v.existenteId] : []))
+  );
+  const ausentes = opciones.desactivarAusentes
+    ? existentes.filter((e) => e.activo && !tocados.has(e.id)).map((e) => e.id)
+    : [];
+
   try {
     // Todo o nada: si algo falla a mitad, no queda el padrón a medio cargar.
     await db.transaction(async (tx) => {
+      if (ausentes.length > 0) {
+        await tx
+          .update(socios)
+          .set({ activo: false, updatedAt: new Date() })
+          .where(and(eq(socios.aprId, apr.id), inArray(socios.id, ausentes)));
+      }
       for (let i = 0; i < aCrear.length; i += 500) {
         await tx.insert(socios).values(aCrear.slice(i, i + 500));
       }
@@ -169,5 +195,10 @@ export async function importarSociosRevisados(
   revalidatePath("/panel/socios");
   revalidatePath("/panel");
 
-  return { ok: true, creados: aCrear.length, actualizados: aActualizar.length };
+  return {
+    ok: true,
+    creados: aCrear.length,
+    actualizados: aActualizar.length,
+    desactivados: ausentes.length,
+  };
 }
