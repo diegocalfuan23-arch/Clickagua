@@ -46,6 +46,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { formatearPeriodo } from "@/lib/boletas";
+import { SocioBuscador, type OpcionSocio } from "@/components/panel/socio-buscador";
 
 type Estado = "PENDIENTE" | "APROBADA" | "RECHAZADA";
 
@@ -62,7 +63,7 @@ export type LecturaFila = {
   createdAt: Date;
 };
 
-export type SocioOpcion = { id: string; nombre: string; rut: string };
+export type SocioOpcion = OpcionSocio;
 
 const POR_PAGINA = 12;
 
@@ -555,25 +556,7 @@ function NuevaLecturaDialog({
         </DialogHeader>
 
         <form action={accion} className="flex min-w-0 flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="nl-socioId">Socio</Label>
-            <select
-              id="nl-socioId"
-              name="socioId"
-              defaultValue=""
-              required
-              className="h-9 min-w-0 rounded-lg border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-            >
-              <option value="" disabled>
-                Elige un socio…
-              </option>
-              {socios.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.nombre} — {s.rut}
-                </option>
-              ))}
-            </select>
-          </div>
+          <SocioBuscador socios={socios} />
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">

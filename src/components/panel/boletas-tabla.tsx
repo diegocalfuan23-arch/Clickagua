@@ -67,6 +67,7 @@ import {
 import { cn } from "@/lib/utils";
 import { formatearPeriodo, saldo } from "@/lib/boletas";
 import { formatearRut, formatearTelefono } from "@/lib/formato";
+import { SocioBuscador, type OpcionSocio } from "@/components/panel/socio-buscador";
 import {
   enlaceWhatsApp,
   mensajeBoleta,
@@ -96,7 +97,7 @@ export type BoletaFila = {
   observacion: string | null;
 };
 
-export type SocioOpcion = { id: string; nombre: string; rut: string | null };
+export type SocioOpcion = OpcionSocio;
 
 const POR_PAGINA = 12;
 
@@ -773,25 +774,7 @@ function BoletaDialog({
         <form action={accion} className="flex flex-col gap-4">
           {boleta && <input type="hidden" name="boletaId" value={boleta.id} />}
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="socioId">Socio</Label>
-            <select
-              id="socioId"
-              name="socioId"
-              defaultValue={boleta?.socioId ?? ""}
-              required
-              className="h-9 rounded-lg border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-            >
-              <option value="" disabled>
-                Elige un socio…
-              </option>
-              {socios.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.nombre} — {formatearRut(s.rut)}
-                </option>
-              ))}
-            </select>
-          </div>
+          <SocioBuscador socios={socios} defaultId={boleta?.socioId} />
 
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="flex flex-col gap-1.5">

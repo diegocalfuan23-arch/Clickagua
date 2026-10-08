@@ -15,9 +15,7 @@ import {
   Clock,
   Droplets,
   Loader2,
-  Search,
   WifiOff,
-  X,
   XCircle,
 } from "lucide-react";
 import { registrarLectura } from "@/app/panel/lecturas/actions";
@@ -39,12 +37,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { formatearPeriodo } from "@/lib/boletas";
+import { SocioBuscador, type OpcionSocio } from "@/components/panel/socio-buscador";
 
 /** `anterior`: la última lectura aprobada del socio, la base del consumo. */
-type Socio = {
-  id: string;
-  nombre: string;
-  rut: string;
+type Socio = OpcionSocio & {
   anterior: { valor: number; periodo: string } | null;
 };
 
@@ -81,104 +77,6 @@ const periodoActual = () => {
   const hoy = new Date();
   return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}`;
 };
-
-/**
- * Buscador de socio: con 150 socios, un <select> de una sola columna es
- * inmanejable en el teléfono. Se escribe parte del nombre o RUT y se toca.
- */
-function SocioPicker({
-  socios,
-  onElegir,
-}: {
-  socios: Socio[];
-  onElegir: (socio: Socio | null) => void;
-}) {
-  const [texto, setTexto] = useState("");
-  const [elegido, setElegido] = useState<Socio | null>(null);
-  const [abierto, setAbierto] = useState(false);
-
-  const resultados = useMemo(() => {
-    const t = texto.trim().toLowerCase();
-    const lista = t
-      ? socios.filter((s) => `${s.nombre} ${s.rut}`.toLowerCase().includes(t))
-      : socios;
-    return lista.slice(0, 40);
-  }, [socios, texto]);
-
-  return (
-    <div className="relative flex flex-col gap-1.5">
-      <Label htmlFor="socio-buscar">Socio</Label>
-      <input type="hidden" name="socioId" value={elegido?.id ?? ""} />
-      <div className="relative">
-        <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4.5 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          id="socio-buscar"
-          value={elegido ? elegido.nombre : texto}
-          onChange={(e) => {
-            setElegido(null);
-            onElegir(null);
-            setTexto(e.target.value);
-            setAbierto(true);
-          }}
-          onFocus={() => setAbierto(true)}
-          // Con retraso para que el toque en un resultado llegue antes de cerrar.
-          onBlur={() => setTimeout(() => setAbierto(false), 150)}
-          placeholder="Busca por nombre o RUT…"
-          autoComplete="off"
-          required
-          className={cn(CAMPO, "pl-11")}
-        />
-        {elegido && (
-          <button
-            type="button"
-            aria-label="Quitar socio elegido"
-            onClick={() => {
-              setElegido(null);
-              onElegir(null);
-              setTexto("");
-              setAbierto(true);
-            }}
-            className="absolute top-1/2 right-2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground"
-          >
-            <X className="size-4.5" />
-          </button>
-        )}
-      </div>
-      {elegido && (
-        <p className="text-[0.82rem] text-muted-foreground">{elegido.rut}</p>
-      )}
-
-      {abierto && !elegido && (
-        <ul className="absolute top-full right-0 left-0 z-20 mt-1 max-h-72 overflow-y-auto rounded-xl border border-border bg-popover shadow-lg">
-          {resultados.length === 0 ? (
-            <li className="px-4 py-3 text-[0.9rem] text-muted-foreground">
-              Ningún socio coincide.
-            </li>
-          ) : (
-            resultados.map((s) => (
-              <li key={s.id}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setElegido(s);
-                    onElegir(s);
-                    setAbierto(false);
-                  }}
-                  className="flex min-h-12 w-full flex-col items-start justify-center border-b border-border/50 px-4 py-2 text-left last:border-b-0 active:bg-muted"
-                >
-                  <span className="text-[0.95rem] font-medium">{s.nombre}</span>
-                  <span className="text-[0.78rem] text-muted-foreground">
-                    {s.rut}
-                  </span>
-                </button>
-              </li>
-            ))
-          )}
-        </ul>
-      )}
-    </div>
-  );
-}
 
 export function LecturaForm({
   socios,
@@ -343,7 +241,12 @@ export function LecturaForm({
             }}
             className="flex flex-col gap-4 rounded-2xl border border-border/60 bg-card p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] md:rounded-xl md:p-5"
           >
-            <SocioPicker key={claveForm} socios={socios} onElegir={setSocio} />
+            <SocioBuscador
+              key={claveForm}
+              socios={socios}
+              className={CAMPO}
+              onElegir={(s) => setSocio(socios.find((x) => x.id === s?.id) ?? null)}
+            />
 
             {socio && (
               <div className="flex items-center justify-between rounded-xl bg-muted/60 px-4 py-3">

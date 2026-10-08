@@ -38,7 +38,7 @@ export default async function BoletasPage() {
   const padron = await db.query.socios.findMany({
     where: eq(socios.aprId, apr.id),
     orderBy: [asc(socios.nombre)],
-    columns: { id: true, nombre: true, rut: true },
+    columns: { id: true, nombre: true, rut: true, numeroCliente: true, tipo: true },
   });
 
   return (

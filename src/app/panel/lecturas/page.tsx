@@ -18,7 +18,7 @@ export default async function LecturasPage() {
   const listaSocios = await db.query.socios.findMany({
     where: eq(socios.aprId, apr.id),
     orderBy: [asc(socios.nombre)],
-    columns: { id: true, nombre: true, rut: true },
+    columns: { id: true, nombre: true, rut: true, numeroCliente: true, tipo: true },
   });
 
   if (user.rol === "OPERADOR") {
@@ -50,7 +50,9 @@ export default async function LecturasPage() {
           return {
             id: s.id,
             nombre: s.nombre,
-            rut: formatearRut(s.rut),
+            rut: s.rut,
+            numeroCliente: s.numeroCliente,
+            tipo: s.tipo,
             anterior: a ? { valor: a.valor, periodo: a.periodo } : null,
           };
         })}
@@ -93,7 +95,9 @@ export default async function LecturasPage() {
       socios={listaSocios.map((s) => ({
         id: s.id,
         nombre: s.nombre,
-        rut: formatearRut(s.rut),
+        rut: s.rut,
+        numeroCliente: s.numeroCliente,
+        tipo: s.tipo,
       }))}
       lecturas={todas.map((l) => ({
         id: l.id,
