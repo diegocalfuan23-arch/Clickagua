@@ -1,11 +1,16 @@
 import { normalizarRut } from "@/lib/formato";
 
 /**
- * Lecturas INICIALES en bloque: la lectura de partida de cada medidor, para que
- * la primera boleta cobre solo el consumo del mes y no el medidor completo. La
- * planilla trae, por cada arranque, cómo identificarlo (N.º, nombre o RUT) y su
- * lectura. Lógica pura: corre igual en el servidor y se prueba sin base de datos.
+ * Lecturas en bloque desde una planilla. Dos usos:
+ *  - "inicial": la lectura de partida de cada medidor (sin boleta), para que la
+ *    primera boleta cobre solo el consumo del mes y no el medidor completo.
+ *  - "mensual": las lecturas del mes, de arranques que ya tienen una anterior;
+ *    de ahí sale el consumo (lectura - anterior) y el monto a cobrar.
+ * La planilla trae, por cada arranque, cómo identificarlo (N.º, nombre o RUT) y
+ * su lectura. Lógica pura: corre igual en el servidor y se prueba sin base.
  */
+
+export type ModoLecturas = "inicial" | "mensual";
 
 export type FilaLectura = {
   linea: number;
@@ -24,6 +29,10 @@ export type CuentaRef = {
   numeroCliente: string | null;
   /** Ya tiene al menos una lectura aprobada: entonces esta no sería la inicial. */
   tieneLecturas: boolean;
+  /** Su última lectura aprobada (la base del consumo); null si no tiene. */
+  anterior: number | null;
+  /** Ya hay una lectura pendiente suya en el período que se está cargando. */
+  pendienteEnPeriodo: boolean;
 };
 
 export type LecturaResuelta = {
@@ -34,6 +43,9 @@ export type LecturaResuelta = {
   socioId: string | null;
   /** El nombre del arranque encontrado, para que se vea a quién corresponde. */
   nombre: string | null;
+  /** Solo en modo mensual: la lectura anterior y los m³ que resultan. */
+  anterior: number | null;
+  consumo: number | null;
   error: string | null;
 };
 
@@ -130,7 +142,8 @@ function leerValor(texto: string): number | null {
 
 export function resolverLecturas(
   filas: FilaLectura[],
-  cuentas: CuentaRef[]
+  cuentas: CuentaRef[],
+  modo: ModoLecturas = "inicial"
 ): LecturaResuelta[] {
   const vistos = new Set<string>();
 
@@ -138,7 +151,15 @@ export function resolverLecturas(
     const referencia = f.numero
       ? `N.º ${f.numero}`
       : f.nombre || (f.rut ? `RUT ${f.rut}` : "—");
-    const base = { linea: f.linea, referencia, valor: null, socioId: null, nombre: null };
+    const base = {
+      linea: f.linea,
+      referencia,
+      valor: null,
+      socioId: null,
+      nombre: null,
+      anterior: null,
+      consumo: null,
+    };
     const mal = (error: string): LecturaResuelta => ({ ...base, error });
 
     const valor = leerValor(f.valor);
@@ -179,16 +200,43 @@ export function resolverLecturas(
     if (candidatos.length === 0) return mal(`No hay un arranque con ${criterio}`);
 
     const cuenta = candidatos[0];
-    const resuelta = { ...base, valor, socioId: cuenta.id, nombre: cuenta.nombre };
+    const resuelta = {
+      ...base,
+      valor,
+      socioId: cuenta.id,
+      nombre: cuenta.nombre,
+      anterior: modo === "mensual" ? cuenta.anterior : null,
+    };
 
-    if (cuenta.tieneLecturas) {
-      return { ...resuelta, error: "Ya tiene lecturas aprobadas: esta no sería la inicial" };
-    }
     if (vistos.has(cuenta.id)) {
       return { ...resuelta, error: "Repetida en el archivo: este arranque ya aparece arriba" };
     }
     vistos.add(cuenta.id);
 
-    return { ...resuelta, error: null };
+    if (modo === "inicial") {
+      if (cuenta.tieneLecturas) {
+        return { ...resuelta, error: "Ya tiene lecturas aprobadas: esta no sería la inicial" };
+      }
+      return { ...resuelta, error: null };
+    }
+
+    // Lectura del mes: necesita una anterior para saber cuántos m³ se consumieron.
+    if (cuenta.anterior === null) {
+      return {
+        ...resuelta,
+        error: "Es su primera lectura: cárgala como lectura inicial (así no se cobra el medidor completo)",
+      };
+    }
+    if (valor < cuenta.anterior) {
+      return {
+        ...resuelta,
+        error: `Es menor que la anterior (${cuenta.anterior}): ¿medidor nuevo o error de digitación?`,
+      };
+    }
+    if (cuenta.pendienteEnPeriodo) {
+      return { ...resuelta, error: "Ya tiene una lectura pendiente de este período" };
+    }
+
+    return { ...resuelta, consumo: valor - cuenta.anterior, error: null };
   });
 }

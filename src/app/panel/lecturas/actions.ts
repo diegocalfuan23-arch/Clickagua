@@ -114,11 +114,13 @@ export async function registrarLectura(
  * se pida expresamente `cobrarDesdeCero` (un medidor realmente nuevo, en 0).
  * Lo normal para la primera lectura es `aprobarComoLecturaInicial`.
  */
-export async function aprobarLectura(
+type Sesion = Awaited<ReturnType<typeof requireAdmin>>;
+
+async function aprobarNucleo(
+  { user, apr }: Sesion,
   lecturaId: string,
-  opciones: { cobrarDesdeCero?: boolean } = {}
+  opciones: { cobrarDesdeCero?: boolean }
 ): Promise<ResultadoAprobacion> {
-  const { user, apr } = await requireAdmin();
 
   const lectura = await db
     .select({
@@ -237,10 +239,56 @@ export async function aprobarLectura(
     .set({ estado: "APROBADA", revisadaPorId: user.id, updatedAt: new Date() })
     .where(eq(lecturas.id, lecturaId));
 
+  return { ok: true };
+}
+
+function refrescarPantallas() {
   revalidatePath("/panel/lecturas");
   revalidatePath("/panel/boletas");
   revalidatePath("/panel");
-  return { ok: true };
+}
+
+export async function aprobarLectura(
+  lecturaId: string,
+  opciones: { cobrarDesdeCero?: boolean } = {}
+): Promise<ResultadoAprobacion> {
+  const sesion = await requireAdmin();
+  const r = await aprobarNucleo(sesion, lecturaId, opciones);
+  if (r.ok) refrescarPantallas();
+  return r;
+}
+
+export type ResultadoAprobacionMasiva =
+  | { ok: true; aprobadas: number; fallidas: { id: string; error: string }[] }
+  | { ok: false; error: string };
+
+/**
+ * Aprueba varias lecturas de una vez y genera sus boletas. Cada una pasa por las
+ * mismas reglas que al aprobar de a una: una primera lectura (sin anterior) o una
+ * menor que la anterior NO se aprueba aquí, queda como fallida con su motivo.
+ */
+export async function aprobarLecturasListas(
+  ids: string[]
+): Promise<ResultadoAprobacionMasiva> {
+  const sesion = await requireAdmin();
+
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return { ok: false, error: "No hay lecturas para aprobar." };
+  }
+  if (ids.length > 2000) {
+    return { ok: false, error: "Máximo 2.000 lecturas por vez." };
+  }
+
+  let aprobadas = 0;
+  const fallidas: { id: string; error: string }[] = [];
+  for (const id of ids) {
+    const r = await aprobarNucleo(sesion, String(id), {});
+    if (r.ok) aprobadas++;
+    else fallidas.push({ id: String(id), error: r.error });
+  }
+
+  refrescarPantallas();
+  return { ok: true, aprobadas, fallidas };
 }
 
 /**

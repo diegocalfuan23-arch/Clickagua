@@ -514,7 +514,18 @@ export function BoletasTabla({
                           {formatearPeriodo(b.periodo)}
                         </TableCell>
                         <TableCell className="px-4 py-3.5 tabular-nums text-muted-foreground">
-                          {b.consumoM3 !== null ? `${b.consumoM3} m³` : "—"}
+                          {b.consumoM3 !== null ? (
+                            <>
+                              <div>{b.consumoM3} m³</div>
+                              {b.lecturaAnterior !== null && b.lecturaActual !== null && (
+                                <div className="text-[0.76rem]">
+                                  {b.lecturaAnterior} → {b.lecturaActual}
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            "—"
+                          )}
                         </TableCell>
                         <TableCell className="px-4 py-3.5 font-medium tabular-nums">
                           {clp.format(b.montoTotal)}

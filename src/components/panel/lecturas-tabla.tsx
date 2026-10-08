@@ -22,6 +22,7 @@ import {
 import {
   aprobarComoLecturaInicial,
   aprobarLectura,
+  aprobarLecturasListas,
   rechazarLectura,
   registrarLectura,
   type ResultadoAccion,
@@ -49,7 +50,7 @@ import {
 import { cn } from "@/lib/utils";
 import { formatearPeriodo } from "@/lib/boletas";
 import { SocioBuscador, type OpcionSocio } from "@/components/panel/socio-buscador";
-import { LecturasInicialesDialog } from "@/components/panel/lecturas-iniciales-dialog";
+import { LecturasMasivasDialog } from "@/components/panel/lecturas-masivas-dialog";
 
 type Estado = "PENDIENTE" | "APROBADA" | "RECHAZADA";
 
@@ -155,6 +156,7 @@ export function LecturasTabla({
   const [creando, setCreando] = useState(false);
   const [rechazando, setRechazando] = useState<LecturaFila | null>(null);
   const [iniciales, setIniciales] = useState(false);
+  const [aprobandoListas, setAprobandoListas] = useState(false);
   const [confirmando, setConfirmando] = useState<{
     lectura: LecturaFila;
     motivo: Motivo;
@@ -182,6 +184,10 @@ export function LecturasTabla({
     paginaActual * POR_PAGINA
   );
 
+  // Las que se pueden aprobar sin preguntar: tienen una anterior y no retroceden.
+  const listas = lecturas.filter(
+    (l) => l.estado === "PENDIENTE" && l.anterior !== null && l.valor >= l.anterior
+  );
   const aprobadas = lecturas.filter((l) => l.estado === "APROBADA").length;
   const rechazadas = lecturas.filter((l) => l.estado === "RECHAZADA").length;
 
@@ -218,7 +224,7 @@ export function LecturasTabla({
           </Link>
           <Button variant="outline" onClick={() => setIniciales(true)}>
             <FileUp />
-            Lecturas iniciales
+            Cargar desde archivo
           </Button>
           <Button onClick={() => setCreando(true)} disabled={socios.length === 0}>
             <Plus />
@@ -239,6 +245,16 @@ export function LecturasTabla({
             </strong>{" "}
             Hasta que no se aprueben, no se genera la boleta del socio.
           </p>
+          {listas.length > 0 && (
+            <Button
+              size="sm"
+              className="ml-auto shrink-0"
+              onClick={() => setAprobandoListas(true)}
+            >
+              <Check />
+              Aprobar las {listas.length} listas
+            </Button>
+          )}
         </div>
       )}
 
@@ -427,7 +443,14 @@ export function LecturasTabla({
         onRegistrada={() => router.refresh()}
       />
 
-      <LecturasInicialesDialog abierto={iniciales} onAbiertoChange={setIniciales} />
+      <LecturasMasivasDialog abierto={iniciales} onAbiertoChange={setIniciales} />
+
+      <AprobarListasDialog
+        abierto={aprobandoListas}
+        onAbiertoChange={setAprobandoListas}
+        listas={listas}
+        onHecho={() => router.refresh()}
+      />
 
       <PrimeraLecturaDialog
         pendiente={confirmando}
@@ -577,6 +600,102 @@ function FilaLectura({
         )}
       </TableCell>
     </TableRow>
+  );
+}
+
+/**
+ * Aprobar en bloque las lecturas que no ofrecen dudas (con anterior y que no
+ * retroceden): genera de una vez sus boletas. Las dudosas (primera lectura,
+ * menor que la anterior) no entran: se resuelven de a una.
+ */
+function AprobarListasDialog({
+  abierto,
+  onAbiertoChange,
+  listas,
+  onHecho,
+}: {
+  abierto: boolean;
+  onAbiertoChange: (v: boolean) => void;
+  listas: LecturaFila[];
+  onHecho: () => void;
+}) {
+  const [trabajando, iniciar] = useTransition();
+  const [resultado, setResultado] = useState<{
+    aprobadas: number;
+    fallidas: { id: string; error: string }[];
+  } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const totalM3 = listas.reduce((s, l) => s + (l.valor - (l.anterior ?? 0)), 0);
+
+  function cambiar(v: boolean) {
+    onAbiertoChange(v);
+    if (!v) {
+      setResultado(null);
+      setError(null);
+    }
+  }
+
+  return (
+    <Dialog open={abierto} onOpenChange={cambiar}>
+      <DialogContent className="sm:max-w-110">
+        <DialogHeader>
+          <DialogTitle>Aprobar y generar boletas</DialogTitle>
+          <DialogDescription>
+            {resultado
+              ? "Listo."
+              : `${listas.length} ${listas.length === 1 ? "lectura" : "lecturas"} · ${numero.format(totalM3)} m³ en total.`}
+          </DialogDescription>
+        </DialogHeader>
+
+        {resultado ? (
+          <div className="flex flex-col gap-3 text-[0.9rem]">
+            <p>
+              <strong>{resultado.aprobadas}</strong> boletas generadas.
+              {resultado.fallidas.length > 0 &&
+                ` ${resultado.fallidas.length} no se pudieron aprobar y siguen por revisar.`}
+            </p>
+            {resultado.fallidas.length > 0 && (
+              <ul className="max-h-40 overflow-y-auto text-[0.82rem] text-destructive">
+                {resultado.fallidas.map((f) => (
+                  <li key={f.id}>{f.error}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ) : (
+          <p className="text-[0.9rem] leading-relaxed">
+            Se aprobarán estas lecturas y se creará la boleta de cada una, con el consumo calculado
+            contra su lectura anterior. Las lecturas dudosas (primera lectura de un arranque o menor
+            que la anterior) quedan fuera, para revisarlas de a una.
+          </p>
+        )}
+        {error && <p className="text-[0.88rem] text-destructive">{error}</p>}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => cambiar(false)} disabled={trabajando}>
+            {resultado ? "Cerrar" : "Cancelar"}
+          </Button>
+          {!resultado && (
+            <Button
+              disabled={trabajando || listas.length === 0}
+              onClick={() => {
+                setError(null);
+                iniciar(async () => {
+                  const r = await aprobarLecturasListas(listas.map((l) => l.id));
+                  if (!r.ok) return setError(r.error);
+                  setResultado({ aprobadas: r.aprobadas, fallidas: r.fallidas });
+                  onHecho();
+                });
+              }}
+            >
+              {trabajando && <Loader2 className="animate-spin" />}
+              Aprobar {listas.length}
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
