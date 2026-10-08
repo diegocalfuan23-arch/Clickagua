@@ -66,7 +66,7 @@ const esTelefono = (c: string) =>
 const esDireccion = (c: string) =>
   /direcc|domicilio|parcela|sector|calle/.test(sinTildes(c));
 const esNumero = (c: string) =>
-  /^(n|no|nro|num|numero)\.?$|n[°º]\s*(cliente|arranque)|numero|arranque\s*n|n\s*cliente/.test(
+  /^(n|no|nro|num|numero)\.?$|^n\.?\s*[°º]\.?$|n\.?\s*[°º]\s*(cliente|arranque)|numero|arranque\s*n|n\s*cliente/.test(
     sinTildes(c)
   );
 

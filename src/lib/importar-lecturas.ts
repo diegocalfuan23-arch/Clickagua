@@ -59,7 +59,7 @@ const sinTildes = (t: string) =>
 
 const esLectura = (c: string) => /lectura|medidor/.test(sinTildes(c));
 const esNumero = (c: string) =>
-  /^(n|no|nro|num|numero)\.?$|n[°º]|numero|arranque|cliente/.test(sinTildes(c));
+  /^(n|no|nro|num|numero)\.?$|n\.?\s*[°º]|numero|arranque|cliente/.test(sinTildes(c));
 const esNombre = (c: string) => /\bnombres?\b/.test(sinTildes(c));
 const esRut = (c: string) => /\b(rut|run)\b/.test(sinTildes(c));
 const esTipo = (c: string) => /^tipo$/.test(sinTildes(c));
@@ -103,6 +103,7 @@ export function detectarLecturas(tabla: string[][]): DeteccionLecturas {
     c >= 0 ? (tabla[r]?.[c] ?? "").replace(/\s+/g, " ").trim() : "";
 
   const filas: FilaLectura[] = [];
+  let sinLectura = 0;
   for (let r = fila + 1; r < tabla.length; r++) {
     const f: FilaLectura = {
       linea: r + 1,
@@ -113,11 +114,19 @@ export function detectarLecturas(tabla: string[][]): DeteccionLecturas {
       valor: celda(r, cLectura),
     };
     if (!f.numero && !f.nombre && !f.rut && !f.valor) continue;
+    // Un medidor que no se leyó se deja en blanco: se ignora, no es un error.
+    if (!f.valor) {
+      sinLectura++;
+      continue;
+    }
     filas.push(f);
   }
 
   if (filas.length === 0) {
-    return { ok: false, error: "Encontré los encabezados, pero no hay filas debajo." };
+    return {
+      ok: false,
+      error: "Encontré los encabezados, pero no hay ninguna fila con lectura.",
+    };
   }
 
   const por = [
@@ -130,6 +139,9 @@ export function detectarLecturas(tabla: string[][]): DeteccionLecturas {
     filas,
     notas: [
       `Encontré los encabezados en la fila ${fila + 1}: lectura, e identifico cada arranque por ${por.join(", ")}.`,
+      ...(sinLectura > 0
+        ? [`${sinLectura} filas no traen lectura: las ignoré.`]
+        : []),
     ],
   };
 }
