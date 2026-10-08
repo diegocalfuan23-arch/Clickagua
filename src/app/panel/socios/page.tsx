@@ -19,6 +19,7 @@ export default async function SociosPage() {
       id: true,
       nombre: true,
       rut: true,
+      tipo: true,
       telefono: true,
       direccion: true,
       numeroCliente: true,

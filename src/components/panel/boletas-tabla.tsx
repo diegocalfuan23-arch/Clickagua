@@ -82,7 +82,7 @@ export type BoletaFila = {
   id: string;
   socioId: string;
   socioNombre: string;
-  socioRut: string;
+  socioRut: string | null;
   socioTelefono: string | null;
   periodo: string;
   montoTotal: number;
@@ -96,7 +96,7 @@ export type BoletaFila = {
   observacion: string | null;
 };
 
-export type SocioOpcion = { id: string; nombre: string; rut: string };
+export type SocioOpcion = { id: string; nombre: string; rut: string | null };
 
 const POR_PAGINA = 12;
 

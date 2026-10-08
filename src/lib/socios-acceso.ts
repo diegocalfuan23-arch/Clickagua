@@ -25,10 +25,13 @@ export async function solicitarAccesoSocio({
 }): Promise<ResultadoSolicitud> {
   const rutNormalizado = normalizarRut(rut);
 
-  const socio = await db.query.socios.findFirst({
+  // Una persona puede tener varios arranques (varias filas con su RUT): la
+  // cuenta es una sola y desde ella se ven todos.
+  const delRut = await db.query.socios.findMany({
     where: and(eq(socios.aprId, aprId), eq(socios.rut, rutNormalizado)),
     columns: { id: true, userId: true },
   });
+  const socio = delRut[0];
 
   // Mensaje genérico a propósito: no hay que confirmarle a un desconocido
   // si un RUT en particular es o no socio de este comité.
@@ -36,7 +39,7 @@ export async function solicitarAccesoSocio({
     "No pudimos verificar ese RUT con el padrón del comité. Si el problema persiste, contacta a tu comité.";
 
   if (!socio) return { ok: false, error: ERROR_GENERICO };
-  if (socio.userId) {
+  if (delRut.some((s) => s.userId)) {
     return {
       ok: false,
       error: "Ese RUT ya tiene una cuenta. Si olvidaste tu clave, contacta a tu comité.",
@@ -99,6 +102,10 @@ export async function aprobarSolicitudAcceso(
   }
 
   const userId = createId();
+  // Sin RUT no hay solicitud de acceso (se pide con el RUT): no debería llegar.
+  if (!solicitud.socio.rut) {
+    return { ok: false, error: "Este socio no tiene RUT en el padrón." };
+  }
   const correoSintetico = correoSocioDesdeRut(
     solicitud.socio.rut,
     solicitud.socio.aprId

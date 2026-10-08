@@ -1,9 +1,11 @@
 import { readSheet } from "read-excel-file/node";
+import { leerPdf } from "@/lib/pdf-tabla";
 
 /**
- * Lee una planilla subida por el comité (CSV o Excel .xlsx) y la devuelve como
- * filas de texto, para que los importadores no distingan el formato. La
- * primera fila es el encabezado.
+ * Lee una planilla subida por el comité (CSV, Excel .xlsx o PDF con texto) y la
+ * devuelve como filas de texto, para que los importadores no distingan el
+ * formato. Con `conservarVacias` las filas vacías no se descartan, así el
+ * número de fila coincide con el del archivo (lo usa la detección de tablas).
  */
 export type ResultadoTabla =
   | { ok: true; filas: string[][] }
@@ -52,7 +54,10 @@ function celdaATexto(valor: unknown): string {
   return String(valor).trim();
 }
 
-export async function leerTabla(archivo: File): Promise<ResultadoTabla> {
+export async function leerTabla(
+  archivo: File,
+  opciones: { conservarVacias?: boolean } = {}
+): Promise<ResultadoTabla> {
   const nombre = archivo.name.toLowerCase();
 
   let filas: string[][];
@@ -69,6 +74,8 @@ export async function leerTabla(archivo: File): Promise<ResultadoTabla> {
           "No pudimos leer el archivo de Excel. Revisa que sea un .xlsx válido, o guárdalo como CSV.",
       };
     }
+  } else if (nombre.endsWith(".pdf")) {
+    return leerPdf(new Uint8Array(await archivo.arrayBuffer()));
   } else if (nombre.endsWith(".xls")) {
     return {
       ok: false,
@@ -77,14 +84,16 @@ export async function leerTabla(archivo: File): Promise<ResultadoTabla> {
     };
   } else {
     const texto = await archivo.text();
-    filas = texto
-      .split(/\r?\n/)
-      .filter((l) => l.trim() !== "")
-      .map(partirLinea);
+    const lineas = texto.split(/\r?\n/);
+    filas = (
+      opciones.conservarVacias ? lineas : lineas.filter((l) => l.trim() !== "")
+    ).map(partirLinea);
   }
 
   // Excel suele arrastrar filas vacías al final de la hoja.
-  filas = filas.filter((fila) => fila.some((celda) => celda !== ""));
+  if (!opciones.conservarVacias) {
+    filas = filas.filter((fila) => fila.some((celda) => celda !== ""));
+  }
 
   if (filas.length < 2) {
     return { ok: false, error: "El archivo no tiene filas de datos." };

@@ -46,8 +46,12 @@ export function Recibo({ r }: { r: ReciboDatos }) {
             <div className="text-neutral-600">{r.comite.razonSocial}</div>
           )}
           <div className="text-neutral-600">
-            RUT {formatearRut(r.comite.rut)}
-            {r.comite.telefono ? ` · ${r.comite.telefono}` : ""}
+            {[
+              r.comite.rut ? `RUT ${formatearRut(r.comite.rut)}` : null,
+              r.comite.telefono,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
           </div>
           <div className="text-neutral-600">
             {[r.comite.direccion, r.comite.comuna].filter(Boolean).join(", ")}
@@ -67,10 +71,12 @@ export function Recibo({ r }: { r: ReciboDatos }) {
           <span className="text-neutral-600">Socio: </span>
           <strong>{r.socio.nombre}</strong>
         </div>
-        <div>
-          <span className="text-neutral-600">RUT: </span>
-          {formatearRut(r.socio.rut)}
-        </div>
+        {r.socio.rut && (
+          <div>
+            <span className="text-neutral-600">RUT: </span>
+            {formatearRut(r.socio.rut)}
+          </div>
+        )}
         {r.socio.numeroCliente && (
           <div>
             <span className="text-neutral-600">N.º cliente: </span>

@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { socios } from "@/lib/db/schema";
@@ -31,4 +31,23 @@ export async function requireSocio(slugEsperado: string) {
   }
 
   return { user: session.user, socio };
+}
+
+/**
+ * Todas las cuentas (arranques) de la misma persona dentro del comité: las que
+ * comparten su RUT. Quien tiene dos medidores entra una sola vez y ve las
+ * boletas de los dos. Sin RUT, solo la suya.
+ */
+export async function cuentasDelSocio(socio: {
+  id: string;
+  nombre: string;
+  aprId: string;
+  rut: string | null;
+}) {
+  if (!socio.rut) return [{ id: socio.id, nombre: socio.nombre }];
+
+  return db.query.socios.findMany({
+    where: and(eq(socios.aprId, socio.aprId), eq(socios.rut, socio.rut)),
+    columns: { id: true, nombre: true },
+  });
 }

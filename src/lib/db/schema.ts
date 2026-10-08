@@ -204,11 +204,19 @@ export const socios = pgTable(
       .notNull()
       .references(() => aprs.id, { onDelete: "cascade" }),
     nombre: text("nombre").notNull(),
-    rut: text("rut").notNull(),
-    /** E.164. Opcional: un socio sin número igual tiene boletas y panel. En
-        Postgres varios NULL no chocan en el índice único por comité. */
+    /**
+     * Cada fila es una CUENTA COBRABLE: un arranque con su propio medidor y su
+     * propia boleta. Una persona con dos arranques son dos filas con el mismo
+     * RUT, y un usuario (no socio, pero que también paga) puede no tener RUT.
+     */
+    rut: text("rut"),
+    /** SOCIO o USUARIO: el comité distingue a quien es socio de quien solo usa el agua. */
+    tipo: text("tipo").$type<"SOCIO" | "USUARIO">().notNull().default("SOCIO"),
+    /** E.164. Opcional, y se puede repetir: una persona con varios arranques
+        usa el mismo número. */
     telefono: text("telefono"),
     direccion: text("direccion"),
+    /** N.º de arranque dentro de su tipo (el socio 3 y el usuario 3 son distintos). */
     numeroCliente: text("numeroCliente"),
     activo: boolean("activo").notNull().default(true),
     /**
@@ -222,10 +230,13 @@ export const socios = pgTable(
     updatedAt: timestamp("updatedAt", { precision: 3 }).notNull().defaultNow(),
   },
   (table) => [
-    // Únicos por APR, no globalmente: dos comités pueden tener socios
-    // distintos con el mismo RUT o teléfono sin colisionar.
-    uniqueIndex("Socio_apr_rut_key").on(table.aprId, table.rut),
-    uniqueIndex("Socio_apr_telefono_key").on(table.aprId, table.telefono),
+    // RUT y teléfono ya no son únicos: varios arranques comparten dueño. Lo
+    // único es el N.º de arranque dentro de su tipo y su comité.
+    index("Socio_apr_rut_idx").on(table.aprId, table.rut),
+    index("Socio_apr_telefono_idx").on(table.aprId, table.telefono),
+    uniqueIndex("Socio_apr_tipo_numero_key")
+      .on(table.aprId, table.tipo, table.numeroCliente)
+      .where(sql`${table.numeroCliente} IS NOT NULL`),
     uniqueIndex("Socio_userId_key")
       .on(table.userId)
       .where(sql`${table.userId} IS NOT NULL`),

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { desc, eq } from "drizzle-orm";
-import { requireSocio } from "@/lib/socio-session";
+import { desc, inArray } from "drizzle-orm";
+import { cuentasDelSocio, requireSocio } from "@/lib/socio-session";
 import { db } from "@/lib/db";
 import { boletas } from "@/lib/db/schema";
 import { saldo, formatearPeriodo } from "@/lib/boletas";
@@ -43,10 +43,16 @@ export default async function PanelSocioPage({ params }: Props) {
   const { slug } = await params;
   const { socio } = await requireSocio(slug);
 
+  // Una persona con varios arranques ve las boletas de todos ellos.
+  const cuentas = await cuentasDelSocio(socio);
   const listaBoletas = await db.query.boletas.findMany({
-    where: eq(boletas.socioId, socio.id),
+    where: inArray(
+      boletas.socioId,
+      cuentas.map((c) => c.id)
+    ),
     orderBy: [desc(boletas.fechaEmision)],
-    limit: 12,
+    limit: 12 * cuentas.length,
+    with: { socio: { columns: { nombre: true } } },
   });
 
   const pendiente = listaBoletas.find(
@@ -111,6 +117,12 @@ export default async function PanelSocioPage({ params }: Props) {
                   <div>
                     <div className="font-medium">
                       {formatearPeriodo(b.periodo)}
+                      {cuentas.length > 1 && (
+                        <span className="font-normal text-muted-foreground">
+                          {" "}
+                          · {b.socio.nombre}
+                        </span>
+                      )}
                     </div>
                     <div className="text-[0.82rem] text-muted-foreground">
                       Vence el {fecha.format(b.fechaVencimiento)}

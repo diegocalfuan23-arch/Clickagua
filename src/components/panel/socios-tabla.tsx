@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import {
   ArrowUpDown,
   ChevronDown,
@@ -9,7 +9,6 @@ import {
   ChevronsUpDown,
   Download,
   FilterX,
-  Loader2,
   MapPinOff,
   MessageCircle,
   MoreHorizontal,
@@ -28,8 +27,6 @@ import {
 import {
   alternarActivo,
   eliminarSocio,
-  importarSocios,
-  type ResultadoImportacion,
 } from "@/app/panel/socios/actions";
 import { SocioDialog, type SocioEditable } from "./socio-dialog";
 import { Button } from "@/components/ui/button";
@@ -44,7 +41,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -62,6 +58,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { ImportarSociosDialog } from "@/components/panel/importar-socios-dialog";
 import { formatearRut, formatearTelefono, iniciales } from "@/lib/formato";
 
 export type SocioFila = SocioEditable & { activo: boolean };
@@ -214,7 +211,7 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
 
       return [
         socio.nombre,
-        socio.rut,
+        socio.rut ?? "",
         socio.telefono ?? "",
         socio.numeroCliente ?? "",
       ]
@@ -247,10 +244,11 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
       /[",;\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
 
     const filas = [
-      ["nombre", "rut", "telefono", "direccion", "numeroCliente", "activo"],
+      ["nombre", "rut", "tipo", "telefono", "direccion", "numeroCliente", "activo"],
       ...filtrados.map((s) => [
         s.nombre,
-        s.rut,
+        s.rut ?? "",
+        s.tipo === "USUARIO" ? "usuario" : "socio",
         s.telefono ?? "",
         s.direccion ?? "",
         s.numeroCliente ?? "",
@@ -585,9 +583,11 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
                             <div className="truncate font-medium">
                               {socio.nombre}
                             </div>
-                            {socio.numeroCliente && (
+                            {(socio.numeroCliente || socio.tipo === "USUARIO") && (
                               <div className="text-[0.78rem] tabular-nums text-muted-foreground">
-                                N.º {socio.numeroCliente}
+                                {socio.tipo === "USUARIO" && "Usuario"}
+                                {socio.tipo === "USUARIO" && socio.numeroCliente && " · "}
+                                {socio.numeroCliente && `N.º ${socio.numeroCliente}`}
                               </div>
                             )}
                           </div>
@@ -760,101 +760,5 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
         </DialogContent>
       </Dialog>
     </>
-  );
-}
-
-function ImportarSociosDialog({
-  abierto,
-  onAbiertoChange,
-}: {
-  abierto: boolean;
-  onAbiertoChange: (v: boolean) => void;
-}) {
-  const [estado, accion, pendiente] = useActionState<
-    ResultadoImportacion | null,
-    FormData
-  >(importarSocios, null);
-
-  return (
-    <Dialog open={abierto} onOpenChange={onAbiertoChange}>
-      <DialogContent className="sm:max-w-[520px]">
-        <DialogHeader>
-          <DialogTitle>Importar socios</DialogTitle>
-          <DialogDescription>
-            Sube el padrón de tu comité en CSV o Excel (.xlsx).
-          </DialogDescription>
-        </DialogHeader>
-
-        <form action={accion} className="flex flex-col gap-4">
-          <div className="rounded-lg border border-border/60 bg-muted/40 p-4 text-[0.85rem]">
-            <p className="font-medium">Columnas del archivo</p>
-            <p className="mt-1.5 text-muted-foreground">
-              Obligatorias: <code className="font-mono">nombre</code>,{" "}
-              <code className="font-mono">rut</code>
-            </p>
-            <p className="mt-1 text-muted-foreground">
-              Opcionales: <code className="font-mono">telefono</code> (puede
-              ir vacío en algunas filas), <code className="font-mono">direccion</code>,{" "}
-              <code className="font-mono">numeroCliente</code>
-            </p>
-            <p className="mt-2.5 text-muted-foreground">
-              Si vuelves a subir el archivo, los socios que ya existen se
-              actualizan en vez de duplicarse.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="archivoSocios">Archivo (CSV o Excel)</Label>
-            <Input
-              id="archivoSocios"
-              name="archivo"
-              type="file"
-              accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-              required
-            />
-          </div>
-
-          {estado && !estado.ok && (
-            <p className="text-[0.88rem] text-destructive">{estado.error}</p>
-          )}
-
-          {estado?.ok && (
-            <div className="rounded-lg border border-forest/30 bg-forest/5 p-4 text-[0.88rem]">
-              <p className="font-medium text-forest">
-                {estado.creados} creados · {estado.actualizados} actualizados
-              </p>
-              {estado.omitidos.length > 0 && (
-                <details className="mt-2">
-                  <summary className="cursor-pointer text-muted-foreground">
-                    {estado.omitidos.length} filas omitidas
-                  </summary>
-                  <ul className="mt-2 flex max-h-40 flex-col gap-1 overflow-y-auto text-[0.82rem] text-muted-foreground">
-                    {estado.omitidos.map((o) => (
-                      <li key={o.linea}>
-                        Línea {o.linea}: {o.motivo}
-                      </li>
-                    ))}
-                  </ul>
-                </details>
-              )}
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onAbiertoChange(false)}
-            >
-              {estado?.ok ? "Cerrar" : "Cancelar"}
-            </Button>
-            <Button type="submit" disabled={pendiente}>
-              {pendiente && <Loader2 className="animate-spin" />}
-              Importar
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
   );
 }

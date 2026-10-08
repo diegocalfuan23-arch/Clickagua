@@ -38,7 +38,7 @@ export type DatosDashboard = {
   solicitudesPendientes: {
     id: string;
     nombre: string;
-    rut: string;
+    rut: string | null;
     hace: string;
   }[];
 };

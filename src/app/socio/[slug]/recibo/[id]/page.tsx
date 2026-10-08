@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireSocio } from "@/lib/socio-session";
+import { cuentasDelSocio, requireSocio } from "@/lib/socio-session";
 import { reciboDeSocio } from "@/lib/recibo";
 import { Recibo } from "@/components/recibos/recibo";
 import { ImprimirBoton } from "@/components/recibos/imprimir-boton";
@@ -18,7 +18,11 @@ export default async function ReciboSocioPage({ params }: Props) {
   const { socio } = await requireSocio(slug);
 
   // El filtro por socio impide abrir el recibo de otra persona cambiando el id.
-  const recibo = await reciboDeSocio(socio.id, id);
+  const cuentas = await cuentasDelSocio(socio);
+  const recibo = await reciboDeSocio(
+    cuentas.map((c) => c.id),
+    id
+  );
   if (!recibo) notFound();
 
   return (

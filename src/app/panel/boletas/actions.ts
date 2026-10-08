@@ -350,6 +350,10 @@ export async function importarBoletas(
     nombres.map((n) => encabezado.indexOf(n)).find((i) => i >= 0) ?? -1;
 
   const iRut = col("rut", "rut socio", "rutsocio");
+  // Cada arranque se cobra aparte y una persona puede tener varios con el mismo
+  // RUT: el N.º de arranque es la forma exacta de nombrar una cuenta.
+  const iNumero = col("numerocliente", "numero cliente", "n cliente", "arranque", "n arranque");
+  const iTipo = col("tipo");
   const iPeriodo = col("periodo", "mes");
   const iMonto = col("monto", "montototal", "monto total", "total");
   const iVence = col("vencimiento", "fechavencimiento", "fecha vencimiento");
@@ -357,19 +361,28 @@ export async function importarBoletas(
   const iLecAnt = col("lecturaanterior", "lectura anterior");
   const iLecAct = col("lecturaactual", "lectura actual");
 
-  if (iRut < 0 || iPeriodo < 0) {
+  if ((iRut < 0 && iNumero < 0) || iPeriodo < 0) {
     return {
       ok: false,
-      error: "El archivo debe tener al menos las columnas: rut y periodo.",
+      error:
+        "El archivo debe tener al menos las columnas: periodo y rut (o numeroCliente, si hay socios con varios arranques).",
     };
   }
 
   // Traemos los socios del comité de una vez: evita una consulta por línea.
   const delComite = await db.query.socios.findMany({
     where: eq(socios.aprId, apr.id),
-    columns: { id: true, rut: true },
+    columns: { id: true, rut: true, tipo: true, numeroCliente: true },
   });
-  const porRut = new Map(delComite.map((s) => [normalizarRut(s.rut), s.id]));
+  const porRut = new Map<string, string[]>();
+  const porNumero = new Map<string, string>(); // "SOCIO|3" → id
+  for (const s of delComite) {
+    if (s.rut) {
+      const clave = normalizarRut(s.rut);
+      porRut.set(clave, [...(porRut.get(clave) ?? []), s.id]);
+    }
+    if (s.numeroCliente) porNumero.set(`${s.tipo}|${s.numeroCliente}`, s.id);
+  }
 
   const omitidas: { linea: number; motivo: string }[] = [];
   const aInsertar: (typeof boletas.$inferInsert)[] = [];
@@ -379,10 +392,38 @@ export async function importarBoletas(
     const campos = filas[i];
     const nLinea = i + 1;
 
-    const socioId = porRut.get(normalizarRut(campos[iRut] ?? ""));
-    if (!socioId) {
-      omitidas.push({ linea: nLinea, motivo: `RUT no está en tu padrón: ${campos[iRut] ?? "vacío"}` });
-      continue;
+    // Primero el N.º de arranque (exacto); si no viene, el RUT, que solo sirve
+    // si esa persona tiene un único arranque.
+    const numero = iNumero >= 0 ? (campos[iNumero] ?? "").trim().replace(/\.0$/, "") : "";
+    const tipo = /usuario/i.test(iTipo >= 0 ? (campos[iTipo] ?? "") : "")
+      ? "USUARIO"
+      : "SOCIO";
+    const rutCrudo = iRut >= 0 ? (campos[iRut] ?? "").trim() : "";
+
+    let socioId: string | undefined;
+    if (numero) {
+      socioId = porNumero.get(`${tipo}|${numero}`);
+      if (!socioId) {
+        omitidas.push({
+          linea: nLinea,
+          motivo: `No hay un ${tipo === "USUARIO" ? "usuario" : "socio"} con N.º ${numero} en tu padrón`,
+        });
+        continue;
+      }
+    } else {
+      const candidatos = porRut.get(normalizarRut(rutCrudo)) ?? [];
+      if (candidatos.length === 1) {
+        socioId = candidatos[0];
+      } else {
+        omitidas.push({
+          linea: nLinea,
+          motivo:
+            candidatos.length === 0
+              ? `RUT no está en tu padrón: ${rutCrudo || "vacío"}`
+              : `El RUT ${rutCrudo} tiene ${candidatos.length} arranques: agrega la columna numeroCliente para indicar cuál`,
+        });
+        continue;
+      }
     }
 
     const periodo = normalizarPeriodo(campos[iPeriodo] ?? "");

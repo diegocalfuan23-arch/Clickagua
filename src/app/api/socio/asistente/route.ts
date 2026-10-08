@@ -1,11 +1,12 @@
 import { NextRequest } from "next/server";
 import { headers } from "next/headers";
 import { z } from "zod";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, inArray } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { boletas, socios } from "@/lib/db/schema";
 import { responder } from "@/lib/ia";
+import { cuentasDelSocio } from "@/lib/socio-session";
 import { saldo, formatearPeriodo } from "@/lib/boletas";
 
 /**
@@ -43,7 +44,9 @@ const bodySchema = z.object({
 function construirPrompt(datos: {
   nombreSocio: string;
   nombreApr: string;
+  conVariosArranques: boolean;
   boletas: {
+    arranque: string;
     periodo: string;
     montoTotal: number;
     montoPagado: number;
@@ -66,7 +69,7 @@ Háblale en español chileno, cercano y directo, en dos o tres frases.`
     const lista = datos.boletas.map((b) => {
       const deuda = saldo(b.montoTotal, b.montoPagado);
       const campos = [
-        `- ${formatearPeriodo(b.periodo)}: total ${clp.format(b.montoTotal)}, estado ${b.estado.toLowerCase()}, vence ${fechaHora.format(b.fechaVencimiento)}`,
+        `- ${datos.conVariosArranques ? `[${b.arranque}] ` : ""}${formatearPeriodo(b.periodo)}: total ${clp.format(b.montoTotal)}, estado ${b.estado.toLowerCase()}, vence ${fechaHora.format(b.fechaVencimiento)}`,
       ];
       if (deuda > 0) campos.push(`  Saldo pendiente: ${clp.format(deuda)}`);
       if (b.consumoM3 !== null) campos.push(`  Consumo: ${b.consumoM3} m³`);
@@ -111,17 +114,24 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: "Consulta inválida." }, { status: 400 });
   }
 
+  // Una persona con varios arranques: se le responde con las boletas de todos.
+  const cuentas = await cuentasDelSocio(socio);
   const listaBoletas = await db.query.boletas.findMany({
-    where: eq(boletas.socioId, socio.id),
+    where: inArray(
+      boletas.socioId,
+      cuentas.map((c) => c.id)
+    ),
     orderBy: [desc(boletas.fechaEmision)],
-    limit: 12,
+    limit: 12 * cuentas.length,
+    with: { socio: { columns: { nombre: true } } },
   });
 
   const { stream } = await responder({
     system: construirPrompt({
       nombreSocio: socio.nombre,
       nombreApr: socio.apr.nombre,
-      boletas: listaBoletas,
+      conVariosArranques: cuentas.length > 1,
+      boletas: listaBoletas.map((b) => ({ ...b, arranque: b.socio.nombre })),
     }),
     mensajes: parsed.data.mensajes,
     maxTokens: 700,

@@ -22,7 +22,8 @@ import {
 export type SocioEditable = {
   id: string;
   nombre: string;
-  rut: string;
+  rut: string | null;
+  tipo: "SOCIO" | "USUARIO";
   telefono: string | null;
   direccion: string | null;
   numeroCliente: string | null;
@@ -74,13 +75,12 @@ export function SocioDialog({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="rut">RUT</Label>
+              <Label htmlFor="rut">RUT (opcional)</Label>
               <Input
                 id="rut"
                 name="rut"
-                defaultValue={socio?.rut}
+                defaultValue={socio?.rut ?? ""}
                 placeholder="12.345.678-9"
-                required
               />
             </div>
 
@@ -95,9 +95,22 @@ export function SocioDialog({
             </div>
           </div>
 
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="tipo">Tipo</Label>
+            <select
+              id="tipo"
+              name="tipo"
+              defaultValue={socio?.tipo ?? "SOCIO"}
+              className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
+              <option value="SOCIO">Socio</option>
+              <option value="USUARIO">Usuario (no es socio, pero paga)</option>
+            </select>
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="numeroCliente">N.º de cliente</Label>
+              <Label htmlFor="numeroCliente">N.º de arranque</Label>
               <Input
                 id="numeroCliente"
                 name="numeroCliente"

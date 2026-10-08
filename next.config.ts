@@ -2,6 +2,11 @@ import path from "node:path";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    // Por defecto una acción de servidor acepta 1 MB: un padrón en PDF o Excel
+    // puede pasarlo. 4 MB es lo máximo que Vercel deja pasar en una petición.
+    serverActions: { bodySizeLimit: "4mb" },
+  },
   turbopack: {
     root: path.join(__dirname),
   },

@@ -1,4 +1,4 @@
-import { and, asc, eq, ne, type SQL } from "drizzle-orm";
+import { and, asc, eq, inArray, ne, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { aprs, boletas, socios } from "@/lib/db/schema";
 
@@ -12,7 +12,7 @@ export type ReciboDatos = {
   comite: {
     nombre: string;
     razonSocial: string | null;
-    rut: string;
+    rut: string | null;
     direccion: string | null;
     comuna: string;
     telefono: string | null;
@@ -20,7 +20,7 @@ export type ReciboDatos = {
   };
   socio: {
     nombre: string;
-    rut: string;
+    rut: string | null;
     numeroCliente: string | null;
     direccion: string | null;
   };
@@ -120,10 +120,10 @@ export function recibosDelPeriodo(aprId: string, periodo: string) {
   );
 }
 
-/** Un recibo del propio socio: el filtro por socioId impide ver el de otro. */
-export async function reciboDeSocio(socioId: string, boletaId: string) {
+/** Un recibo de una de las cuentas de la persona: el filtro por ids impide ver el de otro. */
+export async function reciboDeSocio(socioIds: string[], boletaId: string) {
   const [recibo] = await consultar(
-    and(eq(boletas.socioId, socioId), eq(boletas.id, boletaId))
+    and(inArray(boletas.socioId, socioIds), eq(boletas.id, boletaId))
   );
   return recibo ?? null;
 }

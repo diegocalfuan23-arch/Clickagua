@@ -22,7 +22,7 @@ import {
 type Solicitud = {
   id: string;
   nombre: string;
-  rut: string;
+  rut: string | null;
   createdAt: Date;
 };
 
