@@ -13,6 +13,9 @@ import {
   Droplets,
   FileUp,
   Loader2,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
   Plus,
   Search,
   Smartphone,
@@ -24,6 +27,8 @@ import {
   aprobarComoLecturaInicial,
   aprobarLectura,
   aprobarLecturasListas,
+  editarLectura,
+  eliminarLectura,
   rechazarLectura,
   registrarLectura,
   type ResultadoAccion,
@@ -40,6 +45,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -158,6 +169,8 @@ export function LecturasTabla({
   const [rechazando, setRechazando] = useState<LecturaFila | null>(null);
   const [iniciales, setIniciales] = useState(false);
   const [aprobandoListas, setAprobandoListas] = useState(false);
+  const [editando, setEditando] = useState<LecturaFila | null>(null);
+  const [eliminando, setEliminando] = useState<LecturaFila | null>(null);
   const [confirmando, setConfirmando] = useState<{
     lectura: LecturaFila;
     motivo: Motivo;
@@ -381,13 +394,14 @@ export function LecturasTabla({
                   <TableHead className="h-11 pr-5 text-right text-[0.87rem] font-medium text-muted-foreground">
                     Acción
                   </TableHead>
+                  <TableHead className="h-11 w-12" />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {visibles.length === 0 ? (
                   <TableRow className="hover:bg-transparent">
                     <TableCell
-                      colSpan={6}
+                      colSpan={7}
                       className="py-12 text-center text-[0.92rem] text-muted-foreground"
                     >
                       Ninguna lectura coincide con el filtro.
@@ -401,6 +415,8 @@ export function LecturasTabla({
                       onRechazar={() => setRechazando(l)}
                       onAprobada={() => router.refresh()}
                       onConfirmar={(motivo) => setConfirmando({ lectura: l, motivo })}
+                      onEditar={() => setEditando(l)}
+                      onEliminar={() => setEliminando(l)}
                     />
                   ))
                 )}
@@ -460,6 +476,24 @@ export function LecturasTabla({
         onHecho={() => router.refresh()}
       />
 
+      <EditarLecturaDialog
+        lectura={editando}
+        onCerrar={() => setEditando(null)}
+        onHecho={() => {
+          setEditando(null);
+          router.refresh();
+        }}
+      />
+
+      <EliminarLecturaDialog
+        lectura={eliminando}
+        onCerrar={() => setEliminando(null)}
+        onHecho={() => {
+          setEliminando(null);
+          router.refresh();
+        }}
+      />
+
       <PrimeraLecturaDialog
         pendiente={confirmando}
         onCerrar={() => setConfirmando(null)}
@@ -483,11 +517,15 @@ function FilaLectura({
   onRechazar,
   onAprobada,
   onConfirmar,
+  onEditar,
+  onEliminar,
 }: {
   lectura: LecturaFila;
   onRechazar: () => void;
   onAprobada: () => void;
   onConfirmar: (motivo: Motivo) => void;
+  onEditar: () => void;
+  onEliminar: () => void;
 }) {
   const [aprobando, iniciar] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -607,6 +645,33 @@ function FilaLectura({
           <p className="mt-1 text-[0.78rem] text-destructive">{error}</p>
         )}
       </TableCell>
+      <TableCell className="w-12 py-3.5 pr-4">
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`Acciones para la lectura de ${l.socio}`}
+              >
+                <MoreHorizontal />
+              </Button>
+            }
+          />
+          <DropdownMenuContent align="end">
+            {l.estado !== "RECHAZADA" && (
+              <DropdownMenuItem onClick={onEditar}>
+                <Pencil />
+                Editar
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem variant="destructive" onClick={onEliminar}>
+              <Trash2 />
+              Eliminar
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </TableCell>
     </TableRow>
   );
 }
@@ -701,6 +766,173 @@ function AprobarListasDialog({
               Aprobar {listas.length}
             </Button>
           )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Corregir el valor (o la observación) de una lectura. Si ya generó boleta, se recalcula. */
+function EditarLecturaDialog({
+  lectura,
+  onCerrar,
+  onHecho,
+}: {
+  lectura: LecturaFila | null;
+  onCerrar: () => void;
+  onHecho: () => void;
+}) {
+  const [trabajando, iniciar] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  return (
+    <Dialog open={lectura !== null} onOpenChange={(v) => !v && onCerrar()}>
+      <DialogContent className="sm:max-w-110">
+        {/* key: al abrir otra lectura el formulario parte con sus datos. */}
+        {lectura && (
+          <form
+            key={lectura.id}
+            className="flex flex-col gap-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const datos = new FormData(e.currentTarget);
+              setError(null);
+              iniciar(async () => {
+                const r = await editarLectura(
+                  lectura.id,
+                  Number(String(datos.get("valor") ?? "").replace(/\D/g, "")),
+                  String(datos.get("observacion") ?? "")
+                );
+                if (r.ok) onHecho();
+                else setError(r.error);
+              });
+            }}
+          >
+            <DialogHeader>
+              <DialogTitle>Editar lectura</DialogTitle>
+              <DialogDescription>
+                {lectura.socio} · {formatearPeriodo(lectura.periodo)}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="editar-valor">Lectura del medidor</Label>
+              <Input
+                id="editar-valor"
+                name="valor"
+                inputMode="numeric"
+                defaultValue={lectura.valor}
+                required
+                autoFocus
+              />
+              {lectura.estado === "APROBADA" && (
+                <p className="text-[0.8rem] text-muted-foreground">
+                  Ya está aprobada: si generó una boleta, se recalcula con el nuevo
+                  valor (lo ya pagado se conserva). Solo se puede editar la última
+                  lectura de cada arranque.
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="editar-observacion">Observación</Label>
+              <Textarea
+                id="editar-observacion"
+                name="observacion"
+                rows={2}
+                maxLength={300}
+                defaultValue={
+                  lectura.observacion === "Lectura inicial" ? "" : (lectura.observacion ?? "")
+                }
+              />
+            </div>
+
+            {error && <p className="text-[0.85rem] text-destructive">{error}</p>}
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={onCerrar}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={trabajando}>
+                {trabajando && <Loader2 className="animate-spin" />}
+                Guardar cambios
+              </Button>
+            </DialogFooter>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Eliminar una lectura; si generó una boleta, pide confirmar que se elimina también. */
+function EliminarLecturaDialog({
+  lectura,
+  onCerrar,
+  onHecho,
+}: {
+  lectura: LecturaFila | null;
+  onCerrar: () => void;
+  onHecho: () => void;
+}) {
+  const [trabajando, iniciar] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [conBoleta, setConBoleta] = useState(false);
+
+  function cerrar() {
+    setError(null);
+    setConBoleta(false);
+    onCerrar();
+  }
+
+  function eliminar() {
+    if (!lectura) return;
+    setError(null);
+    iniciar(async () => {
+      const r = await eliminarLectura(lectura.id, { tambienBoleta: conBoleta });
+      if (r.ok) {
+        setConBoleta(false);
+        onHecho();
+      } else if (r.codigo === "TIENE_BOLETA") {
+        setConBoleta(true);
+        setError(r.error);
+      } else {
+        setError(r.error);
+      }
+    });
+  }
+
+  return (
+    <Dialog open={lectura !== null} onOpenChange={(v) => !v && cerrar()}>
+      <DialogContent className="sm:max-w-110">
+        <DialogHeader>
+          <DialogTitle>Eliminar lectura</DialogTitle>
+          <DialogDescription>
+            {lectura &&
+              `${lectura.socio} · ${formatearPeriodo(lectura.periodo)} · lectura ${numero.format(lectura.valor)}`}
+          </DialogDescription>
+        </DialogHeader>
+
+        <p className="text-[0.9rem] leading-relaxed">
+          Se borrará la lectura y no se puede deshacer.
+          {lectura?.estado === "APROBADA" &&
+            " Al ser una lectura aprobada, la anterior vuelve a ser la base del próximo consumo."}
+        </p>
+        {error && (
+          <p className="text-[0.85rem] text-destructive">
+            {error}
+            {conBoleta && " Confirma para eliminar la lectura y su boleta."}
+          </p>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={cerrar} disabled={trabajando}>
+            Cancelar
+          </Button>
+          <Button variant="destructive" onClick={eliminar} disabled={trabajando}>
+            {trabajando && <Loader2 className="animate-spin" />}
+            {conBoleta ? "Eliminar lectura y boleta" : "Eliminar"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

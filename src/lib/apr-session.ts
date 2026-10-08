@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { aprs } from "@/lib/db/schema";
-import { user as userTable } from "@/lib/db/auth-schema";
+import { session as sessionTable, user as userTable } from "@/lib/db/auth-schema";
 
 export type RolPanel = "ADMIN" | "OPERADOR";
 
@@ -23,6 +23,13 @@ export async function requireApr() {
   }
 
   const { user } = session;
+
+  // Un técnico desactivado por la directiva: se cierran sus sesiones y vuelve al
+  // inicio de sesión. Se revisa aquí porque toda página del panel pasa por aquí.
+  if (user.rol === "DESACTIVADO") {
+    await db.delete(sessionTable).where(eq(sessionTable.userId, user.id));
+    redirect("/login?cuenta=desactivada");
+  }
 
   if (user.aprId) {
     const apr = await db.query.aprs.findFirst({

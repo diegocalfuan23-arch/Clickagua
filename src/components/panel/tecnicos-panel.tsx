@@ -4,13 +4,19 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Copy, Loader2, UserPlus, Clock } from "lucide-react";
 import { generarInvitacionOperador } from "@/app/panel/lecturas/actions";
-import { cancelarInvitacion } from "@/app/panel/tecnicos/actions";
+import {
+  cancelarInvitacion,
+  desactivarOperador,
+  reactivarOperador,
+} from "@/app/panel/tecnicos/actions";
 import { iniciales } from "@/lib/formato";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -26,6 +32,8 @@ export type Tecnico = {
   nombre: string;
   correo: string;
   desde: Date;
+  /** false = desactivado por la directiva: no puede entrar. */
+  activo: boolean;
 };
 
 export type InvitacionPendiente = {
@@ -59,7 +67,7 @@ export function TecnicosPanel({
 
       <section>
         <h2 className="mb-3 text-[0.95rem] font-semibold">
-          Técnicos activos
+          Técnicos
         </h2>
         {tecnicos.length === 0 ? (
           <p className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-[0.9rem] text-muted-foreground">
@@ -68,20 +76,7 @@ export function TecnicosPanel({
         ) : (
           <div className="flex flex-col divide-y divide-border/60 rounded-xl border border-border/60 bg-card">
             {tecnicos.map((t) => (
-              <div key={t.id} className="flex items-center gap-3 p-4">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-[0.75rem] font-semibold text-muted-foreground">
-                  {iniciales(t.nombre)}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate font-medium">{t.nombre}</div>
-                  <div className="truncate text-[0.82rem] text-muted-foreground">
-                    {t.correo}
-                  </div>
-                </div>
-                <span className="shrink-0 text-[0.8rem] text-muted-foreground">
-                  Desde {fecha.format(t.desde)}
-                </span>
-              </div>
+              <TecnicoFila key={t.id} tecnico={t} />
             ))}
           </div>
         )}
@@ -99,6 +94,100 @@ export function TecnicosPanel({
           </div>
         </section>
       )}
+    </div>
+  );
+}
+
+function TecnicoFila({ tecnico: t }: { tecnico: Tecnico }) {
+  const router = useRouter();
+  const [confirmando, setConfirmando] = useState(false);
+  const [trabajando, iniciar] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  function cambiar(accion: () => Promise<{ ok: boolean; error?: string }>) {
+    setError(null);
+    iniciar(async () => {
+      const r = await accion();
+      if (r.ok) {
+        setConfirmando(false);
+        router.refresh();
+      } else {
+        setError(r.error ?? "No pudimos completar la acción.");
+      }
+    });
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-3 p-4">
+      <span
+        className={cn(
+          "flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-[0.75rem] font-semibold text-muted-foreground",
+          !t.activo && "opacity-60"
+        )}
+      >
+        {iniciales(t.nombre)}
+      </span>
+      <div className={cn("min-w-0 flex-1", !t.activo && "opacity-60")}>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="truncate font-medium">{t.nombre}</span>
+          {!t.activo && (
+            <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[0.72rem] font-medium text-destructive">
+              Desactivado
+            </span>
+          )}
+        </div>
+        <div className="truncate text-[0.82rem] text-muted-foreground">
+          {t.correo}
+        </div>
+      </div>
+      <span className="shrink-0 text-[0.8rem] text-muted-foreground">
+        Desde {fecha.format(t.desde)}
+      </span>
+      {t.activo ? (
+        <Button variant="outline" size="sm" onClick={() => setConfirmando(true)}>
+          Desactivar
+        </Button>
+      ) : (
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={trabajando}
+          onClick={() => cambiar(() => reactivarOperador(t.id))}
+        >
+          {trabajando && <Loader2 className="animate-spin" />}
+          Reactivar
+        </Button>
+      )}
+      {error && !confirmando && (
+        <p className="w-full text-[0.8rem] text-destructive">{error}</p>
+      )}
+
+      <Dialog open={confirmando} onOpenChange={setConfirmando}>
+        <DialogContent className="sm:max-w-105">
+          <DialogHeader>
+            <DialogTitle>Desactivar a {t.nombre}</DialogTitle>
+            <DialogDescription>
+              Dejará de poder entrar y se cerrará su sesión. Sus lecturas ya
+              cargadas se conservan en el historial. Puedes reactivarlo cuando
+              quieras.
+            </DialogDescription>
+          </DialogHeader>
+          {error && <p className="text-[0.85rem] text-destructive">{error}</p>}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmando(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={trabajando}
+              onClick={() => cambiar(() => desactivarOperador(t.id))}
+            >
+              {trabajando && <Loader2 className="animate-spin" />}
+              Desactivar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

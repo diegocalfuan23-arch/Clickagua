@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, gt, lt, ne } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { lecturas, socios, boletas } from "@/lib/db/schema";
@@ -321,6 +321,225 @@ export async function aprobarComoLecturaInicial(
     .where(eq(lecturas.id, lecturaId));
 
   revalidatePath("/panel/lecturas");
+  return { ok: true };
+}
+
+/** La lectura con el id dado, solo si es de un arranque del comité. */
+async function lecturaDelComite(lecturaId: string, aprId: string) {
+  const r = await db
+    .select({
+      id: lecturas.id,
+      socioId: lecturas.socioId,
+      periodo: lecturas.periodo,
+      valor: lecturas.valor,
+      estado: lecturas.estado,
+      createdAt: lecturas.createdAt,
+    })
+    .from(lecturas)
+    .innerJoin(socios, eq(lecturas.socioId, socios.id))
+    .where(and(eq(lecturas.id, lecturaId), eq(socios.aprId, aprId)))
+    .limit(1);
+  return r[0] ?? null;
+}
+
+type LecturaCargada = NonNullable<Awaited<ReturnType<typeof lecturaDelComite>>>;
+
+/**
+ * Una lectura aprobada es la base del consumo de la siguiente. Por eso solo se
+ * puede tocar la ULTIMA aprobada de un arranque: si hay una posterior, ya se
+ * calculó contra esta y cambiarla dejaría sus números incoherentes.
+ */
+async function esUltimaAprobada(l: LecturaCargada) {
+  const posterior = await db.query.lecturas.findFirst({
+    where: and(
+      eq(lecturas.socioId, l.socioId),
+      eq(lecturas.estado, "APROBADA"),
+      gt(lecturas.createdAt, l.createdAt),
+      ne(lecturas.id, l.id)
+    ),
+    columns: { id: true },
+  });
+  return !posterior;
+}
+
+const MENSAJE_HAY_POSTERIORES =
+  "Este arranque ya tiene lecturas más nuevas que parten de esta. Modifica primero la más reciente.";
+
+/** La boleta del período, si salió de ESTA lectura (sus números coinciden); una boleta hecha a mano no. */
+async function boletaDeLectura(l: LecturaCargada) {
+  const boleta = await db.query.boletas.findFirst({
+    where: and(eq(boletas.socioId, l.socioId), eq(boletas.periodo, l.periodo)),
+  });
+  return boleta && boleta.lecturaActual === l.valor ? boleta : null;
+}
+
+export type ResultadoEdicion =
+  | { ok: true; boletaActualizada: boolean }
+  | { ok: false; error: string };
+
+/**
+ * Corrige el valor (o la observación) de una lectura. Pendiente: se cambia y
+ * listo. Aprobada: solo la última del arranque, y se recalcula la boleta que
+ * generó, conservando lo ya pagado.
+ */
+export async function editarLectura(
+  lecturaId: string,
+  valorCrudo: number,
+  observacion: string
+): Promise<ResultadoEdicion> {
+  const { apr } = await requireAdmin();
+
+  const valor = Number(valorCrudo);
+  if (!Number.isInteger(valor) || valor < 0) {
+    return { ok: false, error: "La lectura debe ser un número entero, 0 o más." };
+  }
+  const nota = String(observacion ?? "").trim().slice(0, 300) || null;
+
+  const l = await lecturaDelComite(lecturaId, apr.id);
+  if (!l) return { ok: false, error: "No encontramos esa lectura." };
+
+  if (l.estado === "RECHAZADA") {
+    return {
+      ok: false,
+      error: "Una lectura rechazada no se edita: elimínala y carga la correcta.",
+    };
+  }
+
+  if (l.estado === "PENDIENTE") {
+    await db
+      .update(lecturas)
+      .set({ valor, observacion: nota, updatedAt: new Date() })
+      .where(eq(lecturas.id, l.id));
+    refrescarPantallas();
+    return { ok: true, boletaActualizada: false };
+  }
+
+  if (!(await esUltimaAprobada(l))) {
+    return { ok: false, error: MENSAJE_HAY_POSTERIORES };
+  }
+
+  // La anterior de esta: la aprobada inmediatamente antes.
+  const previa = await db
+    .select({ valor: lecturas.valor })
+    .from(lecturas)
+    .where(
+      and(
+        eq(lecturas.socioId, l.socioId),
+        eq(lecturas.estado, "APROBADA"),
+        ne(lecturas.id, l.id),
+        lt(lecturas.createdAt, l.createdAt)
+      )
+    )
+    .orderBy(desc(lecturas.createdAt))
+    .limit(1);
+  const anterior = previa[0]?.valor ?? null;
+
+  if (anterior !== null && valor < anterior) {
+    return {
+      ok: false,
+      error: `La lectura no puede ser menor que la anterior (${anterior}).`,
+    };
+  }
+
+  const boleta = await boletaDeLectura(l);
+  let calculo: ReturnType<typeof calcularDesdeLecturas> = null;
+  if (boleta) {
+    calculo = calcularDesdeLecturas(anterior ?? 0, valor, {
+      cargoFijo: apr.tarifaCargoFijo,
+      valorM3: apr.tarifaMetroCubico,
+    });
+    if (calculo && "error" in calculo) return { ok: false, error: calculo.error };
+    if (!calculo) {
+      return { ok: false, error: "No se pudo recalcular la boleta con esa lectura." };
+    }
+  }
+
+  await db.transaction(async (tx) => {
+    await tx
+      .update(lecturas)
+      .set({ valor, observacion: nota, updatedAt: new Date() })
+      .where(eq(lecturas.id, l.id));
+
+    if (boleta && calculo && !("error" in calculo)) {
+      await tx
+        .update(boletas)
+        .set({
+          lecturaAnterior: anterior ?? 0,
+          lecturaActual: valor,
+          consumoM3: calculo.consumoM3,
+          cargoFijo: calculo.cargoFijo,
+          valorM3: calculo.valorM3,
+          montoTotal: calculo.montoTotal,
+          estado: estadoQueCorresponde(
+            calculo.montoTotal,
+            boleta.montoPagado,
+            boleta.fechaVencimiento,
+            boleta.estado as EstadoBoleta
+          ),
+          updatedAt: new Date(),
+        })
+        .where(eq(boletas.id, boleta.id));
+    }
+  });
+
+  refrescarPantallas();
+  return { ok: true, boletaActualizada: Boolean(boleta) };
+}
+
+export type ResultadoEliminacion =
+  | { ok: true }
+  | { ok: false; error: string; codigo?: "TIENE_BOLETA" };
+
+/**
+ * Elimina una lectura. Pendiente o rechazada: se borra. Aprobada: solo la última
+ * del arranque; si generó una boleta, hay que confirmar que se elimina también,
+ * y no se permite si ya tiene pagos registrados.
+ */
+export async function eliminarLectura(
+  lecturaId: string,
+  opciones: { tambienBoleta?: boolean } = {}
+): Promise<ResultadoEliminacion> {
+  const { apr } = await requireAdmin();
+
+  const l = await lecturaDelComite(lecturaId, apr.id);
+  if (!l) return { ok: false, error: "No encontramos esa lectura." };
+
+  if (l.estado !== "APROBADA") {
+    await db.delete(lecturas).where(eq(lecturas.id, l.id));
+    refrescarPantallas();
+    return { ok: true };
+  }
+
+  if (!(await esUltimaAprobada(l))) {
+    return { ok: false, error: MENSAJE_HAY_POSTERIORES };
+  }
+
+  const boleta = await boletaDeLectura(l);
+
+  if (boleta) {
+    if (!opciones.tambienBoleta) {
+      return {
+        ok: false,
+        codigo: "TIENE_BOLETA",
+        error: `Esta lectura generó la boleta de ${l.periodo}. Para eliminarla hay que eliminar también esa boleta.`,
+      };
+    }
+    if (boleta.montoPagado > 0) {
+      return {
+        ok: false,
+        error:
+          "La boleta ya tiene pagos registrados. Anúlala o elimínala primero desde Boletas.",
+      };
+    }
+    await db.transaction(async (tx) => {
+      await tx.delete(boletas).where(eq(boletas.id, boleta.id));
+      await tx.delete(lecturas).where(eq(lecturas.id, l.id));
+    });
+  } else {
+    await db.delete(lecturas).where(eq(lecturas.id, l.id));
+  }
+
+  refrescarPantallas();
   return { ok: true };
 }
 

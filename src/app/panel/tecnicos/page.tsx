@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { and, desc, eq, gt, isNull } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, isNull } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { invitaciones } from "@/lib/db/schema";
 import { user as userTable } from "@/lib/db/auth-schema";
@@ -14,9 +14,12 @@ export default async function TecnicosPage() {
   const { apr } = await requireAdmin();
 
   const tecnicos = await db.query.user.findMany({
-    where: and(eq(userTable.aprId, apr.id), eq(userTable.rol, "OPERADOR")),
+    where: and(
+      eq(userTable.aprId, apr.id),
+      inArray(userTable.rol, ["OPERADOR", "DESACTIVADO"])
+    ),
     orderBy: [desc(userTable.createdAt)],
-    columns: { id: true, name: true, email: true, createdAt: true },
+    columns: { id: true, name: true, email: true, createdAt: true, rol: true },
   });
 
   const pendientes = await db.query.invitaciones.findMany({
@@ -37,6 +40,7 @@ export default async function TecnicosPage() {
         nombre: t.name,
         correo: t.email,
         desde: t.createdAt,
+        activo: t.rol === "OPERADOR",
       }))}
       invitacionesPendientes={pendientes.map((i) => ({
         id: i.id,
