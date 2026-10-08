@@ -135,6 +135,10 @@ export const auth = betterAuth({
                   nombre: datos.apr,
                   rut: datos.rutComite,
                   comuna: datos.comuna,
+                  // El registro pide el "Correo del comité": además de ser el
+                  // de ingreso, es el de contacto del comité (aparece en
+                  // Configuración y en las boletas).
+                  email: nuevoUsuario.email,
                 })
                 .returning()
             )[0].id;
