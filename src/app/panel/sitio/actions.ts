@@ -101,8 +101,15 @@ export async function guardarSitio(
       slug: datos.slug,
       sitioDescripcion: datos.sitioDescripcion ?? null,
       horarioAtencion: datos.horarioAtencion ?? null,
-      tarifaCargoFijo: datos.tarifaCargoFijo,
-      tarifaMetroCubico: datos.tarifaMetroCubico,
+      // Las tarifas se editan en Configuración -> Facturación. Aquí solo se
+      // actualizan si vienen completas: un campo vacío no debe borrar las que
+      // ya estaban guardadas.
+      ...(datos.tarifaCargoFijo !== null && datos.tarifaMetroCubico !== null
+        ? {
+            tarifaCargoFijo: datos.tarifaCargoFijo,
+            tarifaMetroCubico: datos.tarifaMetroCubico,
+          }
+        : {}),
       infoPago: datos.infoPago ?? null,
       updatedAt: new Date(),
     })
