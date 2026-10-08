@@ -42,6 +42,9 @@ export type DatosConfiguracion = {
   pais: string;
   moneda: string;
   zonaHoraria: string;
+  /** Tarifa única del comité: cargo fijo + valor por m³ (CLP). */
+  tarifaCargoFijo: number | null;
+  tarifaMetroCubico: number | null;
   diaGeneracionBoletas: number;
   diasVencimiento: number;
   prefijoBoleta: string;
@@ -344,10 +347,36 @@ export function ConfiguracionForm({
       {seccion === "facturacion" && (
         <Bloque
           titulo="Facturación"
-          descripcion="Cuándo se emiten las boletas y cuándo vencen."
+          descripcion="Cuánto se cobra, cuándo se emiten las boletas y cuándo vencen."
           accion={guardarFacturacion}
         >
           <div className="grid gap-4 sm:grid-cols-2">
+            <Campo
+              id="tarifaCargoFijo"
+              label="Cargo fijo ($)"
+              ayuda="Lo que paga cada arranque cada mes, aunque no consuma."
+            >
+              <Input
+                id="tarifaCargoFijo"
+                name="tarifaCargoFijo"
+                inputMode="numeric"
+                placeholder="3000"
+                defaultValue={datos.tarifaCargoFijo ?? ""}
+              />
+            </Campo>
+            <Campo
+              id="tarifaMetroCubico"
+              label="Valor por m³ ($)"
+              ayuda="Se multiplica por el consumo del mes y se suma al cargo fijo."
+            >
+              <Input
+                id="tarifaMetroCubico"
+                name="tarifaMetroCubico"
+                inputMode="numeric"
+                placeholder="500"
+                defaultValue={datos.tarifaMetroCubico ?? ""}
+              />
+            </Campo>
             <Campo
               id="diaGeneracionBoletas"
               label="Día de emisión"

@@ -27,6 +27,8 @@ export default async function ConfiguracionPage() {
         pais: apr.pais,
         moneda: apr.moneda,
         zonaHoraria: apr.zonaHoraria,
+        tarifaCargoFijo: apr.tarifaCargoFijo,
+        tarifaMetroCubico: apr.tarifaMetroCubico,
         diaGeneracionBoletas: apr.diaGeneracionBoletas,
         diasVencimiento: apr.diasVencimiento,
         prefijoBoleta: apr.prefijoBoleta,

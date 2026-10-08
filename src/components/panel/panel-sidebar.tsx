@@ -3,7 +3,6 @@
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Globe,
   LayoutDashboard,
   Users,
   ReceiptText,
@@ -39,7 +38,11 @@ const gestion = [
 const atencion = [
   { href: "/panel/conversaciones", label: "Conversaciones", icon: MessageCircle },
   { href: "/panel/socios/solicitudes", label: "Solicitudes", icon: UserCheck },
-  { href: "/panel/sitio", label: "Sitio público", icon: Globe },
+  // "Sitio público" está oculto por ahora: todavía no se ofrece a los comités.
+  // La página sigue existiendo en /panel/sitio; para volver a mostrarla, basta
+  // descomentar esta línea (y volver a importar el ícono Globe de lucide-react). Las tarifas ya no dependen de ella: están en
+  // Configuración → Facturación.
+  // { href: "/panel/sitio", label: "Sitio público", icon: Globe },
   { href: "/panel/configuracion", label: "Configuración", icon: Settings },
 ];
 

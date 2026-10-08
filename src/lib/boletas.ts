@@ -31,7 +31,7 @@ export function calcularDesdeLecturas(
   if (tarifas.cargoFijo === null || tarifas.valorM3 === null) {
     return {
       error:
-        "Para calcular desde lecturas necesitas definir el cargo fijo y el valor del m³ en Sitio público.",
+        "Para calcular desde lecturas necesitas definir el cargo fijo y el valor del m³ en Configuración → Facturación.",
     };
   }
 

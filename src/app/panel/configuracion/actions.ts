@@ -125,6 +125,16 @@ export async function guardarFacturacion(
   const dias = aEntero(formData.get("diasVencimiento")) ?? 15;
   const iva = aEntero(formData.get("porcentajeIva")) ?? 19;
   const prefijo = String(formData.get("prefijoBoleta") ?? "").trim();
+  // Tarifa única: las boletas se calculan como cargo fijo + consumo x valor m³.
+  const cargoFijo = aEntero(formData.get("tarifaCargoFijo"));
+  const valorM3 = aEntero(formData.get("tarifaMetroCubico"));
+
+  if ((cargoFijo === null) !== (valorM3 === null)) {
+    return {
+      ok: false,
+      error: "Completa el cargo fijo y el valor por m³, o deja los dos vacíos.",
+    };
+  }
 
   if (dia < 1 || dia > 28) {
     return {
@@ -149,6 +159,8 @@ export async function guardarFacturacion(
   await db
     .update(aprs)
     .set({
+      tarifaCargoFijo: cargoFijo,
+      tarifaMetroCubico: valorM3,
       diaGeneracionBoletas: dia,
       diasVencimiento: dias,
       prefijoBoleta: prefijo || "BOL-",
