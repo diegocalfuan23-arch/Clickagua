@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { boletas, lecturas, socios } from "@/lib/db/schema";
 import { user as userTable } from "@/lib/db/auth-schema";
 import { requireApr } from "@/lib/apr-session";
 import { formatearRut } from "@/lib/formato";
+import { datosTerreno, sociosConAnterior } from "@/lib/terreno";
 import { LecturaForm } from "@/components/panel/lectura-form";
 import { LecturasTabla } from "@/components/panel/lecturas-tabla";
 
@@ -15,58 +16,12 @@ export const metadata: Metadata = {
 export default async function LecturasPage() {
   const { user, apr } = await requireApr();
 
-  const listaSocios = await db.query.socios.findMany({
-    where: eq(socios.aprId, apr.id),
-    orderBy: [asc(socios.nombre)],
-    columns: { id: true, nombre: true, rut: true, numeroCliente: true, tipo: true },
-  });
-
-  // Última lectura aprobada de cada socio: la misma que usa el servidor
-  // al aprobar para calcular el consumo (la más reciente por fecha de carga).
-  const anteriores = await db
-    .selectDistinctOn([lecturas.socioId], {
-      socioId: lecturas.socioId,
-      valor: lecturas.valor,
-      periodo: lecturas.periodo,
-    })
-    .from(lecturas)
-    .innerJoin(socios, eq(lecturas.socioId, socios.id))
-    .where(and(eq(socios.aprId, apr.id), eq(lecturas.estado, "APROBADA")))
-    .orderBy(lecturas.socioId, desc(lecturas.createdAt));
-  const anteriorPorSocio = new Map(anteriores.map((a) => [a.socioId, a]));
-
+  // El operador solo ve la pantalla de cargar lecturas.
   if (user.rol === "OPERADOR") {
-    const propias = await db.query.lecturas.findMany({
-      where: eq(lecturas.registradaPorId, user.id),
-      orderBy: [desc(lecturas.createdAt)],
-      limit: 20,
-      with: { socio: { columns: { nombre: true } } },
-    });
-
-    return (
-      <LecturaForm
-        socios={listaSocios.map((s) => {
-          const a = anteriorPorSocio.get(s.id);
-          return {
-            id: s.id,
-            nombre: s.nombre,
-            rut: s.rut,
-            numeroCliente: s.numeroCliente,
-            tipo: s.tipo,
-            anterior: a ? { valor: a.valor, periodo: a.periodo } : null,
-          };
-        })}
-        recientes={propias.map((l) => ({
-          id: l.id,
-          socio: l.socio.nombre,
-          periodo: l.periodo,
-          valor: l.valor,
-          estado: l.estado,
-          motivoRechazo: l.motivoRechazo,
-        }))}
-      />
-    );
+    return <LecturaForm {...await datosTerreno(user.id, apr.id)} />;
   }
+
+  const { listaSocios, anteriorPorSocio } = await sociosConAnterior(apr.id);
 
   // Todas las lecturas del comité, no solo las pendientes: la directiva
   // necesita ver también lo ya resuelto. Tope alto por si el padrón es grande.

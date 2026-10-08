@@ -11,7 +11,10 @@
  * El caché se borra al cerrar sesión (sign-out-button.tsx).
  */
 const CACHE = "facilapr-terreno-v1";
-const PAGINA = "/panel/lecturas";
+// Las dos pantallas de cargar lecturas: la del operador y el "Modo terreno" de
+// la directiva. La tabla de la directiva (/panel/lecturas) tambien se guarda
+// por ser la misma ruta, pero siempre se pide primero a la red.
+const PAGINAS = new Set(["/panel/lecturas", "/panel/lecturas/terreno"]);
 
 self.addEventListener("install", () => self.skipWaiting());
 
@@ -33,7 +36,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  if (req.mode === "navigate" && url.pathname === PAGINA) {
+  if (req.mode === "navigate" && PAGINAS.has(url.pathname)) {
     event.respondWith(
       fetch(req)
         .then((res) => {
@@ -41,11 +44,11 @@ self.addEventListener("fetch", (event) => {
           // la pantalla de login como si fuera la de lecturas.
           if (res.ok && !res.redirected) {
             const copia = res.clone();
-            caches.open(CACHE).then((c) => c.put(PAGINA, copia));
+            caches.open(CACHE).then((c) => c.put(url.pathname, copia));
           }
           return res;
         })
-        .catch(() => caches.match(PAGINA).then((hit) => hit || Response.error()))
+        .catch(() => caches.match(url.pathname).then((hit) => hit || Response.error()))
     );
     return;
   }

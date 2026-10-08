@@ -15,6 +15,7 @@ import {
   Loader2,
   Plus,
   Search,
+  Smartphone,
   Users,
   X,
   XCircle,
@@ -221,6 +222,13 @@ export function LecturasTabla({
           >
             <Users />
             Técnicos
+          </Link>
+          <Link
+            href="/panel/lecturas/terreno"
+            className={cn(buttonVariants({ variant: "outline" }))}
+          >
+            <Smartphone />
+            Modo terreno
           </Link>
           <Button variant="outline" onClick={() => setIniciales(true)}>
             <FileUp />

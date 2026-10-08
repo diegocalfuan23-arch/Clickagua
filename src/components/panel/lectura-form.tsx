@@ -200,7 +200,7 @@ export function LecturaForm({
     <>
       {/* Celular: una pestaña a la vez, como app. Escritorio (md:): todo junto,
           el formulario y debajo las últimas lecturas, como siempre. */}
-      <div className="mx-auto flex w-full max-w-[560px] flex-col gap-5">
+      <div className="mx-auto flex w-full max-w-[560px] flex-col gap-5 pb-20 md:pb-0">
         <div
           className={cn(
             "flex-col gap-4",
