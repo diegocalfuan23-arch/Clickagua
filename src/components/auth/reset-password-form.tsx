@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CampoClave } from "@/components/auth/campo-clave";
 import { Label } from "@/components/ui/label";
 
 export function ResetPasswordForm({ token }: { token: string }) {
@@ -46,18 +47,12 @@ export function ResetPasswordForm({ token }: { token: string }) {
 
   return (
     <form onSubmit={handleSubmit} className="mt-7 flex flex-col gap-4">
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="password">Contraseña nueva</Label>
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          minLength={8}
-          className="h-10"
-          required
-        />
-      </div>
+      <CampoClave
+        id="password"
+        name="password"
+        label="Contraseña nueva"
+        confirmarId="confirmacion"
+      />
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="confirmacion">Repite la contraseña</Label>

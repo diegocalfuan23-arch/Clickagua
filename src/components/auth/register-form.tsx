@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 import { signUp } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CampoClave } from "@/components/auth/campo-clave";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -133,21 +134,12 @@ export function RegisterForm() {
         />
       </div>
 
-      <div className="flex flex-col gap-1.5 sm:col-span-2">
-        <Label htmlFor="password">Contraseña</Label>
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          minLength={8}
-          className="h-10"
-          required
-        />
-        <span className="text-[0.8rem] text-muted-foreground">
-          Mínimo 8 caracteres.
-        </span>
-      </div>
+      <CampoClave
+        id="password"
+        name="password"
+        label="Contraseña"
+        className="flex flex-col gap-1.5 sm:col-span-2"
+      />
 
       {error && (
         <p
