@@ -307,14 +307,14 @@ export function LecturasTabla({
         </div>
       ) : (
         <div className="rounded-xl border border-border bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-          <div className="flex gap-6 overflow-x-auto border-b border-border/60 px-5">
+          <div className="flex gap-6 overflow-x-auto overflow-y-hidden border-b border-border/60 px-5">
             {pestanas.map((p) => (
               <button
                 key={p.id}
                 type="button"
                 onClick={() => cambiarFiltro(() => setPestana(p.id))}
                 className={cn(
-                  "-mb-px flex shrink-0 items-center gap-2 border-b-2 py-3.5 text-[0.9rem] font-medium transition-colors",
+                  "flex shrink-0 items-center gap-2 border-b-2 py-3.5 text-[0.9rem] font-medium transition-colors",
                   pestana === p.id
                     ? "border-primary text-primary"
                     : "border-transparent text-muted-foreground hover:text-foreground"
