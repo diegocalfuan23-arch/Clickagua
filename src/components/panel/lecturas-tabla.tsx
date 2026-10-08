@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Clock,
   Droplets,
+  FileUp,
   Loader2,
   Plus,
   Search,
@@ -19,6 +20,7 @@ import {
   XCircle,
 } from "lucide-react";
 import {
+  aprobarComoLecturaInicial,
   aprobarLectura,
   rechazarLectura,
   registrarLectura,
@@ -47,6 +49,7 @@ import {
 import { cn } from "@/lib/utils";
 import { formatearPeriodo } from "@/lib/boletas";
 import { SocioBuscador, type OpcionSocio } from "@/components/panel/socio-buscador";
+import { LecturasInicialesDialog } from "@/components/panel/lecturas-iniciales-dialog";
 
 type Estado = "PENDIENTE" | "APROBADA" | "RECHAZADA";
 
@@ -61,11 +64,19 @@ export type LecturaFila = {
   motivoRechazo: string | null;
   registradaPor: string | null;
   createdAt: Date;
+  /** Última lectura aprobada del arranque (la base del consumo); null si es la primera. */
+  anterior: number | null;
+  /** Aprobada como punto de partida: no generó boleta. */
+  inicial: boolean;
 };
+
+type Motivo = "primera" | "menor";
 
 export type SocioOpcion = OpcionSocio;
 
 const POR_PAGINA = 12;
+
+const numero = new Intl.NumberFormat("es-CL");
 
 const fechaHora = new Intl.DateTimeFormat("es-CL", {
   day: "numeric",
@@ -143,6 +154,11 @@ export function LecturasTabla({
   const [pagina, setPagina] = useState(1);
   const [creando, setCreando] = useState(false);
   const [rechazando, setRechazando] = useState<LecturaFila | null>(null);
+  const [iniciales, setIniciales] = useState(false);
+  const [confirmando, setConfirmando] = useState<{
+    lectura: LecturaFila;
+    motivo: Motivo;
+  } | null>(null);
 
   const periodos = useMemo(
     () => [...new Set(lecturas.map((l) => l.periodo))].sort().reverse(),
@@ -200,6 +216,10 @@ export function LecturasTabla({
             <Users />
             Técnicos
           </Link>
+          <Button variant="outline" onClick={() => setIniciales(true)}>
+            <FileUp />
+            Lecturas iniciales
+          </Button>
           <Button onClick={() => setCreando(true)} disabled={socios.length === 0}>
             <Plus />
             Nueva lectura
@@ -356,6 +376,7 @@ export function LecturasTabla({
                       lectura={l}
                       onRechazar={() => setRechazando(l)}
                       onAprobada={() => router.refresh()}
+                      onConfirmar={(motivo) => setConfirmando({ lectura: l, motivo })}
                     />
                   ))
                 )}
@@ -406,6 +427,17 @@ export function LecturasTabla({
         onRegistrada={() => router.refresh()}
       />
 
+      <LecturasInicialesDialog abierto={iniciales} onAbiertoChange={setIniciales} />
+
+      <PrimeraLecturaDialog
+        pendiente={confirmando}
+        onCerrar={() => setConfirmando(null)}
+        onHecho={() => {
+          setConfirmando(null);
+          router.refresh();
+        }}
+      />
+
       <RechazarDialog
         lectura={rechazando}
         onOpenChange={(abierto) => !abierto && setRechazando(null)}
@@ -419,10 +451,12 @@ function FilaLectura({
   lectura: l,
   onRechazar,
   onAprobada,
+  onConfirmar,
 }: {
   lectura: LecturaFila;
   onRechazar: () => void;
   onAprobada: () => void;
+  onConfirmar: (motivo: Motivo) => void;
 }) {
   const [aprobando, iniciar] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -441,8 +475,31 @@ function FilaLectura({
         {formatearPeriodo(l.periodo)}
       </TableCell>
       <TableCell className="px-4 py-3.5 tabular-nums">
-        <div className="font-medium">{l.valor}</div>
-        {l.observacion && (
+        <div className="font-medium">{numero.format(l.valor)}</div>
+        {l.estado === "PENDIENTE" && (
+          <div
+            className={cn(
+              "text-[0.78rem]",
+              l.anterior === null
+                ? "text-tertiary-texto"
+                : l.valor < l.anterior
+                  ? "text-destructive"
+                  : "text-muted-foreground"
+            )}
+          >
+            {l.anterior === null
+              ? "Primera lectura: sin anterior"
+              : l.valor < l.anterior
+                ? `Menor que la anterior (${numero.format(l.anterior)})`
+                : `Anterior ${numero.format(l.anterior)} · +${numero.format(l.valor - l.anterior)} m³`}
+          </div>
+        )}
+        {l.inicial && (
+          <div className="text-[0.78rem] text-muted-foreground">
+            Lectura inicial (sin boleta)
+          </div>
+        )}
+        {l.observacion && l.observacion !== "Lectura inicial" && (
           <div
             title={l.observacion}
             className="max-w-48 truncate text-[0.78rem] text-muted-foreground"
@@ -493,14 +550,20 @@ function FilaLectura({
               type="button"
               size="sm"
               disabled={aprobando}
-              onClick={() =>
+              onClick={() => {
+                // Sin lectura anterior (o con una menor) no se aprueba de golpe:
+                // cobraría el medidor completo. Se pregunta qué hacer.
+                if (l.anterior === null) return onConfirmar("primera");
+                if (l.valor < l.anterior) return onConfirmar("menor");
                 iniciar(async () => {
                   setError(null);
                   const r = await aprobarLectura(l.id);
                   if (r.ok) onAprobada();
+                  else if (r.codigo === "PRIMERA_LECTURA") onConfirmar("primera");
+                  else if (r.codigo === "LECTURA_MENOR") onConfirmar("menor");
                   else setError(r.error);
-                })
-              }
+                });
+              }}
             >
               {aprobando ? <Loader2 className="animate-spin" /> : <Check />}
               Aprobar
@@ -514,6 +577,94 @@ function FilaLectura({
         )}
       </TableCell>
     </TableRow>
+  );
+}
+
+/**
+ * Cuando no se puede aprobar de golpe: no hay lectura anterior (la primera de un
+ * arranque) o la lectura es menor que la anterior (medidor nuevo). La salida
+ * segura es usarla como PUNTO DE PARTIDA: queda registrada, no cobra nada, y
+ * la próxima lectura calcula el consumo desde ella.
+ */
+function PrimeraLecturaDialog({
+  pendiente,
+  onCerrar,
+  onHecho,
+}: {
+  pendiente: { lectura: LecturaFila; motivo: Motivo } | null;
+  onCerrar: () => void;
+  onHecho: () => void;
+}) {
+  const [trabajando, iniciar] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  const l = pendiente?.lectura;
+  const primera = pendiente?.motivo === "primera";
+
+  function correr(accion: () => Promise<{ ok: boolean; error?: string }>) {
+    setError(null);
+    iniciar(async () => {
+      const r = await accion();
+      if (r.ok) onHecho();
+      else setError(r.error ?? "No pudimos completar la acción.");
+    });
+  }
+
+  return (
+    <Dialog open={pendiente !== null} onOpenChange={(v) => !v && onCerrar()}>
+      <DialogContent className="sm:max-w-120">
+        <DialogHeader>
+          <DialogTitle>
+            {primera ? "Primera lectura de este arranque" : "Lectura menor que la anterior"}
+          </DialogTitle>
+          <DialogDescription>
+            {l && `${l.socio} · ${formatearPeriodo(l.periodo)} · lectura ${numero.format(l.valor)}`}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex flex-col gap-3 text-[0.9rem] leading-relaxed">
+          {primera ? (
+            <p>
+              Todavía no hay una lectura anterior para calcular el consumo. Si la apruebas sin más, se
+              cobraría <strong>el medidor completo ({l && numero.format(l.valor)} m³)</strong> como si
+              fuera consumo de este mes.
+            </p>
+          ) : (
+            <p>
+              Un medidor no retrocede. Si se cambió por uno nuevo, usa esta lectura como punto de
+              partida; si fue un error de digitación, recházala.
+            </p>
+          )}
+          <p className="rounded-lg bg-muted/60 px-3.5 py-2.5 text-[0.85rem]">
+            <strong>Usarla como lectura inicial</strong> la deja registrada sin cobrar nada: la próxima
+            lectura de este arranque calculará el consumo desde aquí.
+          </p>
+          {error && <p className="text-destructive">{error}</p>}
+        </div>
+
+        <DialogFooter className="sm:flex-wrap">
+          <Button variant="outline" onClick={onCerrar} disabled={trabajando}>
+            Cancelar
+          </Button>
+          {primera && (
+            <Button
+              variant="outline"
+              disabled={trabajando}
+              onClick={() => l && correr(() => aprobarLectura(l.id, { cobrarDesdeCero: true }))}
+            >
+              Cobrar desde 0
+            </Button>
+          )}
+          <Button
+            disabled={trabajando}
+            onClick={() => l && correr(() => aprobarComoLecturaInicial(l.id))}
+          >
+            {trabajando && <Loader2 className="animate-spin" />}
+            Usar como lectura inicial
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

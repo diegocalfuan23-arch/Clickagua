@@ -107,7 +107,8 @@ export function LecturaForm({
   // Solo orienta; el administrador sigue revisando antes de generar la boleta.
   const anterior = socio?.anterior ?? null;
   const actual = valorTxt === "" ? null : Number(valorTxt);
-  const consumo = actual !== null ? actual - (anterior?.valor ?? 0) : null;
+  // Sin lectura anterior no hay consumo que mostrar: sería el medidor completo.
+  const consumo = actual !== null && anterior ? actual - anterior.valor : null;
 
   function guardarSinConexion(formData: FormData): EstadoForm {
     const socioId = String(formData.get("socioId") ?? "");
@@ -263,8 +264,8 @@ export function LecturaForm({
                     </span>
                   </span>
                 ) : (
-                  <span className="text-[0.85rem] text-muted-foreground">
-                    Sin lectura anterior · parte de 0
+                  <span className="text-right text-[0.82rem] text-muted-foreground">
+                    Primera lectura: la directiva la usa como punto de partida
                   </span>
                 )}
               </div>

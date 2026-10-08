@@ -16,6 +16,14 @@ import {
 
 export type ResultadoAccion = { ok: true } | { ok: false; error: string };
 
+/**
+ * `codigo` le dice a la pantalla POR QUÉ no se pudo aprobar, para ofrecer la
+ * salida correcta (usarla como lectura inicial) en vez de solo un error.
+ */
+export type ResultadoAprobacion =
+  | { ok: true }
+  | { ok: false; error: string; codigo?: "PRIMERA_LECTURA" | "LECTURA_MENOR" };
+
 const lecturaSchema = z.object({
   socioId: z.string().trim().min(1, "Elige un socio."),
   periodo: z.string().trim().min(1, "El período es obligatorio."),
@@ -99,9 +107,17 @@ export async function registrarLectura(
 /**
  * Aprobar vuelca la lectura a la Boleta del período: si no existe, la crea;
  * si existe, la recalcula con la lectura actual como nueva lectura actual y
- * la anterior aprobada de este socio (o 0 si es la primera).
+ * la anterior aprobada de este socio.
+ *
+ * Si el arranque NO tiene lectura anterior, el consumo saldría como el medidor
+ * completo (un medidor en 1.250 cobraría 1.250 m³). Por eso se niega, salvo que
+ * se pida expresamente `cobrarDesdeCero` (un medidor realmente nuevo, en 0).
+ * Lo normal para la primera lectura es `aprobarComoLecturaInicial`.
  */
-export async function aprobarLectura(lecturaId: string): Promise<ResultadoAccion> {
+export async function aprobarLectura(
+  lecturaId: string,
+  opciones: { cobrarDesdeCero?: boolean } = {}
+): Promise<ResultadoAprobacion> {
   const { user, apr } = await requireAdmin();
 
   const lectura = await db
@@ -140,6 +156,15 @@ export async function aprobarLectura(lecturaId: string): Promise<ResultadoAccion
     .orderBy(desc(lecturas.createdAt))
     .limit(1);
 
+  if (anterior.length === 0 && !opciones.cobrarDesdeCero) {
+    return {
+      ok: false,
+      codigo: "PRIMERA_LECTURA",
+      error:
+        "Es la primera lectura de este arranque: no hay una anterior para calcular el consumo. Úsala como lectura inicial, o confirma que quieres cobrar desde 0.",
+    };
+  }
+
   const lecturaAnterior = anterior[0]?.valor ?? 0;
 
   const calculo = calcularDesdeLecturas(lecturaAnterior, actual.valor, {
@@ -148,7 +173,11 @@ export async function aprobarLectura(lecturaId: string): Promise<ResultadoAccion
   });
 
   if (calculo && "error" in calculo) {
-    return { ok: false, error: calculo.error };
+    return {
+      ok: false,
+      error: calculo.error,
+      codigo: actual.valor < lecturaAnterior ? "LECTURA_MENOR" : undefined,
+    };
   }
   if (!calculo) {
     return {
@@ -211,6 +240,39 @@ export async function aprobarLectura(lecturaId: string): Promise<ResultadoAccion
   revalidatePath("/panel/lecturas");
   revalidatePath("/panel/boletas");
   revalidatePath("/panel");
+  return { ok: true };
+}
+
+/**
+ * Aprueba una lectura como PUNTO DE PARTIDA: queda registrada y será la
+ * "anterior" de la próxima, pero no genera boleta ni cobra consumo. Sirve para
+ * la primera lectura de un arranque y para un medidor que se cambió por otro.
+ */
+export async function aprobarComoLecturaInicial(
+  lecturaId: string
+): Promise<ResultadoAccion> {
+  const { user, apr } = await requireAdmin();
+
+  const lectura = await db
+    .select({ id: lecturas.id, estado: lecturas.estado })
+    .from(lecturas)
+    .innerJoin(socios, eq(lecturas.socioId, socios.id))
+    .where(and(eq(lecturas.id, lecturaId), eq(socios.aprId, apr.id)))
+    .limit(1);
+
+  if (lectura.length === 0) {
+    return { ok: false, error: "No encontramos esa lectura." };
+  }
+  if (lectura[0].estado !== "PENDIENTE") {
+    return { ok: false, error: "Esa lectura ya fue revisada." };
+  }
+
+  await db
+    .update(lecturas)
+    .set({ estado: "APROBADA", revisadaPorId: user.id, updatedAt: new Date() })
+    .where(eq(lecturas.id, lecturaId));
+
+  revalidatePath("/panel/lecturas");
   return { ok: true };
 }
 

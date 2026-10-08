@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { and, asc, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { lecturas, socios } from "@/lib/db/schema";
+import { boletas, lecturas, socios } from "@/lib/db/schema";
 import { user as userTable } from "@/lib/db/auth-schema";
 import { requireApr } from "@/lib/apr-session";
 import { formatearRut } from "@/lib/formato";
@@ -21,6 +21,20 @@ export default async function LecturasPage() {
     columns: { id: true, nombre: true, rut: true, numeroCliente: true, tipo: true },
   });
 
+  // Última lectura aprobada de cada socio: la misma que usa el servidor
+  // al aprobar para calcular el consumo (la más reciente por fecha de carga).
+  const anteriores = await db
+    .selectDistinctOn([lecturas.socioId], {
+      socioId: lecturas.socioId,
+      valor: lecturas.valor,
+      periodo: lecturas.periodo,
+    })
+    .from(lecturas)
+    .innerJoin(socios, eq(lecturas.socioId, socios.id))
+    .where(and(eq(socios.aprId, apr.id), eq(lecturas.estado, "APROBADA")))
+    .orderBy(lecturas.socioId, desc(lecturas.createdAt));
+  const anteriorPorSocio = new Map(anteriores.map((a) => [a.socioId, a]));
+
   if (user.rol === "OPERADOR") {
     const propias = await db.query.lecturas.findMany({
       where: eq(lecturas.registradaPorId, user.id),
@@ -28,20 +42,6 @@ export default async function LecturasPage() {
       limit: 20,
       with: { socio: { columns: { nombre: true } } },
     });
-
-    // Última lectura aprobada de cada socio: la misma que usa el servidor
-    // al aprobar para calcular el consumo (la más reciente por fecha de carga).
-    const anteriores = await db
-      .selectDistinctOn([lecturas.socioId], {
-        socioId: lecturas.socioId,
-        valor: lecturas.valor,
-        periodo: lecturas.periodo,
-      })
-      .from(lecturas)
-      .innerJoin(socios, eq(lecturas.socioId, socios.id))
-      .where(and(eq(socios.aprId, apr.id), eq(lecturas.estado, "APROBADA")))
-      .orderBy(lecturas.socioId, desc(lecturas.createdAt));
-    const anteriorPorSocio = new Map(anteriores.map((a) => [a.socioId, a]));
 
     return (
       <LecturaForm
@@ -79,12 +79,19 @@ export default async function LecturasPage() {
       estado: lecturas.estado,
       motivoRechazo: lecturas.motivoRechazo,
       createdAt: lecturas.createdAt,
+      socioId: lecturas.socioId,
       socioNombre: socios.nombre,
       socioRut: socios.rut,
       registradaPor: userTable.name,
+      boletaId: boletas.id,
     })
     .from(lecturas)
     .innerJoin(socios, eq(lecturas.socioId, socios.id))
+    // Una lectura aprobada sin boleta del mismo período es una lectura inicial.
+    .leftJoin(
+      boletas,
+      and(eq(boletas.socioId, lecturas.socioId), eq(boletas.periodo, lecturas.periodo))
+    )
     .leftJoin(userTable, eq(lecturas.registradaPorId, userTable.id))
     .where(eq(socios.aprId, apr.id))
     .orderBy(desc(lecturas.createdAt))
@@ -110,6 +117,8 @@ export default async function LecturasPage() {
         motivoRechazo: l.motivoRechazo,
         registradaPor: l.registradaPor,
         createdAt: l.createdAt,
+        anterior: anteriorPorSocio.get(l.socioId)?.valor ?? null,
+        inicial: l.estado === "APROBADA" && l.boletaId === null,
       }))}
     />
   );

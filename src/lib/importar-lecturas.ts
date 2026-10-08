@@ -1,0 +1,194 @@
+import { normalizarRut } from "@/lib/formato";
+
+/**
+ * Lecturas INICIALES en bloque: la lectura de partida de cada medidor, para que
+ * la primera boleta cobre solo el consumo del mes y no el medidor completo. La
+ * planilla trae, por cada arranque, cómo identificarlo (N.º, nombre o RUT) y su
+ * lectura. Lógica pura: corre igual en el servidor y se prueba sin base de datos.
+ */
+
+export type FilaLectura = {
+  linea: number;
+  numero: string;
+  nombre: string;
+  rut: string;
+  tipo: string;
+  valor: string;
+};
+
+export type CuentaRef = {
+  id: string;
+  nombre: string;
+  rut: string | null;
+  tipo: "SOCIO" | "USUARIO";
+  numeroCliente: string | null;
+  /** Ya tiene al menos una lectura aprobada: entonces esta no sería la inicial. */
+  tieneLecturas: boolean;
+};
+
+export type LecturaResuelta = {
+  linea: number;
+  /** Cómo la identificó la planilla, para mostrarla ("N.º 3", "Aedo Bernardo"). */
+  referencia: string;
+  valor: number | null;
+  socioId: string | null;
+  /** El nombre del arranque encontrado, para que se vea a quién corresponde. */
+  nombre: string | null;
+  error: string | null;
+};
+
+const sinTildes = (t: string) =>
+  t
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const esLectura = (c: string) => /lectura|medidor/.test(sinTildes(c));
+const esNumero = (c: string) =>
+  /^(n|no|nro|num|numero)\.?$|n[°º]|numero|arranque|cliente/.test(sinTildes(c));
+const esNombre = (c: string) => /\bnombres?\b/.test(sinTildes(c));
+const esRut = (c: string) => /\b(rut|run)\b/.test(sinTildes(c));
+const esTipo = (c: string) => /^tipo$/.test(sinTildes(c));
+
+export type DeteccionLecturas =
+  | { ok: true; filas: FilaLectura[]; notas: string[] }
+  | { ok: false; error: string };
+
+export function detectarLecturas(tabla: string[][]): DeteccionLecturas {
+  const limite = Math.min(tabla.length, 30);
+  let fila = -1;
+  for (let r = 0; r < limite; r++) {
+    const celdas = tabla[r].filter(Boolean);
+    const tieneLectura = celdas.some(esLectura);
+    const tieneIdentificador = celdas.some(
+      (c) => esNumero(c) || esNombre(c) || esRut(c)
+    );
+    if (tieneLectura && tieneIdentificador) {
+      fila = r;
+      break;
+    }
+  }
+
+  if (fila < 0) {
+    return {
+      ok: false,
+      error:
+        "No encontré los encabezados. Necesito una columna «Lectura» y otra que identifique el arranque: «N.º», «Nombre» o «RUT».",
+    };
+  }
+
+  const enc = tabla[fila];
+  const col = (cond: (c: string) => boolean) => enc.findIndex((c) => c && cond(c));
+  const cLectura = col(esLectura);
+  const cNumero = col(esNumero);
+  const cNombre = col(esNombre);
+  const cRut = col(esRut);
+  const cTipo = col(esTipo);
+
+  const celda = (r: number, c: number) =>
+    c >= 0 ? (tabla[r]?.[c] ?? "").replace(/\s+/g, " ").trim() : "";
+
+  const filas: FilaLectura[] = [];
+  for (let r = fila + 1; r < tabla.length; r++) {
+    const f: FilaLectura = {
+      linea: r + 1,
+      numero: celda(r, cNumero).replace(/\.0$/, ""),
+      nombre: celda(r, cNombre),
+      rut: celda(r, cRut),
+      tipo: celda(r, cTipo),
+      valor: celda(r, cLectura),
+    };
+    if (!f.numero && !f.nombre && !f.rut && !f.valor) continue;
+    filas.push(f);
+  }
+
+  if (filas.length === 0) {
+    return { ok: false, error: "Encontré los encabezados, pero no hay filas debajo." };
+  }
+
+  const por = [
+    cNumero >= 0 ? "N.º" : null,
+    cNombre >= 0 ? "nombre" : null,
+    cRut >= 0 ? "RUT" : null,
+  ].filter(Boolean);
+  return {
+    ok: true,
+    filas,
+    notas: [
+      `Encontré los encabezados en la fila ${fila + 1}: lectura, e identifico cada arranque por ${por.join(", ")}.`,
+    ],
+  };
+}
+
+/** "1.250" → 1250; "1250,5" → 1250 (un medidor se lee en m³ enteros). */
+function leerValor(texto: string): number | null {
+  const t = texto.trim().split(",")[0].replace(/\./g, "");
+  return /^\d{1,9}$/.test(t) ? Number(t) : null;
+}
+
+export function resolverLecturas(
+  filas: FilaLectura[],
+  cuentas: CuentaRef[]
+): LecturaResuelta[] {
+  const vistos = new Set<string>();
+
+  return filas.map((f) => {
+    const referencia = f.numero
+      ? `N.º ${f.numero}`
+      : f.nombre || (f.rut ? `RUT ${f.rut}` : "—");
+    const base = { linea: f.linea, referencia, valor: null, socioId: null, nombre: null };
+    const mal = (error: string): LecturaResuelta => ({ ...base, error });
+
+    const valor = leerValor(f.valor);
+    if (valor === null) return mal(`Lectura inválida: «${f.valor || "vacía"}»`);
+
+    const tipo = /usuario/i.test(f.tipo) ? "USUARIO" : /socio/i.test(f.tipo) ? "SOCIO" : null;
+    const delTipo = (c: CuentaRef) => !tipo || c.tipo === tipo;
+
+    let candidatos: CuentaRef[] = [];
+    let criterio = "";
+
+    if (f.numero) {
+      criterio = `el N.º ${f.numero}`;
+      candidatos = cuentas.filter((c) => c.numeroCliente === f.numero && delTipo(c));
+      if (candidatos.length > 1) {
+        return mal(
+          `Hay un socio y un usuario con el N.º ${f.numero}: agrega una columna «Tipo» (socio o usuario)`
+        );
+      }
+    } else if (f.nombre) {
+      criterio = `el nombre «${f.nombre}»`;
+      const n = sinTildes(f.nombre);
+      candidatos = cuentas.filter((c) => sinTildes(c.nombre) === n && delTipo(c));
+      if (candidatos.length > 1) {
+        return mal(`Hay ${candidatos.length} arranques con el nombre «${f.nombre}»: usa el N.º`);
+      }
+    } else if (f.rut) {
+      criterio = `el RUT ${f.rut}`;
+      const r = normalizarRut(f.rut);
+      candidatos = cuentas.filter((c) => c.rut === r && delTipo(c));
+      if (candidatos.length > 1) {
+        return mal(`El RUT ${f.rut} tiene ${candidatos.length} arranques: usa el N.º o el nombre`);
+      }
+    } else {
+      return mal("Falta el N.º, el nombre o el RUT para saber de qué arranque es");
+    }
+
+    if (candidatos.length === 0) return mal(`No hay un arranque con ${criterio}`);
+
+    const cuenta = candidatos[0];
+    const resuelta = { ...base, valor, socioId: cuenta.id, nombre: cuenta.nombre };
+
+    if (cuenta.tieneLecturas) {
+      return { ...resuelta, error: "Ya tiene lecturas aprobadas: esta no sería la inicial" };
+    }
+    if (vistos.has(cuenta.id)) {
+      return { ...resuelta, error: "Repetida en el archivo: este arranque ya aparece arriba" };
+    }
+    vistos.add(cuenta.id);
+
+    return { ...resuelta, error: null };
+  });
+}
