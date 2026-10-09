@@ -15,5 +15,10 @@ export const metadata: Metadata = {
  */
 export default async function TerrenoPage() {
   const { user, apr } = await requireApr();
-  return <LecturaForm {...await datosTerreno(user.id, apr.id)} />;
+  return (
+    <LecturaForm
+      {...await datosTerreno(user.id, apr.id)}
+      puedeCargarSocios={user.rol === "ADMIN"}
+    />
+  );
 }

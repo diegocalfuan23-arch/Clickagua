@@ -8,6 +8,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
@@ -15,6 +16,7 @@ import {
   Clock,
   Droplets,
   Loader2,
+  Users,
   WifiOff,
   XCircle,
 } from "lucide-react";
@@ -31,7 +33,7 @@ import {
   suscribirConexion,
   type LecturaEnCola,
 } from "@/lib/lecturas-offline";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -78,12 +80,41 @@ const periodoActual = () => {
   return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}`;
 };
 
+function SinSocios({ puedeCargar }: { puedeCargar: boolean }) {
+  return (
+    <div className="mx-auto flex w-full max-w-[560px] flex-col items-center rounded-2xl border border-dashed border-border bg-card px-6 py-12 text-center">
+      <span className="flex size-11 items-center justify-center rounded-full bg-muted">
+        <Users className="size-5 text-muted-foreground" />
+      </span>
+      <h1 className="mt-4 text-[1.1rem] font-semibold">
+        Aún no tienes socios cargados
+      </h1>
+      <p className="mt-2 max-w-[42ch] text-[0.92rem] leading-relaxed text-muted-foreground">
+        {puedeCargar
+          ? "Para tomar lecturas primero hay que cargar el padrón: los socios y usuarios de tu comité."
+          : "La directiva todavía no cargó los socios del comité. Avísale para poder tomar lecturas."}
+      </p>
+      {puedeCargar && (
+        <Link
+          href="/panel/socios"
+          className={cn(buttonVariants(), "mt-5")}
+        >
+          Cargar socios
+        </Link>
+      )}
+    </div>
+  );
+}
+
 export function LecturaForm({
   socios,
   recientes,
+  puedeCargarSocios = false,
 }: {
   socios: Socio[];
   recientes: LecturaReciente[];
+  /** La directiva puede ir a cargar el padrón; el operador solo avisarle. */
+  puedeCargarSocios?: boolean;
 }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
@@ -195,6 +226,12 @@ export function LecturaForm({
     // enviarCola solo usa refs y el store local: no depende del render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enLinea, cola.length]);
+
+  // Sin padrón no hay a quién tomarle la lectura: se dice claro, en vez de un
+  // buscador que parece roto ("Ningún socio coincide").
+  if (socios.length === 0) {
+    return <SinSocios puedeCargar={puedeCargarSocios} />;
+  }
 
   return (
     <>

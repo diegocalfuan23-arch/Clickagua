@@ -137,7 +137,9 @@ export function SocioBuscador({
         <ul className="max-h-56 overflow-y-auto rounded-lg border border-border bg-popover">
           {resultados.length === 0 ? (
             <li className="px-3 py-2.5 text-[0.88rem] text-muted-foreground">
-              Ningún socio coincide.
+              {socios.length === 0
+                ? "Aún no hay socios cargados."
+                : "Ningún socio coincide."}
             </li>
           ) : (
             resultados.map((s) => (

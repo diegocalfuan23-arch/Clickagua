@@ -254,6 +254,22 @@ export function LecturasTabla({
         </div>
       </div>
 
+      {socios.length === 0 && (
+        <div className="flex items-start gap-2.5 rounded-xl border border-tertiary/40 bg-tertiary/10 px-4 py-3">
+          <AlertCircle className="mt-0.5 size-4 shrink-0 text-tertiary" />
+          <p className="text-[0.88rem] leading-relaxed">
+            <strong>Primero carga a tus socios.</strong> Las lecturas se toman
+            por arranque.{" "}
+            <Link
+              href="/panel/socios"
+              className="font-medium text-primary hover:underline"
+            >
+              Ir a Socios
+            </Link>
+          </p>
+        </div>
+      )}
+
       {porRevisar > 0 && (
         <div className="flex items-start gap-2.5 rounded-xl border border-tertiary/40 bg-tertiary/10 px-4 py-3">
           <AlertCircle className="mt-0.5 size-4 shrink-0 text-tertiary" />
