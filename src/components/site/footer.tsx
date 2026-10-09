@@ -11,6 +11,9 @@ export function Footer() {
         </div>
 
         <div className="flex flex-wrap items-center gap-5">
+          <Link href="/ayuda" className="transition-colors hover:text-foreground">
+            Centro de ayuda
+          </Link>
           <Link href="/terminos" className="transition-colors hover:text-foreground">
             Términos de uso
           </Link>

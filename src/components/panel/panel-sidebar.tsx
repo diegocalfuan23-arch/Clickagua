@@ -12,6 +12,7 @@ import {
   HardHat,
   MessageCircle,
   Smartphone,
+  LifeBuoy,
 } from "lucide-react";
 import { Logo } from "@/components/marca/logo";
 import {
@@ -46,6 +47,7 @@ const atencion = [
   // Configuración → Facturación.
   // { href: "/panel/sitio", label: "Sitio público", icon: Globe },
   { href: "/panel/configuracion", label: "Configuración", icon: Settings },
+  { href: "/ayuda", label: "Centro de ayuda", icon: LifeBuoy },
 ];
 
 /** Lo único que un OPERADOR puede ver: cargar lecturas, nada más. */

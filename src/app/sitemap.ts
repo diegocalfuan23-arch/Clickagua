@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { ARTICULOS } from "@/lib/ayuda";
 
 /**
  * URL canónica del sitio. Sale del entorno porque facilapr.cl se sirve sin
@@ -13,6 +14,18 @@ const SITE_URL =
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
+    {
+      url: `${SITE_URL}/ayuda`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
+    ...ARTICULOS.map((a) => ({
+      url: `${SITE_URL}/ayuda/${a.slug}`,
+      lastModified: new Date(),
+      changeFrequency: "monthly" as const,
+      priority: 0.5,
+    })),
     {
       url: SITE_URL,
       lastModified: new Date(),
