@@ -1,5 +1,4 @@
 import { NextRequest } from "next/server";
-import { timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
@@ -8,6 +7,7 @@ import { aprs } from "@/lib/db/schema";
 import { session as sessionTable, user as userTable } from "@/lib/db/auth-schema";
 import { formatearRut, normalizarRut, rutValido } from "@/lib/formato";
 import { generarClave } from "@/lib/clave";
+import { exigirSecreto, respuesta } from "@/lib/interno";
 
 export const dynamic = "force-dynamic";
 
@@ -32,30 +32,9 @@ const cuerpoSchema = z.object({
   plan: z.enum(["BASICO", "ESTANDAR", "PREMIUM"]).default("BASICO"),
 });
 
-/** Comparación en tiempo constante: no filtra cuánto del secreto se acertó. */
-function secretoValido(recibido: string | null) {
-  const esperado = process.env.SUPERADMIN_API_SECRET;
-  if (!esperado || esperado.length < 24 || !recibido) return false;
-
-  const a = Buffer.from(recibido);
-  const b = Buffer.from(esperado);
-  return a.length === b.length && timingSafeEqual(a, b);
-}
-
-function respuesta(estado: number, cuerpo: Record<string, unknown>) {
-  return Response.json(cuerpo, {
-    status: estado,
-    headers: { "Cache-Control": "no-store" },
-  });
-}
-
 export async function POST(req: NextRequest) {
-  if (!process.env.SUPERADMIN_API_SECRET) {
-    return respuesta(503, { error: "El endpoint no está configurado." });
-  }
-  if (!secretoValido(req.headers.get("x-api-secret"))) {
-    return respuesta(401, { error: "No autorizado." });
-  }
+  const noAutorizado = exigirSecreto(req);
+  if (noAutorizado) return noAutorizado;
 
   const parsed = cuerpoSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
