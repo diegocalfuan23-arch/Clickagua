@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Check, Loader2 } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
+import { solicitarRecuperacion } from "@/app/(auth)/olvide-clave/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,23 +10,19 @@ import { Label } from "@/components/ui/label";
 export function OlvideClaveForm() {
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setError(null);
     setEnviando(true);
 
     const datos = new FormData(e.currentTarget);
-
-    // Better Auth responde igual exista o no la cuenta, para no confirmarle
-    // a un desconocido si un correo está registrado. Por eso no hay manejo
-    // de error aquí: siempre se muestra el mismo mensaje de éxito.
-    await authClient.requestPasswordReset({
-      email: String(datos.get("email") ?? ""),
-      redirectTo: "/reset-password",
-    });
+    const r = await solicitarRecuperacion(String(datos.get("email") ?? ""));
 
     setEnviando(false);
-    setEnviado(true);
+    if (r.ok) setEnviado(true);
+    else setError(r.error);
   }
 
   if (enviado) {
@@ -34,7 +30,7 @@ export function OlvideClaveForm() {
       <div className="mt-7 flex items-start gap-3 rounded-lg bg-forest/10 px-4 py-3.5 text-[0.9rem] text-forest">
         <Check className="mt-0.5 size-4.5 shrink-0" />
         <p>
-          Si ese correo está registrado, te enviamos un enlace para crear una
+          Te enviamos un enlace para crear una
           contraseña nueva. Revisa también spam.
         </p>
       </div>
@@ -55,6 +51,15 @@ export function OlvideClaveForm() {
           required
         />
       </div>
+
+      {error && (
+        <p
+          role="alert"
+          className="rounded-lg bg-destructive/10 px-3.5 py-2.5 text-[0.88rem] text-destructive"
+        >
+          {error}
+        </p>
+      )}
 
       <Button type="submit" disabled={enviando} className="mt-2 h-10 w-full">
         {enviando && <Loader2 className="animate-spin" />}
