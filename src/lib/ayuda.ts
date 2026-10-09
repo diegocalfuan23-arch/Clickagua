@@ -132,7 +132,13 @@ export const ARTICULOS: Articulo[] = [
       {
         titulo: "Escribe el correo de tu cuenta",
         texto:
-          "Pulsa Enviar enlace de recuperación. Por seguridad, el mensaje es el mismo exista o no el correo: no se confirma si está registrado.",
+          "Pulsa Enviar enlace de recuperación.",
+      },
+      {
+        titulo: "Confirma que se envió",
+        texto:
+          "Verás un aviso verde: te enviamos un enlace si ese correo está registrado. Por seguridad, el aviso es el mismo exista o no la cuenta, así que no se confirma si el correo está registrado.",
+        nota: "El correo debería llegar en unos minutos. Si no lo ves, revisa la carpeta de spam.",
       },
       {
         titulo: "Abre el correo que te llega",
