@@ -6,8 +6,7 @@ import {
   enviarMensajeSocio,
   marcarLeidoSocio,
 } from "@/app/socio/[slug]/chat-actions";
-import { pusherClient } from "@/lib/pusher/client";
-import { canalChatSocio, EVENTO_MENSAJE_NUEVO } from "@/lib/pusher/server";
+import { escucharChat } from "@/lib/chat/cliente";
 import type { MensajeChat } from "@/lib/chat-socio";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -47,19 +46,13 @@ export function ChatComite({
       .then((data: MensajeChat[]) => setMensajes(data))
       .finally(() => setCargando(false));
 
-    const pusher = pusherClient();
-    const canal = pusher.subscribe(canalChatSocio(socioId));
-    canal.bind(EVENTO_MENSAJE_NUEVO, (mensaje: MensajeChat) => {
+    return escucharChat<MensajeChat>(socioId, (mensaje) => {
       setMensajes((prev) => [...prev, mensaje]);
       if (mensaje.remitente === "DIRECTIVA") {
         setSinLeer((n) => (abiertoRef.current ? 0 : n + 1));
         if (abiertoRef.current) marcarLeidoSocio(slug);
       }
     });
-
-    return () => {
-      pusher.unsubscribe(canalChatSocio(socioId));
-    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socioId, slug]);
 

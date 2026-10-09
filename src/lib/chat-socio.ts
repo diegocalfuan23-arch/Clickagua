@@ -1,7 +1,7 @@
 import { asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { mensajesSocio } from "@/lib/db/schema";
-import { pusherServer, canalChatSocio, EVENTO_MENSAJE_NUEVO } from "@/lib/pusher/server";
+import { publicarMensajeEnVivo } from "@/lib/chat/tiempo-real";
 
 export type MensajeChat = {
   id: string;
@@ -55,11 +55,9 @@ export async function enviarMensajeChat({
       createdAt: mensajesSocio.createdAt,
     });
 
-  pusherServer
-    .trigger(canalChatSocio(socioId), EVENTO_MENSAJE_NUEVO, mensaje)
-    .catch((error) => {
-      console.error("No se pudo publicar el mensaje en Pusher:", error);
-    });
+  publicarMensajeEnVivo(socioId, mensaje).catch((error) => {
+    console.error("No se pudo publicar el mensaje en tiempo real:", error);
+  });
 
   return mensaje;
 }

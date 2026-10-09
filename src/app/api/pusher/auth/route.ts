@@ -1,9 +1,7 @@
 import { NextRequest } from "next/server";
 import { headers } from "next/headers";
-import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { socios } from "@/lib/db/schema";
+import { puedeEscucharChatSocio } from "@/lib/chat/autorizacion";
 import { pusherServer } from "@/lib/pusher/server";
 
 /**
@@ -29,26 +27,7 @@ export async function POST(req: NextRequest) {
     return new Response("Solicitud inválida.", { status: 400 });
   }
 
-  const socioId = match[1];
-  const { user } = session;
-
-  let autorizado = false;
-
-  if (user.rol === "SOCIO") {
-    const socio = await db.query.socios.findFirst({
-      where: eq(socios.id, socioId),
-      columns: { userId: true },
-    });
-    autorizado = socio?.userId === user.id;
-  } else if (user.rol === "ADMIN") {
-    const socio = await db.query.socios.findFirst({
-      where: eq(socios.id, socioId),
-      columns: { aprId: true },
-    });
-    autorizado = socio?.aprId === user.aprId;
-  }
-
-  if (!autorizado) {
+  if (!(await puedeEscucharChatSocio(session.user, match[1]))) {
     return new Response("No autorizado.", { status: 403 });
   }
 

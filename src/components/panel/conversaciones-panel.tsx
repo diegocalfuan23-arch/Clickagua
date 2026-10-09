@@ -6,8 +6,7 @@ import {
   enviarMensajeDirectiva,
   marcarLeidoDirectiva,
 } from "@/app/panel/conversaciones/actions";
-import { pusherClient } from "@/lib/pusher/client";
-import { canalChatSocio, EVENTO_MENSAJE_NUEVO } from "@/lib/pusher/server";
+import { escucharChat } from "@/lib/chat/cliente";
 import type { MensajeChat } from "@/lib/chat-socio";
 import { iniciales } from "@/lib/formato";
 import { cn } from "@/lib/utils";
@@ -136,16 +135,10 @@ function ChatConSocio({
 
     marcarLeidoDirectiva(socioId);
 
-    const pusher = pusherClient();
-    const canal = pusher.subscribe(canalChatSocio(socioId));
-    canal.bind(EVENTO_MENSAJE_NUEVO, (mensaje: MensajeChat) => {
+    return escucharChat<MensajeChat>(socioId, (mensaje) => {
       setMensajes((prev) => [...prev, mensaje]);
       if (mensaje.remitente === "SOCIO") marcarLeidoDirectiva(socioId);
     });
-
-    return () => {
-      pusher.unsubscribe(canalChatSocio(socioId));
-    };
   }, [socioId]);
 
   useEffect(() => {

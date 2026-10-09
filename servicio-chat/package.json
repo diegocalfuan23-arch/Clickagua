@@ -1,0 +1,15 @@
+{
+  "name": "facilapr-servicio-chat",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Servidor Socket.IO del chat en tiempo real de Facilapr",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "jose": "^6.0.0",
+    "socket.io": "^4.8.1"
+  }
+}
