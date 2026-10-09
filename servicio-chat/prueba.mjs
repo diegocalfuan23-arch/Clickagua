@@ -1,33 +1,31 @@
 /**
  * Prueba de humo del servicio: arranca el servidor, conecta clientes y publica.
- * Uso:  node prueba.mjs     (desde esta carpeta, con las dependencias instaladas)
+ * Uso:  npm run build && node prueba.mjs     (desde esta carpeta)
  * Requiere socket.io-client (está en la raíz de Facilapr); se carga desde ahí.
  */
 import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
-import { SignJWT } from "jose";
 
-const require = createRequire(new URL("../package.json", import.meta.url));
-const { io } = require("socket.io-client");
+const requireRaiz = createRequire(new URL("../package.json", import.meta.url));
+const { io } = requireRaiz("socket.io-client");
+const jwt = createRequire(import.meta.url)("jsonwebtoken");
 
 const JWT = "a".repeat(40);
 const EMIT = "b".repeat(40);
 const PUERTO = 3917;
 const URL_BASE = `http://localhost:${PUERTO}`;
 
-const servidor = spawn(process.execPath, ["server.mjs"], {
+const servidor = spawn(process.execPath, ["dist/main.js"], {
   env: { ...process.env, PORT: String(PUERTO), CHAT_JWT_SECRET: JWT, CHAT_EMIT_SECRET: EMIT, CORS_ORIGINS: "*" },
   stdio: "inherit",
 });
 
+servidor.on("exit", (c, s) => console.log("servidor terminó", c, s));
+servidor.on("error", (e) => console.log("spawn error", e.message));
 const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
-const token = (salas, exp = "2m") =>
-  new SignJWT({ salas })
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuer("facilapr")
-    .setIssuedAt()
-    .setExpirationTime(exp)
-    .sign(new TextEncoder().encode(JWT));
+// Igual que firma Facilapr con jose: HS256, emisor "facilapr", salas permitidas.
+const token = (salas, expiraEnSegundos = 120) =>
+  jwt.sign({ salas }, JWT, { algorithm: "HS256", issuer: "facilapr", expiresIn: expiraEnSegundos });
 
 const emitir = (sala, secreto = EMIT) =>
   fetch(`${URL_BASE}/emitir`, {
@@ -44,7 +42,7 @@ const verificar = (nombre, ok) => {
 
 try {
   // El servidor tarda en arrancar: se consulta /salud hasta que responda.
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < 120; i++) {
     try {
       if ((await fetch(`${URL_BASE}/salud`)).ok) break;
     } catch {
@@ -67,7 +65,7 @@ try {
   let errorMalo = null;
   malo.on("connect_error", (e) => (errorMalo = e.message));
 
-  const vencido = conectar(await token(["chat-socio-A"], "-10s"));
+  const vencido = conectar(await token(["chat-socio-A"], -10));
   let errorVencido = null;
   vencido.on("connect_error", (e) => (errorVencido = e.message));
 

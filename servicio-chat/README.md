@@ -1,6 +1,6 @@
 # Servicio de chat en tiempo real (Socket.IO)
 
-Servidor Node aparte que reemplaza a Pusher. Facilapr (en Vercel) guarda los
+Servidor aparte (NestJS + Socket.IO) que reemplaza a Pusher. Facilapr (en Vercel) guarda los
 mensajes y avisa a este servicio; este servicio los empuja a los navegadores.
 No guarda nada: si se reinicia, los clientes se reconectan solos.
 
@@ -13,7 +13,7 @@ navegador ──(Socket.IO + token)──▶ este servicio ◀──(POST /emiti
 ```bash
 cd servicio-chat
 npm install
-node prueba.mjs      # arranca el servidor, conecta clientes y verifica el flujo
+npm run build && node prueba.mjs   # arranca el servidor, conecta clientes y verifica el flujo
 ```
 
 ## Variables
