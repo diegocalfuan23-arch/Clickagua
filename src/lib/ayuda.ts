@@ -52,6 +52,107 @@ export const CATEGORIAS: { nombre: Categoria; descripcion: string }[] = [
 
 export const ARTICULOS: Articulo[] = [
   {
+    slug: "registrarse",
+    titulo: "Crear la cuenta de tu comité",
+    resumen:
+      "Registra tu APR o SSR en Facilapr. Se hace una sola vez y toma un par de minutos.",
+    categoria: "Primeros pasos",
+    para: "Administrador",
+    minutos: 3,
+    pasos: [
+      {
+        titulo: "Entra a la página de registro",
+        texto:
+          "Abre facilapr.cl/registro, o pulsa el botón de crear cuenta en la página principal.",
+      },
+      {
+        titulo: "Completa los datos del comité",
+        texto:
+          "Escribe el nombre del APR o SSR, el RUT del comité y la comuna.",
+        nota: "Usa el RUT del comité, no el tuyo personal.",
+      },
+      {
+        titulo: "Indica quién eres",
+        texto:
+          "Escribe tu nombre y apellido, y elige tu cargo en el comité: presidente/a, tesorero/a, secretario/a, administrador/a u otro.",
+      },
+      {
+        titulo: "Elige el correo y la contraseña",
+        texto:
+          "El correo del comité será tu usuario para entrar. Para la contraseña puedes pulsar Sugerir una clave segura: genera una fácil de leer y copiar. Mínimo 8 caracteres.",
+        nota: "Guarda la contraseña en un lugar seguro. Si la pierdes, se recupera con el correo (ver Recuperar el acceso a tu cuenta).",
+      },
+      {
+        titulo: "Pulsa Crear cuenta del comité",
+        texto:
+          "Entras directo al panel. Lo siguiente es configurar las tarifas y cargar a tus socios.",
+      },
+    ],
+  },
+  {
+    slug: "iniciar-sesion",
+    titulo: "Iniciar sesión en el panel",
+    resumen: "Entra al panel de tu comité con el correo y la contraseña.",
+    categoria: "Primeros pasos",
+    para: "Todos",
+    minutos: 1,
+    pasos: [
+      {
+        titulo: "Abre la página de acceso",
+        texto:
+          "Entra a facilapr.cl/login. En celular, conviene guardarla en la pantalla de inicio para llegar con un toque.",
+      },
+      {
+        titulo: "Escribe tu correo y contraseña",
+        texto:
+          "Es el correo con que se creó tu cuenta o con que te invitaron. Con el icono del ojo puedes ver lo que escribes y evitar errores.",
+      },
+      {
+        titulo: "Pulsa Entrar al panel",
+        texto:
+          "Verás el resumen del comité. Si eres técnico, entrarás directo a Lecturas.",
+        nota: "Si aparece «Correo o contraseña incorrectos», revisa mayúsculas y espacios. Si no la recuerdas, usa ¿La olvidaste?",
+      },
+    ],
+  },
+  {
+    slug: "recuperar-cuenta",
+    titulo: "Recuperar el acceso a tu cuenta",
+    resumen:
+      "Si olvidaste la contraseña, crea una nueva con un enlace que llega a tu correo.",
+    categoria: "Primeros pasos",
+    para: "Todos",
+    minutos: 3,
+    pasos: [
+      {
+        titulo: "Pulsa ¿La olvidaste?",
+        texto:
+          "Está junto al campo de contraseña, en la pantalla de inicio de sesión.",
+      },
+      {
+        titulo: "Escribe el correo de tu cuenta",
+        texto:
+          "Pulsa Enviar enlace de recuperación. Por seguridad, el mensaje es el mismo exista o no el correo: no se confirma si está registrado.",
+      },
+      {
+        titulo: "Abre el correo que te llega",
+        texto:
+          "Busca el mensaje de Facilapr y pulsa el enlace. Si no lo ves en unos minutos, revisa la carpeta de spam.",
+        nota: "El enlace vence. Si ya no funciona, pide uno nuevo desde el paso 1.",
+      },
+      {
+        titulo: "Crea la contraseña nueva",
+        texto:
+          "Escríbela dos veces (mínimo 8 caracteres) y pulsa Guardar contraseña. También puedes usar Sugerir una clave segura.",
+      },
+      {
+        titulo: "Inicia sesión",
+        texto:
+          "Te llevamos a la pantalla de acceso: entra con tu correo y la contraseña nueva.",
+      },
+    ],
+  },
+  {
     slug: "configurar-tarifas",
     titulo: "Configurar las tarifas del comité",
     resumen:
