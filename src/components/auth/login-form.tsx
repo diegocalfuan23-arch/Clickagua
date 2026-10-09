@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { signIn } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ export function LoginForm() {
   const router = useRouter();
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mostrar, setMostrar] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -60,14 +61,24 @@ export function LoginForm() {
             ¿La olvidaste?
           </Link>
         </div>
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          className="h-10"
-          required
-        />
+        <div className="relative">
+          <Input
+            id="password"
+            name="password"
+            type={mostrar ? "text" : "password"}
+            autoComplete="current-password"
+            className="h-10 pr-11"
+            required
+          />
+          <button
+            type="button"
+            onClick={() => setMostrar((v) => !v)}
+            aria-label={mostrar ? "Ocultar la contraseña" : "Mostrar la contraseña"}
+            className="absolute top-1/2 right-1.5 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
+          >
+            {mostrar ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+          </button>
+        </div>
       </div>
 
       {error && (
