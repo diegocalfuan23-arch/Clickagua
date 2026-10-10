@@ -142,7 +142,7 @@ export function SitioApr({
           </p>
 
           <a
-            href="/socio/entrar"
+            href="/cuenta/entrar"
             className="inline-flex h-11 items-center gap-2 rounded-full bg-primary px-6 text-[0.95rem] font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             <MessageCircle className="size-4" />

@@ -34,7 +34,7 @@ export default async function EntrarSocioPage({ params }: Props) {
       where: eq(socios.userId, session.user.id),
       with: { apr: { columns: { slug: true } } },
     });
-    if (socio?.apr.slug === slug) redirect(`${base}/panel`);
+    if (socio?.apr.slug === slug) redirect(base);
   }
 
   return (

@@ -59,6 +59,7 @@ const RESERVADOS = new Set([
   "mail",
   "soporte",
   "ayuda",
+  "cuenta",
   "facilapr",
 ]);
 

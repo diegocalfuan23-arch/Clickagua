@@ -45,7 +45,7 @@ export function EntrarSocioForm({ slug, base }: { slug: string; base: string }) 
       return;
     }
 
-    router.push(`${base}/panel`);
+    router.push(base);
   }
 
   return (

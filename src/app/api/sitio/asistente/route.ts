@@ -11,7 +11,7 @@ import { formatearTelefono } from "@/lib/formato";
  *
  * Deliberadamente NO responde deudas: en la web no hay forma de saber quién
  * está escribiendo, y pedir un RUT en un chat público expondría los datos de
- * un socio a cualquiera. Para eso deriva al panel de socios (/socio/entrar),
+ * un socio a cualquiera. Para eso deriva al panel de socios (/cuenta/entrar),
  * donde el RUT y la clave identifican a la persona.
  */
 

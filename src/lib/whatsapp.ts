@@ -92,7 +92,7 @@ function valoresDe(comite: DatosComiteWhatsApp, boleta: DatosBoletaWhatsApp) {
     saldo: abonada ? clp.format(porPagar) : "",
     vence: diaMes.format(boleta.fechaVencimiento),
     como_pagar: comite.infoPago?.trim() ?? "",
-    link: comite.slug ? `https://${comite.slug}.${DOMINIO_RAIZ}/socio/entrar` : "",
+    link: comite.slug ? `https://${comite.slug}.${DOMINIO_RAIZ}/cuenta/entrar` : "",
   } as Record<string, string>;
 }
 

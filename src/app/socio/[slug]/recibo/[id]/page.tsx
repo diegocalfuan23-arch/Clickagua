@@ -31,7 +31,7 @@ export default async function ReciboSocioPage({ params }: Props) {
     <div className="mx-auto w-full max-w-[640px] px-4 py-8 print:max-w-none print:p-0">
       <div className="mb-5 flex items-center justify-between gap-3 print:hidden">
         <Link
-          href={`${base}/panel`}
+          href={base}
           className="text-[0.9rem] text-muted-foreground hover:underline"
         >
           ← Mi cuenta

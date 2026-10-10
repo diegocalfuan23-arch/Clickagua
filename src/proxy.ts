@@ -6,7 +6,10 @@ import type { NextRequest } from "next/server";
  *
  *   pitrelahue.facilapr.cl/             → /sitio/pitrelahue
  *   pitrelahue.facilapr.cl/avisos       → /sitio/pitrelahue/avisos
- *   pitrelahue.facilapr.cl/socio/entrar → /socio/pitrelahue/entrar
+ *   pitrelahue.facilapr.cl/cuenta/entrar → /socio/pitrelahue/entrar
+ *   pitrelahue.facilapr.cl/cuenta        → /socio/pitrelahue/panel
+ *   facilapr.cl/pitrelahue/cuenta/entrar → /socio/pitrelahue/entrar
+ *   (/socio/... sigue funcionando en el subdominio por los enlaces ya enviados)
  *
  * /socio/* tiene su propia rama de reescritura (no cuelga de /sitio/[slug])
  * porque es una app distinta con su propia sesión (rol SOCIO): mezclarla
@@ -33,6 +36,20 @@ const HOSTS_APP = new Set([
  */
 const DOMINIOS_ANTIGUOS = new Set(["facilagua.com", "www.facilagua.com"]);
 
+/**
+ * Rutas del portal de socios con direcciones limpias. "/cuenta" (sin nada
+ * más) es el panel; el resto del camino se conserva (entrar, solicitar,
+ * recibo/<id>). Las páginas viven en /socio/[slug]/..., pero esa carpeta es un
+ * detalle interno: nadie la ve en la barra de direcciones.
+ */
+function rutaDeCuenta(slug: string, resto: string) {
+  const camino = resto.replace(/^\/+/, "");
+  return `/socio/${slug}/${camino === "" ? "panel" : camino}`;
+}
+
+/** facilapr.cl/<slug>/cuenta/...  (dominio raíz, localhost y previews, sin subdominio). */
+const CUENTA_EN_RAIZ = /^\/([a-z0-9][a-z0-9-]{1,39})\/cuenta(\/.*)?$/;
+
 export function proxy(request: NextRequest) {
   const host = (request.headers.get("host") ?? "")
     .toLowerCase()
@@ -46,10 +63,17 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(destino, 301);
   }
 
-  if (!host || HOSTS_APP.has(host)) return NextResponse.next();
+  const sirveLaApp =
+    !host || HOSTS_APP.has(host) || host.endsWith(".vercel.app");
 
-  // Los previews de Vercel también sirven la app, no una landing.
-  if (host.endsWith(".vercel.app")) return NextResponse.next();
+  if (sirveLaApp) {
+    const enRaiz = request.nextUrl.pathname.match(CUENTA_EN_RAIZ);
+    if (!enRaiz) return NextResponse.next();
+
+    const url = request.nextUrl.clone();
+    url.pathname = rutaDeCuenta(enRaiz[1], enRaiz[2] ?? "");
+    return NextResponse.rewrite(url);
+  }
 
   const url = request.nextUrl.clone();
 
@@ -57,6 +81,11 @@ export function proxy(request: NextRequest) {
     const slug = host.slice(0, -(DOMINIO_RAIZ.length + 1));
     // Solo el primer nivel: "a.b.facilapr.cl" no es un comité válido.
     if (!slug || slug.includes(".")) return NextResponse.next();
+
+    if (url.pathname === "/cuenta" || url.pathname.startsWith("/cuenta/")) {
+      url.pathname = rutaDeCuenta(slug, url.pathname.slice("/cuenta".length));
+      return NextResponse.rewrite(url);
+    }
 
     if (url.pathname.startsWith("/socio")) {
       url.pathname = `/socio/${slug}${url.pathname.slice("/socio".length)}`;

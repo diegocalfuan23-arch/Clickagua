@@ -153,7 +153,7 @@ export function AsistenteComite({
           {/* La deuda no se responde aquí: este widget no sabe quién eres.
               Se deriva al panel de socios, donde sí hay sesión. */}
           <a
-            href="/socio/entrar"
+            href="/cuenta/entrar"
             className="shrink-0 border-t border-border bg-muted/40 px-4 py-2.5 text-center text-[0.8rem] text-muted-foreground transition-colors hover:text-primary"
           >
             ¿Consultas sobre tu cuenta?{" "}

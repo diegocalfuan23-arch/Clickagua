@@ -21,10 +21,10 @@ const ICONOS: MetadataRoute.Manifest["icons"] = [
  * La PWA es del panel del socio, y cada comité vive en su subdominio
  * (pitrelahue.facilapr.cl). El proxy no toca /manifest.webmanifest (tiene
  * punto), así que el slug sale del host: cada comité instala "su" app, con su
- * nombre, y abre directo en /socio/entrar (el proxy lo reescribe al slug).
+ * nombre, y abre directo en /cuenta/entrar (el proxy lo reescribe al slug).
  *
  * En el dominio raíz no hay comité: devolvemos un manifest genérico que no
- * apunta a /socio, porque ahí esa ruta no existe sin slug.
+ * apunta a /cuenta, porque ahí esa ruta no existe sin slug.
  */
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const host = ((await headers()).get("host") ?? "").toLowerCase().split(":")[0];
@@ -64,11 +64,11 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
 
   return {
     ...base,
-    id: "/socio/entrar",
+    id: "/cuenta/entrar",
     name: `${apr.nombre} — Mi cuenta`,
     short_name: "Mi APR",
     description: `Consulta tu deuda, tus boletas y tu consumo en ${apr.nombre}.`,
-    start_url: "/socio/entrar",
-    scope: "/socio/",
+    start_url: "/cuenta/entrar",
+    scope: "/cuenta",
   };
 }
