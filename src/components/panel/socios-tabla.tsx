@@ -9,6 +9,7 @@ import {
   ChevronsUpDown,
   Download,
   FilterX,
+  KeyRound,
   Loader2,
   MapPinOff,
   MessageCircle,
@@ -62,9 +63,10 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { ImportarSociosDialog } from "@/components/panel/importar-socios-dialog";
+import { RestablecerClaveDialog } from "@/components/panel/restablecer-clave-dialog";
 import { formatearRut, formatearTelefono, iniciales } from "@/lib/formato";
 
-export type SocioFila = SocioEditable & { activo: boolean };
+export type SocioFila = SocioEditable & { activo: boolean; conCuenta: boolean };
 
 type Pestana = "todos" | "activos" | "inactivos";
 type Columna = "nombre" | "rut" | "telefono";
@@ -186,6 +188,7 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
   const [creando, setCreando] = useState(false);
   const [editando, setEditando] = useState<SocioFila | null>(null);
   const [porEliminar, setPorEliminar] = useState<SocioFila | null>(null);
+  const [restableciendo, setRestableciendo] = useState<SocioFila | null>(null);
   const [pendiente, startTransition] = useTransition();
 
   const listaActivos = socios.filter((s) => s.activo);
@@ -697,6 +700,14 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
                                 ? "Marcar inactivo"
                                 : "Marcar activo"}
                             </DropdownMenuItem>
+                            {socio.conCuenta && (
+                              <DropdownMenuItem
+                                onClick={() => setRestableciendo(socio)}
+                              >
+                                <KeyRound />
+                                Restablecer clave
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               variant="destructive"
@@ -784,6 +795,13 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
           abierto
           onAbiertoChange={(v) => !v && setEditando(null)}
           socio={editando}
+        />
+      )}
+
+      {restableciendo && (
+        <RestablecerClaveDialog
+          socio={restableciendo}
+          onCerrar={() => setRestableciendo(null)}
         />
       )}
 

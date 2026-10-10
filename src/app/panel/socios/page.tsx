@@ -24,8 +24,20 @@ export default async function SociosPage() {
       direccion: true,
       numeroCliente: true,
       activo: true,
+      userId: true,
     },
   });
 
-  return <SociosTabla socios={listado} />;
+  // Quien tiene varios arranques comparte una sola cuenta (por RUT): todos sus
+  // arranques cuentan como "con cuenta", aunque solo uno guarde el userId.
+  const rutsConCuenta = new Set(
+    listado.filter((s) => s.userId && s.rut).map((s) => s.rut as string)
+  );
+
+  const filas = listado.map(({ userId, ...s }) => ({
+    ...s,
+    conCuenta: Boolean(userId) || (s.rut !== null && rutsConCuenta.has(s.rut)),
+  }));
+
+  return <SociosTabla socios={filas} />;
 }
