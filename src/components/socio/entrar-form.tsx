@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function EntrarSocioForm({ slug }: { slug: string }) {
+export function EntrarSocioForm({ slug, base }: { slug: string; base: string }) {
   const router = useRouter();
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +45,7 @@ export function EntrarSocioForm({ slug }: { slug: string }) {
       return;
     }
 
-    router.push("/socio/panel");
+    router.push(`${base}/panel`);
   }
 
   return (

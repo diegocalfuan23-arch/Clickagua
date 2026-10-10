@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { aprs } from "@/lib/db/schema";
 import { SolicitarAccesoForm } from "@/components/socio/solicitar-acceso-form";
+import { basePortal } from "@/lib/portal-socio";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -15,6 +16,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function SolicitarAccesoPage({ params }: Props) {
   const { slug } = await params;
+  const base = await basePortal(slug);
 
   const apr = await db.query.aprs.findFirst({
     where: eq(aprs.slug, slug),
@@ -36,7 +38,7 @@ export default async function SolicitarAccesoPage({ params }: Props) {
 
       <p className="mt-6 text-center text-[0.85rem] text-muted-foreground">
         ¿Ya tienes cuenta?{" "}
-        <Link href={`/socio/entrar`} className="font-medium text-primary hover:underline">
+        <Link href={`${base}/entrar`} className="font-medium text-primary hover:underline">
           Entra aquí
         </Link>
       </p>

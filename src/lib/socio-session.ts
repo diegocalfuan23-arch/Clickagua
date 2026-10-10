@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { socios } from "@/lib/db/schema";
+import { basePortal } from "@/lib/portal-socio";
 
 /**
  * Sesión de un socio dentro de SU panel (rol SOCIO). Un ADMIN u OPERADOR que
@@ -16,9 +17,10 @@ import { socios } from "@/lib/db/schema";
  */
 export async function requireSocio(slugEsperado: string) {
   const session = await auth.api.getSession({ headers: await headers() });
+  const base = await basePortal(slugEsperado);
 
   if (!session || session.user.rol !== "SOCIO") {
-    redirect(`/socio/entrar`);
+    redirect(`${base}/entrar`);
   }
 
   const socio = await db.query.socios.findFirst({
@@ -27,7 +29,7 @@ export async function requireSocio(slugEsperado: string) {
   });
 
   if (!socio || socio.apr.slug !== slugEsperado) {
-    redirect(`/socio/entrar`);
+    redirect(`${base}/entrar`);
   }
 
   return { user: session.user, socio };

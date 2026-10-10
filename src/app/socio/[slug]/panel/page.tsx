@@ -9,6 +9,7 @@ import { SignOutSocioButton } from "@/components/socio/sign-out-button";
 import { AsistenteSocio } from "@/components/socio/asistente-socio";
 import { ChatComite } from "@/components/socio/chat-comite";
 import { InstalarApp } from "@/components/socio/instalar-app";
+import { basePortal } from "@/lib/portal-socio";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -42,6 +43,7 @@ const ESTADO_TEXTO = {
 export default async function PanelSocioPage({ params }: Props) {
   const { slug } = await params;
   const { socio } = await requireSocio(slug);
+  const base = await basePortal(slug);
 
   // Una persona con varios arranques ve las boletas de todos ellos.
   const cuentas = await cuentasDelSocio(socio);
@@ -72,7 +74,7 @@ export default async function PanelSocioPage({ params }: Props) {
               {socio.apr.nombre}
             </div>
           </div>
-          <SignOutSocioButton />
+          <SignOutSocioButton base={base} />
         </div>
       </header>
 
@@ -130,7 +132,7 @@ export default async function PanelSocioPage({ params }: Props) {
                     </div>
                     {b.estado !== "ANULADA" && (
                       <Link
-                        href={`/socio/recibo/${b.id}`}
+                        href={`${base}/recibo/${b.id}`}
                         className="text-[0.82rem] font-medium text-primary hover:underline"
                       >
                         Ver recibo

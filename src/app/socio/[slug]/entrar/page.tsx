@@ -7,6 +7,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { aprs, socios } from "@/lib/db/schema";
 import { EntrarSocioForm } from "@/components/socio/entrar-form";
+import { basePortal } from "@/lib/portal-socio";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -17,6 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function EntrarSocioPage({ params }: Props) {
   const { slug } = await params;
+  const base = await basePortal(slug);
 
   const apr = await db.query.aprs.findFirst({
     where: eq(aprs.slug, slug),
@@ -32,7 +34,7 @@ export default async function EntrarSocioPage({ params }: Props) {
       where: eq(socios.userId, session.user.id),
       with: { apr: { columns: { slug: true } } },
     });
-    if (socio?.apr.slug === slug) redirect("/socio/panel");
+    if (socio?.apr.slug === slug) redirect(`${base}/panel`);
   }
 
   return (
@@ -44,12 +46,12 @@ export default async function EntrarSocioPage({ params }: Props) {
         Ingresa con tu RUT y tu clave.
       </p>
 
-      <EntrarSocioForm slug={slug} />
+      <EntrarSocioForm slug={slug} base={base} />
 
       <p className="mt-6 text-center text-[0.85rem] text-muted-foreground">
         ¿Todavía no tienes cuenta?{" "}
         <Link
-          href="/socio/solicitar"
+          href={`${base}/solicitar`}
           className="font-medium text-primary hover:underline"
         >
           Solicítala aquí

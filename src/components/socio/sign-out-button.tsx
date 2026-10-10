@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { signOut } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 
-export function SignOutSocioButton() {
+export function SignOutSocioButton({ base }: { base: string }) {
   const router = useRouter();
 
   return (
@@ -13,7 +13,7 @@ export function SignOutSocioButton() {
       size="sm"
       onClick={async () => {
         await signOut();
-        router.push("/socio/entrar");
+        router.push(`${base}/entrar`);
       }}
     >
       Cerrar sesión
