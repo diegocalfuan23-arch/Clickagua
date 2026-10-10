@@ -58,9 +58,19 @@ export const RECORRIDOS: Recorrido[] = [
         texto: "Tus tarifas y los datos de tu comité. Empieza por aquí.",
       },
       {
+        selector: enMenu("/panel"),
+        titulo: "Resumen",
+        texto: "La vista general: cuántos socios tienes, cuánto se ha cobrado y quién debe.",
+      },
+      {
         selector: enMenu("/panel/socios"),
         titulo: "Socios",
         texto: "Tu padrón de socios y usuarios.",
+      },
+      {
+        selector: enMenu("/panel/boletas"),
+        titulo: "Boletas",
+        texto: "Emitir boletas, enviar el recibo en PDF y registrar los pagos.",
       },
       {
         selector: enMenu("/panel/lecturas"),
@@ -78,9 +88,9 @@ export const RECORRIDOS: Recorrido[] = [
         texto: "Quienes toman las lecturas en terreno.",
       },
       {
-        selector: enMenu("/panel/boletas"),
-        titulo: "Boletas",
-        texto: "Emitir boletas, enviar el recibo en PDF y registrar los pagos.",
+        selector: enMenu("/panel/conversaciones"),
+        titulo: "Conversaciones",
+        texto: "El chat con tus socios: te escriben desde su cuenta en línea y les respondes aquí.",
       },
       {
         selector: enMenu("/panel/socios/solicitudes"),
