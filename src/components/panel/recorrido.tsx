@@ -6,6 +6,10 @@ import { driver, type DriveStep } from "driver.js";
 import "driver.js/dist/driver.css";
 import { PlayCircle } from "lucide-react";
 import { useSidebar } from "@/components/ui/sidebar";
+import {
+  marcarRecorridoVisto,
+  recorridoYaVisto,
+} from "@/app/panel/recorrido-actions";
 
 const EVENTO = "facilapr:recorrido";
 
@@ -101,9 +105,8 @@ export function BotonRecorrido() {
 
 /**
  * Lanza el recorrido solo la primera vez que esa persona entra al resumen y,
- * después, cuando pulsa «Ver recorrido». «Primera vez» se recuerda en este
- * navegador y por usuario: sin una columna nueva, en otro equipo puede volver
- * a salir mientras el comité no termine sus primeros pasos.
+ * después, cuando pulsa «Ver recorrido». «Primera vez» se guarda en la base
+ * (columna recorridoVisto del usuario) y, de respaldo, en el navegador.
  */
 export function Recorrido({ usuarioId }: { usuarioId: string }) {
   const pathname = usePathname();
@@ -154,28 +157,50 @@ export function Recorrido({ usuarioId }: { usuarioId: string }) {
   }, [lanzar]);
 
   // Primera vez: solo en el resumen y solo si la guía de primeros pasos sigue
-  // a la vista (un comité que ya terminó no necesita el recorrido).
+  // a la vista (un comité que ya terminó no necesita el recorrido). Se recuerda
+  // en la base, por usuario (así no se repite en otro equipo); el navegador es
+  // el respaldo mientras la columna no exista o no haya conexión.
   useEffect(() => {
     if (pathname !== "/panel") return;
 
     const clave = `facilapr-recorrido-visto-${usuarioId}`;
+    let visto = false;
     try {
-      if (localStorage.getItem(clave)) return;
+      visto = Boolean(localStorage.getItem(clave));
     } catch {
-      return; // Sin almacenamiento no se puede recordar: mejor no insistir.
+      // Sin almacenamiento local se decide solo con lo que diga la base.
     }
+    if (visto) return;
 
-    const espera = window.setTimeout(() => {
+    let cancelado = false;
+    const espera = window.setTimeout(async () => {
       if (!document.querySelector('[data-tour="primeros-pasos"]')) return;
+
+      const enBase = await recorridoYaVisto().catch(() => null);
+      if (cancelado) return;
+
+      if (enBase === true) {
+        try {
+          localStorage.setItem(clave, "1");
+        } catch {
+          // Da igual: la base ya lo sabe.
+        }
+        return;
+      }
+
       try {
         localStorage.setItem(clave, "1");
       } catch {
         // Si no se puede guardar, saldrá otra vez en la próxima visita.
       }
+      void marcarRecorridoVisto().catch(() => undefined);
       lanzar();
     }, 900);
 
-    return () => window.clearTimeout(espera);
+    return () => {
+      cancelado = true;
+      window.clearTimeout(espera);
+    };
   }, [pathname, usuarioId, lanzar]);
 
   return null;
