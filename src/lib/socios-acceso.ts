@@ -177,6 +177,28 @@ export async function rechazarSolicitudAcceso(
   return { ok: true };
 }
 
+/**
+ * Borra el registro de una solicitud (pendiente, aprobada o rechazada). Solo
+ * quita la fila: la cuenta de un socio ya aprobado vive en user/account y no
+ * se toca. Si estaba pendiente, el socio puede volver a pedir acceso.
+ */
+export async function eliminarSolicitudAcceso(
+  solicitudId: string,
+  aprId: string
+): Promise<ResultadoAprobacion> {
+  const solicitud = await db.query.solicitudesAcceso.findFirst({
+    where: eq(solicitudesAcceso.id, solicitudId),
+    with: { socio: { columns: { aprId: true } } },
+  });
+
+  if (!solicitud || solicitud.socio.aprId !== aprId) {
+    return { ok: false, error: "Solicitud no encontrada." };
+  }
+
+  await db.delete(solicitudesAcceso).where(eq(solicitudesAcceso.id, solicitudId));
+  return { ok: true };
+}
+
 /** RUT normalizado -> correo sintético, para el login. */
 export function correoSocioDesdeRut(rut: string, aprId: string): string {
   return `${normalizarRut(rut).toLowerCase()}@${aprId}.socio.local`;
