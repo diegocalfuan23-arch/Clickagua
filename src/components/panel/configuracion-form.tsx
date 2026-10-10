@@ -272,7 +272,11 @@ export function ConfiguracionForm({
                 defaultValue={datos.email ?? ""}
               />
             </Campo>
-            <Campo id="sitioWeb" label="Sitio web">
+            <Campo
+              id="sitioWeb"
+              label="Sitio web"
+              ayuda="Solo si tu comité ya tiene su propia página, fuera de Facilapr."
+            >
               <Input
                 id="sitioWeb"
                 name="sitioWeb"
@@ -286,13 +290,13 @@ export function ConfiguracionForm({
 
       {seccion === "comite" && (
         <Bloque
-          titulo="Dirección del comité"
-          descripcion="Es el nombre que va en el enlace de tu portal de socios y de tu sitio."
+          titulo="Tu enlace en Facilapr"
+          descripcion="El nombre que va en el enlace de tu portal de socios y de tu sitio dentro de Facilapr. No es tu domicilio ni tu página web."
           accion={guardarDireccion}
         >
           <Campo
             id="slug"
-            label="Dirección"
+            label="Nombre del enlace"
             ayuda="Letras minúsculas, números y guiones. Si la cambias, los enlaces anteriores dejan de funcionar: avísale a tus socios."
           >
             <div className="flex items-center overflow-hidden rounded-lg border border-input focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
