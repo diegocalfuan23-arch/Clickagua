@@ -41,6 +41,7 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -481,6 +482,7 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
                   }
                 />
                 <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuGroup>
                   <DropdownMenuLabel>Mostrar solo</DropdownMenuLabel>
                   <DropdownMenuCheckboxItem
                     checked={soloConTelefono}
@@ -506,6 +508,7 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
                   >
                     Sin número de cliente
                   </DropdownMenuCheckboxItem>
+                  </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     disabled={filtrosActivos === 0}
@@ -700,14 +703,15 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
                                 ? "Marcar inactivo"
                                 : "Marcar activo"}
                             </DropdownMenuItem>
-                            {socio.conCuenta && (
-                              <DropdownMenuItem
-                                onClick={() => setRestableciendo(socio)}
-                              >
-                                <KeyRound />
-                                Restablecer clave
-                              </DropdownMenuItem>
-                            )}
+                            <DropdownMenuItem
+                              disabled={!socio.conCuenta}
+                              onClick={() => setRestableciendo(socio)}
+                            >
+                              <KeyRound />
+                              {socio.conCuenta
+                                ? "Restablecer clave"
+                                : "Sin cuenta en el portal"}
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               variant="destructive"
