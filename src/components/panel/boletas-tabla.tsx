@@ -317,6 +317,7 @@ export function BoletasTabla({
         <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
+            data-tour="bol-imprimir"
             disabled={periodos.length === 0}
             title="Hoja de recibos para imprimir: el período filtrado, o el más reciente"
             onClick={() =>
@@ -332,17 +333,19 @@ export function BoletasTabla({
           </Button>
           <Button
             variant="outline"
+            data-tour="bol-whatsapp"
             onClick={() => setParaEnviar(filtradas.filter(cobrable))}
             disabled={boletas.length === 0}
           >
             <MessageCircle />
             Enviar por WhatsApp
           </Button>
-          <Button variant="outline" onClick={() => setImportando(true)}>
+          <Button variant="outline" data-tour="bol-importar" onClick={() => setImportando(true)}>
             <Upload />
             Importar CSV
           </Button>
           <Button
+            data-tour="bol-nueva"
             onClick={() => setCreando(true)}
             disabled={socios.length === 0}
           >
@@ -418,7 +421,7 @@ export function BoletasTabla({
         </div>
       ) : (
         <div className="rounded-xl border border-border bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-          <div className="flex gap-6 overflow-x-auto overflow-y-hidden border-b border-border/60 px-5">
+          <div data-tour="bol-pestanas" className="flex gap-6 overflow-x-auto overflow-y-hidden border-b border-border/60 px-5">
             {pestanas.map((p) => (
               <button
                 key={p.id}
@@ -466,7 +469,7 @@ export function BoletasTabla({
 
           {/* TableHeader y TableRow apilan sus bordes en la misma fila: un
               solo borde suave declarado aquí gana a ambos. */}
-          <div className="overflow-x-auto">
+          <div data-tour="bol-tabla" className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="border-b-border/50 hover:bg-transparent">

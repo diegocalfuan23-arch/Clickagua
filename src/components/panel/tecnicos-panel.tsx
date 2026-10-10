@@ -254,7 +254,7 @@ function InvitarTecnico() {
 
   return (
     <>
-      <Button type="button" onClick={abrir}>
+      <Button type="button" data-tour="tec-invitar" onClick={abrir}>
         <UserPlus />
         Invitar técnico
       </Button>

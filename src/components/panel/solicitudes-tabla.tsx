@@ -128,7 +128,7 @@ function FilaSolicitud({
         </span>
       </TableCell>
       <TableCell className="px-4 py-3.5">
-        <div className="flex items-center justify-end gap-2">
+        <div data-tour="sol-acciones" className="flex items-center justify-end gap-2">
           {error && (
             <p className="max-w-[22ch] text-right text-[0.78rem] text-destructive">
               {error}
@@ -290,7 +290,7 @@ export function SolicitudesTabla({
           </p>
         </div>
       ) : (
-        <div className="mt-6 overflow-x-auto rounded-xl border border-border bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+        <div data-tour="sol-tabla" className="mt-6 overflow-x-auto rounded-xl border border-border bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           <Table>
             <TableHeader>
               <TableRow>

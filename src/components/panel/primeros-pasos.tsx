@@ -9,15 +9,15 @@ import {
   socios,
 } from "@/lib/db/schema";
 import { cn } from "@/lib/utils";
-import { BotonRecorrido } from "@/components/panel/recorrido";
+import { BotonGuia, BotonRecorrido } from "@/components/panel/recorrido";
 
 type Paso = {
   id: string;
   titulo: string;
   texto: string;
   href: string;
-  /** Guía del centro de ayuda para este paso. */
-  guia?: string;
+  /** Recorrido guiado de este paso (ver lib/recorridos.ts). */
+  recorrido?: string;
   hecho: boolean;
   opcional?: boolean;
 };
@@ -75,7 +75,7 @@ export async function PrimerosPasos({ apr }: { apr: Comite }) {
       texto:
         "Teléfono y dirección (en Comité) y cómo se paga (en Facturación). Salen en cada recibo que le llega a tus socios.",
       href: "/panel/configuracion",
-      guia: "completar-datos-comite",
+      recorrido: "configuracion",
       hecho: Boolean(
         apr.telefono?.trim() && apr.direccion?.trim() && apr.infoPago?.trim()
       ),
@@ -85,7 +85,7 @@ export async function PrimerosPasos({ apr }: { apr: Comite }) {
       titulo: "Define tus tarifas",
       texto: "El cargo fijo y el valor del m³: con eso se calcula cada boleta.",
       href: "/panel/configuracion",
-      guia: "configurar-tarifas",
+      recorrido: "configuracion",
       hecho: apr.tarifaCargoFijo !== null && apr.tarifaMetroCubico !== null,
     },
     {
@@ -93,7 +93,7 @@ export async function PrimerosPasos({ apr }: { apr: Comite }) {
       titulo: "Carga a tus socios",
       texto: "Importa el padrón desde tu planilla de Excel, o agrégalos de a uno.",
       href: "/panel/socios",
-      guia: "cargar-socios",
+      recorrido: "socios",
       hecho: nSocios > 0,
     },
     {
@@ -102,7 +102,7 @@ export async function PrimerosPasos({ apr }: { apr: Comite }) {
       texto:
         "La primera de cada medidor es la lectura inicial: sirve de punto de partida.",
       href: "/panel/lecturas",
-      guia: "lectura-inicial",
+      recorrido: "lecturas",
       hecho: nLecturas > 0,
     },
     {
@@ -110,7 +110,7 @@ export async function PrimerosPasos({ apr }: { apr: Comite }) {
       titulo: "Emite tu primera boleta",
       texto: "Con la lectura aprobada y las tarifas, se genera sola.",
       href: "/panel/boletas",
-      guia: "emitir-boleta",
+      recorrido: "boletas",
       hecho: nBoletas > 0,
     },
     {
@@ -119,7 +119,7 @@ export async function PrimerosPasos({ apr }: { apr: Comite }) {
       texto:
         "Dale acceso solo a lecturas, desde su celular, incluso sin señal.",
       href: "/panel/tecnicos",
-      guia: "invitar-tecnico",
+      recorrido: "tecnicos",
       hecho: nInvitaciones > 0,
       opcional: true,
     },
@@ -154,12 +154,11 @@ export async function PrimerosPasos({ apr }: { apr: Comite }) {
         <div className="flex items-center gap-4">
           <BotonRecorrido />
           <Link
-            href="/ayuda"
-            target="_blank"
+            href="/panel/ayuda"
             className="inline-flex items-center gap-1.5 text-[0.85rem] font-medium text-primary hover:underline"
           >
             <BookOpen className="size-4" />
-            Centro de ayuda
+            Ayuda
           </Link>
         </div>
       </div>
@@ -226,14 +225,13 @@ export async function PrimerosPasos({ apr }: { apr: Comite }) {
 
               {!p.hecho && (
                 <div className="flex shrink-0 items-center gap-3">
-                  {p.guia && (
-                    <Link
-                      href={`/ayuda/${p.guia}`}
-                      target="_blank"
-                      className="text-[0.82rem] text-muted-foreground hover:text-foreground hover:underline"
+                  {p.recorrido && (
+                    <BotonGuia
+                      id={p.recorrido}
+                      className="text-[0.82rem] font-normal text-muted-foreground hover:text-foreground"
                     >
-                      Ver guía
-                    </Link>
+                      Guíame
+                    </BotonGuia>
                   )}
                   <Link
                     href={p.href}

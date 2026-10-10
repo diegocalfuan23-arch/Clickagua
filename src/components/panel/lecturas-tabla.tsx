@@ -237,17 +237,18 @@ export function LecturasTabla({
             Técnicos
           </Link>
           <Link
+            data-tour="lec-terreno"
             href="/panel/lecturas/terreno"
             className={cn(buttonVariants({ variant: "outline" }))}
           >
             <Smartphone />
             Modo terreno
           </Link>
-          <Button variant="outline" onClick={() => setIniciales(true)}>
+          <Button variant="outline" data-tour="lec-archivo" onClick={() => setIniciales(true)}>
             <FileUp />
             Cargar desde archivo
           </Button>
-          <Button onClick={() => setCreando(true)} disabled={socios.length === 0}>
+          <Button data-tour="lec-nueva" onClick={() => setCreando(true)} disabled={socios.length === 0}>
             <Plus />
             Nueva lectura
           </Button>
@@ -344,7 +345,7 @@ export function LecturasTabla({
         </div>
       ) : (
         <div className="rounded-xl border border-border bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-          <div className="flex gap-6 overflow-x-auto overflow-y-hidden border-b border-border/60 px-5">
+          <div data-tour="lec-pestanas" className="flex gap-6 overflow-x-auto overflow-y-hidden border-b border-border/60 px-5">
             {pestanas.map((p) => (
               <button
                 key={p.id}
@@ -393,7 +394,7 @@ export function LecturasTabla({
             </select>
           </div>
 
-          <div className="overflow-x-auto">
+          <div data-tour="lec-tabla" className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="border-b-border/50 hover:bg-transparent">

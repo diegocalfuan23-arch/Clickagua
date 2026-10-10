@@ -342,11 +342,11 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-[1.35rem] font-semibold tracking-tight">Socios</h1>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" onClick={() => setImportando(true)}>
+          <Button variant="outline" data-tour="socios-importar" onClick={() => setImportando(true)}>
             <Upload />
             Importar
           </Button>
-          <Button onClick={() => setCreando(true)}>
+          <Button data-tour="socios-nuevo" onClick={() => setCreando(true)}>
             <Plus />
             Nuevo socio
           </Button>
@@ -441,7 +441,7 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
           <div className="flex flex-wrap items-center justify-between gap-3 p-5">
             {/* El buscador no necesita todo el ancho: deja sitio a la derecha
                 para importar y filtrar, que es donde el ojo los busca. */}
-            <div className="relative w-full max-w-md min-w-52 flex-1">
+            <div data-tour="socios-buscar" className="relative w-full max-w-md min-w-52 flex-1">
               <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={busqueda}
@@ -459,7 +459,7 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
               <DropdownMenu>
                 <DropdownMenuTrigger
                   render={
-                    <Button variant="outline" className="h-10">
+                    <Button variant="outline" className="h-10" data-tour="socios-exportar">
                       <ArrowUpDown />
                       Importar / Exportar
                       <ChevronDown />
@@ -481,7 +481,7 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
               <DropdownMenu>
                 <DropdownMenuTrigger
                   render={
-                    <Button variant="outline" className="h-10">
+                    <Button variant="outline" className="h-10" data-tour="socios-filtros">
                       <SlidersHorizontal />
                       Filtros
                       {filtrosActivos > 0 && (
@@ -596,7 +596,7 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
           {/* TableHeader fuerza [&_tr]:border-b y TableRow trae el suyo: las
               dos se apilan en la misma fila y se ven como una línea gruesa.
               Un solo borde suave, declarado aquí, gana a ambas. */}
-          <div className="overflow-x-auto">
+          <div data-tour="socios-tabla" className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="border-b-border/50 hover:bg-transparent">

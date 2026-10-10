@@ -74,8 +74,11 @@ function Bloque({
   titulo,
   descripcion,
   accion,
+  ancla,
   children,
 }: {
+  /** Ancla para el recorrido guiado (data-tour). */
+  ancla?: string;
   titulo: string;
   descripcion: string;
   accion: (
@@ -90,7 +93,9 @@ function Bloque({
   >(accion, null);
 
   return (
-    <section className="rounded-xl border border-border bg-card p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+    <section
+      data-tour={ancla}
+      className="rounded-xl border border-border bg-card p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
       <h2 className="text-[1.05rem] font-semibold">{titulo}</h2>
       <p className="mt-0.5 text-[0.87rem] text-muted-foreground">
         {descripcion}
@@ -185,12 +190,14 @@ export function ConfiguracionForm({
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
         <nav
           aria-label="Secciones de configuración"
+          data-tour="cfg-nav"
           className="flex shrink-0 gap-1 overflow-x-auto lg:w-56 lg:flex-col lg:overflow-visible"
         >
           {SECCIONES.map(({ id, label, icono: Icono }) => (
             <button
               key={id}
               type="button"
+              data-tour={`cfg-${id}`}
               onClick={() => setSeccion(id)}
               aria-current={seccion === id ? "page" : undefined}
               className={cn(
@@ -211,6 +218,7 @@ export function ConfiguracionForm({
       {seccion === "comite" && (
         <Bloque
           titulo="Datos del comité"
+          ancla="cfg-datos"
           descripcion="Aparecen en las boletas y en tu sitio público."
           accion={guardarComite}
         >
@@ -294,6 +302,7 @@ export function ConfiguracionForm({
       {seccion === "comite" && (
         <Bloque
           titulo="Tu enlace en Facilapr"
+          ancla="cfg-enlace"
           descripcion="El nombre que va en el enlace de tu portal de socios y de tu sitio dentro de Facilapr. No es tu domicilio ni tu página web."
           accion={guardarDireccion}
         >
