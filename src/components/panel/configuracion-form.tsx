@@ -18,6 +18,7 @@ import {
 import {
   guardarComite,
   guardarCortes,
+  guardarDireccion,
   guardarFacturacion,
   guardarMedidores,
   guardarRegional,
@@ -30,6 +31,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
 export type DatosConfiguracion = {
+  /** La dirección del comité: portal de socios y sitio. */
+  slug: string | null;
   nombre: string;
   razonSocial: string | null;
   rut: string;
@@ -278,6 +281,47 @@ export function ConfiguracionForm({
               />
             </Campo>
           </div>
+        </Bloque>
+      )}
+
+      {seccion === "comite" && (
+        <Bloque
+          titulo="Dirección del comité"
+          descripcion="Es el nombre que va en el enlace de tu portal de socios y de tu sitio."
+          accion={guardarDireccion}
+        >
+          <Campo
+            id="slug"
+            label="Dirección"
+            ayuda="Letras minúsculas, números y guiones. Si la cambias, los enlaces anteriores dejan de funcionar: avísale a tus socios."
+          >
+            <div className="flex items-center overflow-hidden rounded-lg border border-input focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
+              <span className="shrink-0 bg-muted/60 px-3 py-2 text-[0.85rem] text-muted-foreground">
+                facilapr.cl/
+              </span>
+              <input
+                id="slug"
+                name="slug"
+                defaultValue={datos.slug ?? ""}
+                placeholder="mi-comite"
+                maxLength={40}
+                required
+                autoComplete="off"
+                className="h-9 min-w-0 flex-1 bg-transparent px-2 font-mono text-sm outline-none"
+              />
+              <span className="shrink-0 pr-3 text-[0.85rem] text-muted-foreground">
+                /cuenta
+              </span>
+            </div>
+          </Campo>
+          {datos.slug && (
+            <p className="text-[0.82rem] text-muted-foreground">
+              Tu portal de socios hoy:{" "}
+              <span className="font-mono text-foreground">
+                facilapr.cl/{datos.slug}/cuenta/entrar
+              </span>
+            </p>
+          )}
         </Bloque>
       )}
 

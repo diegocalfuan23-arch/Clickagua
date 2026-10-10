@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { aprs } from "@/lib/db/schema";
 import { slugDisponible } from "@/lib/planes";
@@ -78,4 +78,42 @@ export async function slugUnico(
 
   // Prácticamente imposible: cien comités con el mismo nombre.
   return `${base.slice(0, 30)}-${Date.now().toString(36)}`;
+}
+
+export type ResultadoSlug = { ok: true; slug: string } | { ok: false; error: string };
+
+/**
+ * Cambia la dirección (slug) de un comité. La usan el propio comité, desde
+ * Configuración, y el panel de super admin, por la API interna: así las reglas
+ * viven en un solo lugar. Cambiarlo rompe los enlaces anteriores (el del
+ * portal de socios y el del sitio), por eso la pantalla lo advierte.
+ */
+export async function cambiarSlug(
+  aprId: string,
+  slugCrudo: string
+): Promise<ResultadoSlug> {
+  const slug = slugCrudo.trim().toLowerCase();
+
+  if (!slugDisponible(slug)) {
+    return {
+      ok: false,
+      error:
+        "La dirección admite letras minúsculas, números y guiones (de 2 a 40 caracteres), y no puede ser una palabra reservada.",
+    };
+  }
+
+  const tomado = await db.query.aprs.findFirst({
+    where: and(eq(aprs.slug, slug), ne(aprs.id, aprId)),
+    columns: { id: true },
+  });
+  if (tomado) {
+    return { ok: false, error: "Esa dirección ya la usa otro comité." };
+  }
+
+  await db
+    .update(aprs)
+    .set({ slug, updatedAt: new Date() })
+    .where(eq(aprs.id, aprId));
+
+  return { ok: true, slug };
 }

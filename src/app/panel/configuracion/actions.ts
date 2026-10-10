@@ -6,6 +6,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { aprs } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/apr-session";
+import { cambiarSlug } from "@/lib/slug";
 
 export type ResultadoAccion = { ok: true } | { ok: false; error: string };
 
@@ -250,5 +251,20 @@ export async function guardarCortes(
     .where(eq(aprs.id, apr.id));
 
   revalidatePath("/panel/configuracion");
+  return { ok: true };
+}
+
+/** La dirección del comité (slug): portal de socios y sitio público. */
+export async function guardarDireccion(
+  _prev: ResultadoAccion | null,
+  formData: FormData
+): Promise<ResultadoAccion> {
+  const { apr } = await requireAdmin();
+
+  const resultado = await cambiarSlug(apr.id, String(formData.get("slug") ?? ""));
+  if (!resultado.ok) return resultado;
+
+  revalidatePath("/panel/configuracion");
+  revalidatePath("/panel/sitio");
   return { ok: true };
 }
