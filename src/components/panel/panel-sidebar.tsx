@@ -13,6 +13,8 @@ import {
   MessageCircle,
   Smartphone,
   LifeBuoy,
+  LayoutGrid,
+  Headset,
 } from "lucide-react";
 import { Logo } from "@/components/marca/logo";
 import {
@@ -27,7 +29,16 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const gestion = [
   { href: "/panel", label: "Resumen", icon: LayoutDashboard },
@@ -95,13 +106,63 @@ function EnlaceMenu({
  */
 function GrupoEnlaces({
   titulo,
+  icono: IconoGrupo,
   enlaces,
   pathname,
 }: {
   titulo: string;
+  icono: typeof LayoutDashboard;
   enlaces: Enlace[];
   pathname: string;
 }) {
+  const { state, isMobile } = useSidebar();
+
+  // Colapsado, el menú muestra un solo ícono por grupo (Gestión, Atención) y
+  // sus enlaces salen en un menú al lado. Así la barra angosta no se llena de
+  // íconos sueltos.
+  if (state === "collapsed" && !isMobile) {
+    const algunoActivo = enlaces.some((e) => e.href === pathname);
+    return (
+      <SidebarGroup>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <SidebarMenuButton
+                      isActive={algunoActivo}
+                      aria-label={titulo}
+                      className="hover:bg-muted hover:text-foreground data-active:hover:bg-sidebar-accent data-active:hover:text-sidebar-accent-foreground"
+                    />
+                  }
+                >
+                  <IconoGrupo />
+                  <span>{titulo}</span>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="right" align="start" className="w-52">
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel>{titulo}</DropdownMenuLabel>
+                    {enlaces.map((e) => (
+                      <DropdownMenuItem
+                        key={e.href}
+                        render={<Link href={e.href} />}
+                        className={pathname === e.href ? "bg-muted font-medium" : undefined}
+                      >
+                        <e.icon />
+                        {e.label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+    );
+  }
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>{titulo}</SidebarGroupLabel>
@@ -152,11 +213,11 @@ export function PanelSidebar({
       <SidebarContent>
         {rol === "ADMIN" ? (
           <>
-            <GrupoEnlaces titulo="Gestión" enlaces={gestion} pathname={pathname} />
-            <GrupoEnlaces titulo="Atención" enlaces={atencion} pathname={pathname} />
+            <GrupoEnlaces titulo="Gestión" icono={LayoutGrid} enlaces={gestion} pathname={pathname} />
+            <GrupoEnlaces titulo="Atención" icono={Headset} enlaces={atencion} pathname={pathname} />
           </>
         ) : (
-          <GrupoEnlaces titulo="Terreno" enlaces={soloOperador} pathname={pathname} />
+          <GrupoEnlaces titulo="Terreno" icono={Droplets} enlaces={soloOperador} pathname={pathname} />
         )}
       </SidebarContent>
 
