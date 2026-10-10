@@ -353,6 +353,20 @@ export const RECORRIDOS: Recorrido[] = [
         lado: "bottom",
       },
       {
+        selector: enMenu("tec-tabla"),
+        titulo: "Tus técnicos",
+        texto:
+          "Quienes ya aceptaron y pueden entrar. Si alguien deja de trabajar con el comité, lo desactivas: pierde el acceso al instante y sus lecturas se conservan. Puedes reactivarlo cuando quieras.",
+        lado: "top",
+      },
+      {
+        selector: enMenu("tec-invitaciones"),
+        titulo: "Invitaciones pendientes",
+        texto:
+          "Los enlaces que ya generaste y nadie ha usado. Vencen solos, y puedes cancelar uno si lo mandaste a la persona equivocada.",
+        lado: "top",
+      },
+      {
         titulo: "Qué ve el técnico",
         texto:
           "Solo la sección de lecturas: no accede a socios, boletas ni configuración. Tú apruebas cada lectura antes de que cuente. Si deja de trabajar con el comité, lo desactivas desde esta misma pantalla.",

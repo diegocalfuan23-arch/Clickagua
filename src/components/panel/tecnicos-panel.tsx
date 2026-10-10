@@ -13,6 +13,14 @@ import { iniciales } from "@/lib/formato";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -66,18 +74,32 @@ export function TecnicosPanel({
       </div>
 
       <section>
-        <h2 className="mb-3 text-[0.95rem] font-semibold">
-          Técnicos
-        </h2>
+        <h2 className="mb-3 text-[0.95rem] font-semibold">Técnicos</h2>
         {tecnicos.length === 0 ? (
           <p className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-[0.9rem] text-muted-foreground">
             Todavía no tienes técnicos invitados.
           </p>
         ) : (
-          <div className="flex flex-col divide-y divide-border/60 rounded-xl border border-border/60 bg-card">
-            {tecnicos.map((t) => (
-              <TecnicoFila key={t.id} tecnico={t} />
-            ))}
+          <div
+            data-tour="tec-tabla"
+            className="overflow-x-auto rounded-xl border border-border bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+          >
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="h-11 px-4">Técnico</TableHead>
+                  <TableHead className="h-11 px-4">Correo</TableHead>
+                  <TableHead className="h-11 px-4">Desde</TableHead>
+                  <TableHead className="h-11 px-4">Estado</TableHead>
+                  <TableHead className="h-11 px-4 text-right">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {tecnicos.map((t) => (
+                  <TecnicoFila key={t.id} tecnico={t} />
+                ))}
+              </TableBody>
+            </Table>
           </div>
         )}
       </section>
@@ -87,10 +109,26 @@ export function TecnicosPanel({
           <h2 className="mb-3 text-[0.95rem] font-semibold">
             Invitaciones pendientes
           </h2>
-          <div className="flex flex-col divide-y divide-border/60 rounded-xl border border-border/60 bg-card">
-            {invitacionesPendientes.map((inv) => (
-              <InvitacionFila key={inv.id} invitacion={inv} />
-            ))}
+          <div
+            data-tour="tec-invitaciones"
+            className="overflow-x-auto rounded-xl border border-border bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+          >
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="h-11 px-4">Invitación</TableHead>
+                  <TableHead className="h-11 px-4">Creada</TableHead>
+                  <TableHead className="h-11 px-4">Vence</TableHead>
+                  <TableHead className="h-11 px-4">Estado</TableHead>
+                  <TableHead className="h-11 px-4 text-right">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {invitacionesPendientes.map((inv) => (
+                  <InvitacionFila key={inv.id} invitacion={inv} />
+                ))}
+              </TableBody>
+            </Table>
           </div>
         </section>
       )}
@@ -118,77 +156,85 @@ function TecnicoFila({ tecnico: t }: { tecnico: Tecnico }) {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-3 p-4">
-      <span
-        className={cn(
-          "flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-[0.75rem] font-semibold text-muted-foreground",
-          !t.activo && "opacity-60"
-        )}
-      >
-        {iniciales(t.nombre)}
-      </span>
-      <div className={cn("min-w-0 flex-1", !t.activo && "opacity-60")}>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="truncate font-medium">{t.nombre}</span>
-          {!t.activo && (
-            <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[0.72rem] font-medium text-destructive">
-              Desactivado
-            </span>
+    <TableRow>
+      <TableCell className="px-4 py-3.5">
+        <div className={cn("flex items-center gap-3", !t.activo && "opacity-60")}>
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-[0.7rem] font-semibold text-muted-foreground">
+            {iniciales(t.nombre)}
+          </span>
+          <span className="font-medium">{t.nombre}</span>
+        </div>
+      </TableCell>
+      <TableCell className={cn("px-4 py-3.5 text-muted-foreground", !t.activo && "opacity-60")}>
+        {t.correo}
+      </TableCell>
+      <TableCell className="px-4 py-3.5 whitespace-nowrap text-muted-foreground">
+        {fecha.format(t.desde)}
+      </TableCell>
+      <TableCell className="px-4 py-3.5">
+        <span
+          className={cn(
+            "inline-flex rounded-full px-2.5 py-1 text-[0.78rem] font-medium whitespace-nowrap",
+            t.activo
+              ? "bg-forest/15 text-forest"
+              : "bg-destructive/10 text-destructive"
           )}
-        </div>
-        <div className="truncate text-[0.82rem] text-muted-foreground">
-          {t.correo}
-        </div>
-      </div>
-      <span className="shrink-0 text-[0.8rem] text-muted-foreground">
-        Desde {fecha.format(t.desde)}
-      </span>
-      {t.activo ? (
-        <Button variant="outline" size="sm" onClick={() => setConfirmando(true)}>
-          Desactivar
-        </Button>
-      ) : (
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={trabajando}
-          onClick={() => cambiar(() => reactivarOperador(t.id))}
         >
-          {trabajando && <Loader2 className="animate-spin" />}
-          Reactivar
-        </Button>
-      )}
-      {error && !confirmando && (
-        <p className="w-full text-[0.8rem] text-destructive">{error}</p>
-      )}
-
-      <Dialog open={confirmando} onOpenChange={setConfirmando}>
-        <DialogContent className="sm:max-w-105">
-          <DialogHeader>
-            <DialogTitle>Desactivar a {t.nombre}</DialogTitle>
-            <DialogDescription>
-              Dejará de poder entrar y se cerrará su sesión. Sus lecturas ya
-              cargadas se conservan en el historial. Puedes reactivarlo cuando
-              quieras.
-            </DialogDescription>
-          </DialogHeader>
-          {error && <p className="text-[0.85rem] text-destructive">{error}</p>}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmando(false)}>
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={trabajando}
-              onClick={() => cambiar(() => desactivarOperador(t.id))}
-            >
-              {trabajando && <Loader2 className="animate-spin" />}
+          {t.activo ? "Activo" : "Desactivado"}
+        </span>
+      </TableCell>
+      <TableCell className="px-4 py-3.5">
+        <div className="flex items-center justify-end gap-2">
+          {error && !confirmando && (
+            <p className="max-w-[24ch] text-right text-[0.78rem] text-destructive">
+              {error}
+            </p>
+          )}
+          {t.activo ? (
+            <Button variant="outline" size="sm" onClick={() => setConfirmando(true)}>
               Desactivar
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={trabajando}
+              onClick={() => cambiar(() => reactivarOperador(t.id))}
+            >
+              {trabajando && <Loader2 className="animate-spin" />}
+              Reactivar
+            </Button>
+          )}
+        </div>
+
+        <Dialog open={confirmando} onOpenChange={setConfirmando}>
+          <DialogContent className="sm:max-w-105">
+            <DialogHeader>
+              <DialogTitle>Desactivar a {t.nombre}</DialogTitle>
+              <DialogDescription>
+                Dejará de poder entrar y se cerrará su sesión. Sus lecturas ya
+                cargadas se conservan en el historial. Puedes reactivarlo cuando
+                quieras.
+              </DialogDescription>
+            </DialogHeader>
+            {error && <p className="text-[0.85rem] text-destructive">{error}</p>}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setConfirmando(false)}>
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={trabajando}
+                onClick={() => cambiar(() => desactivarOperador(t.id))}
+              >
+                {trabajando && <Loader2 className="animate-spin" />}
+                Desactivar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </TableCell>
+    </TableRow>
   );
 }
 
@@ -197,32 +243,46 @@ function InvitacionFila({ invitacion }: { invitacion: InvitacionPendiente }) {
   const [cancelando, iniciar] = useTransition();
 
   return (
-    <div className="flex items-center gap-3 p-4">
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-tertiary/15 text-tertiary-foreground">
-        <Clock className="size-4" />
-      </span>
-      <div className="min-w-0 flex-1">
-        <div className="font-medium">Invitación sin usar</div>
-        <div className="text-[0.82rem] text-muted-foreground">
-          Vence el {fecha.format(invitacion.expiraEn)}
+    <TableRow>
+      <TableCell className="px-4 py-3.5">
+        <div className="flex items-center gap-3">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-tertiary/15 text-tertiary-foreground">
+            <Clock className="size-4" />
+          </span>
+          <span className="font-medium">Invitación para técnico</span>
         </div>
-      </div>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        disabled={cancelando}
-        onClick={() =>
-          iniciar(async () => {
-            await cancelarInvitacion(invitacion.id);
-            router.refresh();
-          })
-        }
-      >
-        {cancelando && <Loader2 className="animate-spin" />}
-        Cancelar
-      </Button>
-    </div>
+      </TableCell>
+      <TableCell className="px-4 py-3.5 whitespace-nowrap text-muted-foreground">
+        {fecha.format(invitacion.creadaEn)}
+      </TableCell>
+      <TableCell className="px-4 py-3.5 whitespace-nowrap text-muted-foreground">
+        {fecha.format(invitacion.expiraEn)}
+      </TableCell>
+      <TableCell className="px-4 py-3.5">
+        <span className="inline-flex rounded-full bg-tertiary/15 px-2.5 py-1 text-[0.78rem] font-medium whitespace-nowrap text-tertiary-foreground">
+          Sin usar
+        </span>
+      </TableCell>
+      <TableCell className="px-4 py-3.5">
+        <div className="flex justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={cancelando}
+            onClick={() =>
+              iniciar(async () => {
+                await cancelarInvitacion(invitacion.id);
+                router.refresh();
+              })
+            }
+          >
+            {cancelando && <Loader2 className="animate-spin" />}
+            Cancelar
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
   );
 }
 
