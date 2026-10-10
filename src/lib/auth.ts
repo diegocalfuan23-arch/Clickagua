@@ -6,6 +6,7 @@ import * as schema from "@/lib/db/auth-schema";
 import { aprs } from "@/lib/db/schema";
 import { user as userTable } from "@/lib/db/auth-schema";
 import { enviarCorreoResetPassword } from "@/lib/correo/reset-password";
+import { slugUnico } from "@/lib/slug";
 
 /**
  * Orígenes aceptados. Sin esto, Better Auth solo confía en BETTER_AUTH_URL y
@@ -133,6 +134,9 @@ export const auth = betterAuth({
                 .insert(aprs)
                 .values({
                   nombre: datos.apr,
+                  // La dirección del comité (portal de socios) sale del nombre;
+                  // no depende del plan ni de publicar el sitio.
+                  slug: await slugUnico(datos.apr),
                   rut: datos.rutComite,
                   comuna: datos.comuna,
                   // El registro pide el "Correo del comité": además de ser el
