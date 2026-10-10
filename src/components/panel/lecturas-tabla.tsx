@@ -230,6 +230,7 @@ export function LecturasTabla({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Link
+            data-tour="lec-tecnicos"
             href="/panel/tecnicos"
             className={cn(buttonVariants({ variant: "outline" }))}
           >

@@ -236,6 +236,13 @@ export const RECORRIDOS: Recorrido[] = [
     minutos: 2,
     pasos: [
       {
+        selector: enMenu("lec-tecnicos"),
+        titulo: "Técnicos",
+        texto:
+          "Quienes toman las lecturas en terreno. Desde aquí los invitas o ves quiénes tienen acceso: solo ven lecturas, nada más.",
+        lado: "bottom",
+      },
+      {
         selector: enMenu("lec-terreno"),
         titulo: "Modo terreno",
         texto:
