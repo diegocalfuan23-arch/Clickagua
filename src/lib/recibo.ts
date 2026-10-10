@@ -109,6 +109,12 @@ export async function reciboDeComite(aprId: string, boletaId: string) {
   return recibo ?? null;
 }
 
+/** Un recibo por id, sin filtrar por comité: solo para el enlace firmado (/r/<código>). */
+export async function reciboPorId(boletaId: string) {
+  const [recibo] = await consultar(eq(boletas.id, boletaId));
+  return recibo ?? null;
+}
+
 /** La hoja de talonario de un período: todas las boletas no anuladas. */
 export function recibosDelPeriodo(aprId: string, periodo: string) {
   return consultar(

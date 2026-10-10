@@ -6,6 +6,8 @@ import { reciboDeSocio } from "@/lib/recibo";
 import { Recibo } from "@/components/recibos/recibo";
 import { ImprimirBoton } from "@/components/recibos/imprimir-boton";
 import { basePortal } from "@/lib/portal-socio";
+import { codigoRecibo } from "@/lib/recibo-enlace";
+import { Button } from "@/components/ui/button";
 
 type Props = { params: Promise<{ slug: string; id: string }> };
 
@@ -36,7 +38,16 @@ export default async function ReciboSocioPage({ params }: Props) {
         >
           ← Mi cuenta
         </Link>
-        <ImprimirBoton />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            nativeButton={false}
+            render={<a href={`/r/${codigoRecibo(id)}`} target="_blank" rel="noopener" />}
+          >
+            Descargar PDF
+          </Button>
+          <ImprimirBoton />
+        </div>
       </div>
       <Recibo r={recibo} />
     </div>

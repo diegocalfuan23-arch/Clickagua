@@ -34,6 +34,7 @@ export const VARIABLES_PLANTILLA = [
   { nombre: "saldo", ayuda: "Lo que queda por pagar (solo si hubo abono)" },
   { nombre: "vence", ayuda: "Fecha de vencimiento" },
   { nombre: "como_pagar", ayuda: "Dónde y cómo pagar (de Configuración)" },
+  { nombre: "recibo", ayuda: "Enlace al recibo en PDF" },
   { nombre: "link", ayuda: "Enlace al panel del socio" },
 ] as const;
 
@@ -43,17 +44,19 @@ export const VARIABLES_PLANTILLA = [
  */
 export const PLANTILLA_POR_DEFECTO = `Hola {nombre}, te escribe {comite}.
 
-Tu boleta de agua de {periodo} está lista:
+Tu recibo de agua de {periodo} está listo:
 • Consumo: {consumo}
 • Monto: {monto}
 • Te quedan por pagar: {saldo}
 • Vence el {vence}
 
+Descárgalo en PDF: {recibo}
+
 Cómo pagar: {como_pagar}
 
 Cuando pagues, envíanos el comprobante por este mismo WhatsApp y lo registramos.
 
-Revisa tu cuenta cuando quieras: {link}`;
+Tu cuenta en línea: {link}`;
 
 /** El teléfono se guarda en E.164 (+56912345678). Cualquier otra cosa no sirve para wa.me. */
 export function telefonoValidoParaWhatsApp(telefono: string | null | undefined) {
@@ -77,6 +80,8 @@ export type DatosBoletaWhatsApp = {
   montoPagado: number;
   fechaVencimiento: Date;
   consumoM3: number | null;
+  /** Enlace firmado al recibo en PDF (ver lib/recibo-enlace.ts). */
+  reciboUrl?: string;
 };
 
 function valoresDe(comite: DatosComiteWhatsApp, boleta: DatosBoletaWhatsApp) {
@@ -92,7 +97,8 @@ function valoresDe(comite: DatosComiteWhatsApp, boleta: DatosBoletaWhatsApp) {
     saldo: abonada ? clp.format(porPagar) : "",
     vence: diaMes.format(boleta.fechaVencimiento),
     como_pagar: comite.infoPago?.trim() ?? "",
-    link: comite.slug ? `https://${comite.slug}.${DOMINIO_RAIZ}/cuenta/entrar` : "",
+    recibo: boleta.reciboUrl ?? "",
+    link: comite.slug ? `https://${DOMINIO_RAIZ}/${comite.slug}/cuenta/entrar` : "",
   } as Record<string, string>;
 }
 

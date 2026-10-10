@@ -12,6 +12,7 @@ import {
   Ban,
   Check,
   CheckCircle2,
+  FileDown,
   ChevronLeft,
   ChevronRight,
   Clock,
@@ -95,6 +96,8 @@ export type BoletaFila = {
   lecturaActual: number | null;
   consumoM3: number | null;
   observacion: string | null;
+  /** Enlace firmado al recibo en PDF. */
+  reciboUrl: string;
 };
 
 export type SocioOpcion = OpcionSocio;
@@ -591,6 +594,16 @@ export function BoletasTabla({
                                 <FileText />
                                 Ver recibo
                               </DropdownMenuItem>
+                              {b.estado !== "ANULADA" && (
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    window.open(b.reciboUrl, "_blank", "noopener")
+                                  }
+                                >
+                                  <FileDown />
+                                  Descargar PDF
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuItem onClick={() => setCobrando(b)}>
                                 <Coins />
                                 Registrar pago
@@ -1054,120 +1067,126 @@ function EnviarWhatsAppDialog({
 
   return (
     <Dialog open={abierto} onOpenChange={onAbiertoChange}>
-      <DialogContent className="sm:max-w-140">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
+        <DialogHeader className="shrink-0 border-b border-border/60 px-5 py-4 pr-12">
           <DialogTitle>Enviar por WhatsApp</DialogTitle>
           <DialogDescription>
             {unica
-              ? `Boleta de ${unica.socioNombre}. Edita el mensaje si quieres y envíalo.`
-              : "Edita el mensaje una vez y se usa para todos. Cada socio recibe el suyo con sus datos."}
+              ? `Recibo de ${unica.socioNombre}. Se envía con un enlace al PDF.`
+              : "Edita el mensaje una vez y se usa para todos. Cada socio recibe el suyo con su recibo en PDF."}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex min-w-0 flex-col gap-2">
-          <div className="flex items-center justify-between gap-2">
-            <Label htmlFor="mensaje-wa">Mensaje</Label>
-            {plantilla !== PLANTILLA_POR_DEFECTO && (
-              <button
-                type="button"
-                onClick={() => onPlantilla(PLANTILLA_POR_DEFECTO)}
-                className="text-[0.8rem] text-primary hover:underline"
-              >
-                Restablecer mensaje
-              </button>
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+          <div className="grid min-w-0 gap-5 md:grid-cols-2">
+            <div className="flex min-w-0 flex-col gap-2">
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="mensaje-wa">Mensaje</Label>
+                {plantilla !== PLANTILLA_POR_DEFECTO && (
+                  <button
+                    type="button"
+                    onClick={() => onPlantilla(PLANTILLA_POR_DEFECTO)}
+                    className="text-[0.8rem] text-primary hover:underline"
+                  >
+                    Restablecer mensaje
+                  </button>
+                )}
+              </div>
+              <Textarea
+                id="mensaje-wa"
+                ref={areaRef}
+                rows={12}
+                value={plantilla}
+                onChange={(e) => onPlantilla(e.target.value)}
+                className="text-[0.85rem] leading-relaxed"
+              />
+              <div className="flex flex-wrap gap-1.5">
+                {VARIABLES_PLANTILLA.map((v) => (
+                  <button
+                    key={v.nombre}
+                    type="button"
+                    title={v.ayuda}
+                    onClick={() => insertar(v.nombre)}
+                    className="rounded-full border border-border bg-muted/50 px-2 py-0.5 font-mono text-[0.72rem] text-muted-foreground hover:bg-muted"
+                  >
+                    {`{${v.nombre}}`}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {ejemplo && (
+              <div className="flex min-w-0 flex-col gap-2">
+                <p className="text-[0.85rem] font-medium">
+                  Así lo recibirá {ejemplo.socioNombre.split(" ")[0]}
+                </p>
+                <div className="rounded-xl bg-[#efeae2] p-3">
+                  <div className="ml-auto max-w-full rounded-lg rounded-tr-sm bg-[#d9fdd3] px-3 py-2 text-[0.84rem] leading-relaxed break-words whitespace-pre-wrap text-neutral-900 shadow-sm">
+                    {mensajeBoleta(comite, ejemplo, plantilla)}
+                  </div>
+                </div>
+              </div>
             )}
           </div>
-          <Textarea
-            id="mensaje-wa"
-            ref={areaRef}
-            rows={10}
-            value={plantilla}
-            onChange={(e) => onPlantilla(e.target.value)}
-            className="font-mono text-[0.82rem] leading-relaxed"
-          />
-          <div className="flex flex-wrap gap-1.5">
-            {VARIABLES_PLANTILLA.map((v) => (
-              <button
-                key={v.nombre}
-                type="button"
-                title={v.ayuda}
-                onClick={() => insertar(v.nombre)}
-                className="rounded-full border border-border bg-muted/50 px-2.5 py-0.5 font-mono text-[0.75rem] text-muted-foreground hover:bg-muted"
-              >
-                {`{${v.nombre}}`}
-              </button>
-            ))}
-          </div>
 
-          {ejemplo && (
-            <div className="mt-1">
-              <p className="text-[0.8rem] text-muted-foreground">
-                Así lo recibirá {ejemplo.socioNombre.split(" ")[0]}:
+          {!unica && conTelefono.length > 0 && (
+            <div className="mt-5 flex flex-col gap-2">
+              <p className="text-[0.85rem] text-muted-foreground">
+                <span className="font-medium tabular-nums text-foreground">
+                  {porEnviar}
+                </span>{" "}
+                por enviar · {conTelefono.length - porEnviar} ya enviadas
               </p>
-              <pre className="mt-1 max-h-48 overflow-y-auto rounded-lg bg-muted/50 p-3 font-sans text-[0.82rem] leading-relaxed whitespace-pre-wrap">
-                {mensajeBoleta(comite, ejemplo, plantilla)}
-              </pre>
+              <div className="flex flex-col divide-y divide-border/60 rounded-lg border border-border/60">
+                {conTelefono.map((b) => {
+                  const yaEnviada = enviadas.has(b.id);
+                  return (
+                    <div
+                      key={b.id}
+                      className="flex items-center justify-between gap-3 px-4 py-2.5"
+                    >
+                      <div className="min-w-0">
+                        <div className="truncate font-medium">{b.socioNombre}</div>
+                        <div className="text-[0.78rem] tabular-nums text-muted-foreground">
+                          {b.socioTelefono && formatearTelefono(b.socioTelefono)} ·{" "}
+                          {formatearPeriodo(b.periodo)} ·{" "}
+                          {clp.format(saldo(b.montoTotal, b.montoPagado))}
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant={yaEnviada ? "outline" : "default"}
+                        onClick={() => onEnviar(b)}
+                      >
+                        {yaEnviada ? <Check /> : <MessageCircle />}
+                        {yaEnviada ? "Reenviar" : "Enviar"}
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
+          )}
+
+          {boletas.length > 0 && conTelefono.length === 0 && (
+            <p className="mt-5 rounded-lg border border-dashed border-border px-4 py-6 text-center text-[0.9rem] text-muted-foreground">
+              {unica
+                ? "Este socio no tiene un teléfono válido. Agrégalo en Socios para poder enviarle el recibo."
+                : "No hay boletas por cobrar con teléfono en este filtro."}
+            </p>
+          )}
+
+          {!unica && sinTelefono > 0 && conTelefono.length > 0 && (
+            <p className="mt-3 text-[0.82rem] text-destructive">
+              {sinTelefono}{" "}
+              {sinTelefono === 1 ? "socio no tiene" : "socios no tienen"} un
+              teléfono válido y no aparece{sinTelefono === 1 ? "" : "n"} en la
+              lista.
+            </p>
           )}
         </div>
 
-        {!unica && conTelefono.length > 0 && (
-          <>
-            <p className="text-[0.85rem] text-muted-foreground">
-              <span className="font-medium tabular-nums text-foreground">
-                {porEnviar}
-              </span>{" "}
-              por enviar · {conTelefono.length - porEnviar} ya enviadas
-            </p>
-            <div className="flex max-h-[30vh] flex-col divide-y divide-border/60 overflow-y-auto rounded-lg border border-border/60">
-              {conTelefono.map((b) => {
-                const yaEnviada = enviadas.has(b.id);
-                return (
-                  <div
-                    key={b.id}
-                    className="flex items-center justify-between gap-3 px-4 py-3"
-                  >
-                    <div className="min-w-0">
-                      <div className="truncate font-medium">{b.socioNombre}</div>
-                      <div className="text-[0.78rem] tabular-nums text-muted-foreground">
-                        {b.socioTelefono && formatearTelefono(b.socioTelefono)} ·{" "}
-                        {formatearPeriodo(b.periodo)} ·{" "}
-                        {clp.format(saldo(b.montoTotal, b.montoPagado))}
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant={yaEnviada ? "outline" : "default"}
-                      onClick={() => onEnviar(b)}
-                    >
-                      {yaEnviada ? <Check /> : <MessageCircle />}
-                      {yaEnviada ? "Reenviar" : "Enviar"}
-                    </Button>
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
-
-        {boletas.length > 0 && conTelefono.length === 0 && (
-          <p className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-[0.9rem] text-muted-foreground">
-            {unica
-              ? "Este socio no tiene un teléfono válido. Agrégalo en Socios para poder enviarle la boleta."
-              : "No hay boletas por cobrar con teléfono en este filtro."}
-          </p>
-        )}
-
-        {!unica && sinTelefono > 0 && conTelefono.length > 0 && (
-          <p className="text-[0.82rem] text-destructive">
-            {sinTelefono}{" "}
-            {sinTelefono === 1 ? "socio no tiene" : "socios no tienen"} un
-            teléfono válido y no aparece{sinTelefono === 1 ? "" : "n"} en la
-            lista.
-          </p>
-        )}
-
-        <DialogFooter>
+        <DialogFooter className="mx-0 mb-0 shrink-0 rounded-b-xl border-t border-border/60 px-5 py-3">
           <Button variant="outline" onClick={() => onAbiertoChange(false)}>
             Cerrar
           </Button>

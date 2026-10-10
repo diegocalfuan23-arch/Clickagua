@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { boletas, lecturas, socios } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/apr-session";
 import { BoletasTabla } from "@/components/panel/boletas-tabla";
+import { urlRecibo } from "@/lib/recibo-enlace";
 
 export const metadata: Metadata = {
   title: "Boletas",
@@ -55,7 +56,7 @@ export default async function BoletasPage() {
 
   return (
     <BoletasTabla
-      boletas={listado}
+      boletas={listado.map((b) => ({ ...b, reciboUrl: urlRecibo(b.id) }))}
       socios={padron.map((p) => ({ ...p, ultimaLectura: anteriorDe.get(p.id) ?? null }))}
       tarifas={
         apr.tarifaCargoFijo !== null && apr.tarifaMetroCubico !== null
