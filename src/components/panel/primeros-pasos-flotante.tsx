@@ -1,0 +1,248 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { ArrowRight, Check, HelpCircle, Rocket, X } from "lucide-react";
+import {
+  progresoPrimerosPasos,
+  type ProgresoPrimerosPasos,
+} from "@/app/panel/primeros-pasos-actions";
+import { lanzarRecorrido } from "@/components/panel/recorrido";
+import { RECORRIDOS } from "@/lib/recorridos";
+import { cn } from "@/lib/utils";
+
+const RADIO = 22;
+const CIRCUNFERENCIA = 2 * Math.PI * RADIO;
+
+/**
+ * Botón flotante con el avance de los primeros pasos. Va en todas las
+ * pantallas del panel: cerrado es solo un anillo de progreso; abierto, la lista
+ * de pasos, cada uno con su recorrido guiado. Desaparece cuando lo esencial
+ * está hecho.
+ */
+export function PrimerosPasosFlotante() {
+  const pathname = usePathname();
+  const [datos, setDatos] = useState<ProgresoPrimerosPasos | null>(null);
+  const [abierto, setAbierto] = useState(false);
+  const caja = useRef<HTMLDivElement>(null);
+
+  // El avance se vuelve a leer al cambiar de pantalla: hacer un paso lo marca.
+  useEffect(() => {
+    let vivo = true;
+    progresoPrimerosPasos()
+      .then((d) => vivo && setDatos(d))
+      .catch(() => undefined);
+    return () => {
+      vivo = false;
+    };
+  }, [pathname]);
+
+  // Cerrar al hacer clic afuera o con Escape.
+  useEffect(() => {
+    if (!abierto) return;
+    const afuera = (e: MouseEvent) => {
+      if (caja.current && !caja.current.contains(e.target as Node)) {
+        setAbierto(false);
+      }
+    };
+    const tecla = (e: KeyboardEvent) => e.key === "Escape" && setAbierto(false);
+    document.addEventListener("mousedown", afuera);
+    document.addEventListener("keydown", tecla);
+    return () => {
+      document.removeEventListener("mousedown", afuera);
+      document.removeEventListener("keydown", tecla);
+    };
+  }, [abierto]);
+
+  if (!datos) return null;
+
+  const { pasos, hechos, total } = datos;
+  const siguiente = pasos.find((p) => !p.hecho && !p.opcional);
+  const porcentaje = hechos / total;
+  const recorridoDePantalla = RECORRIDOS.find(
+    (r) => r.ruta === pathname && r.id !== "resumen"
+  );
+
+  return (
+    <div ref={caja} className="fixed right-5 bottom-5 z-40 flex flex-col items-end gap-3">
+      {abierto && (
+        <section
+          aria-label="Primeros pasos"
+          className="w-[min(22rem,calc(100vw-2.5rem))] rounded-2xl border border-border bg-card p-4 shadow-xl"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-2.5">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <Rocket className="size-4" />
+              </span>
+              <div>
+                <h2 className="text-[0.98rem] leading-tight font-semibold">
+                  Empieza a usar Facilapr
+                </h2>
+                <p className="mt-0.5 text-[0.8rem] text-muted-foreground">
+                  {hechos} de {total} pasos listos
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAbierto(false)}
+              aria-label="Cerrar"
+              className="rounded-md p-1 text-muted-foreground hover:bg-muted"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+
+          <div
+            className="mt-3 h-1.5 overflow-hidden rounded-full bg-primary/15"
+            role="progressbar"
+            aria-valuenow={Math.round(porcentaje * 100)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            <div
+              className="h-full rounded-full bg-primary transition-all"
+              style={{ width: `${porcentaje * 100}%` }}
+            />
+          </div>
+
+          <ol className="mt-3 flex max-h-[55vh] flex-col overflow-y-auto">
+            {pasos.map((p, i) => {
+              const esSiguiente = p.id === siguiente?.id;
+              return (
+                <li
+                  key={p.id}
+                  className={cn(
+                    "flex gap-3 border-b border-border/60 py-3 last:border-0",
+                    esSiguiente && "rounded-lg bg-primary/[0.05] px-2"
+                  )}
+                >
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full text-[0.72rem] font-semibold",
+                      p.hecho
+                        ? "bg-forest text-white"
+                        : esSiguiente
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground"
+                    )}
+                  >
+                    {p.hecho ? <Check className="size-3.5" /> : i + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div
+                      className={cn(
+                        "text-[0.88rem] leading-snug font-medium",
+                        p.hecho && "text-muted-foreground line-through"
+                      )}
+                    >
+                      {p.titulo}
+                      {p.opcional && (
+                        <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-[0.65rem] font-normal text-muted-foreground no-underline">
+                          Opcional
+                        </span>
+                      )}
+                    </div>
+                    {!p.hecho && (
+                      <>
+                        <p className="mt-0.5 text-[0.78rem] leading-relaxed text-muted-foreground">
+                          {p.texto}
+                        </p>
+                        <div className="mt-2 flex items-center gap-3">
+                          <Link
+                            href={p.href}
+                            onClick={() => setAbierto(false)}
+                            className="inline-flex h-7 items-center gap-1 rounded-md bg-primary px-2.5 text-[0.78rem] font-medium text-primary-foreground hover:bg-primary/90"
+                          >
+                            Ir
+                            <ArrowRight className="size-3" />
+                          </Link>
+                          {p.recorrido && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setAbierto(false);
+                                lanzarRecorrido(p.recorrido!);
+                              }}
+                              className="text-[0.78rem] text-muted-foreground hover:text-foreground hover:underline"
+                            >
+                              Guíame
+                            </button>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-3">
+            {recorridoDePantalla ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setAbierto(false);
+                  lanzarRecorrido(recorridoDePantalla.id);
+                }}
+                className="inline-flex items-center gap-1.5 text-[0.8rem] font-medium text-primary hover:underline"
+              >
+                <HelpCircle className="size-3.5" />
+                Explicar esta pantalla
+              </button>
+            ) : (
+              <span />
+            )}
+            <Link
+              href="/panel/ayuda"
+              onClick={() => setAbierto(false)}
+              className="text-[0.8rem] text-muted-foreground hover:text-foreground hover:underline"
+            >
+              Todos los recorridos
+            </Link>
+          </div>
+        </section>
+      )}
+
+      <button
+        type="button"
+        data-tour="primeros-pasos"
+        onClick={() => setAbierto((v) => !v)}
+        aria-label={`Primeros pasos: ${hechos} de ${total} listos`}
+        aria-expanded={abierto}
+        className="relative flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg ring-4 ring-background transition-transform hover:scale-105"
+      >
+        <svg className="absolute inset-0 -rotate-90" viewBox="0 0 56 56" aria-hidden>
+          <circle
+            cx="28"
+            cy="28"
+            r={RADIO}
+            fill="none"
+            stroke="currentColor"
+            strokeOpacity="0.25"
+            strokeWidth="3.5"
+          />
+          <circle
+            cx="28"
+            cy="28"
+            r={RADIO}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3.5"
+            strokeLinecap="round"
+            strokeDasharray={CIRCUNFERENCIA}
+            strokeDashoffset={CIRCUNFERENCIA * (1 - porcentaje)}
+            className="transition-all"
+          />
+        </svg>
+        <span className="relative text-[0.82rem] font-semibold tabular-nums">
+          {hechos}/{total}
+        </span>
+      </button>
+    </div>
+  );
+}

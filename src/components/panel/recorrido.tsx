@@ -4,13 +4,14 @@ import { useCallback, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { driver, type DriveStep } from "driver.js";
 import "driver.js/dist/driver.css";
-import { PlayCircle } from "lucide-react";
 import { useSidebar } from "@/components/ui/sidebar";
 import {
   marcarRecorridoVisto,
   recorridoYaVisto,
 } from "@/app/panel/recorrido-actions";
+import { progresoPrimerosPasos } from "@/app/panel/primeros-pasos-actions";
 import {
+  RECORRIDOS,
   recorridoPorId,
   type PasoRecorrido,
   type Recorrido as DatosRecorrido,
@@ -48,16 +49,6 @@ export function BotonGuia({
   );
 }
 
-/** Botón para repetir el recorrido general. Lo usa la tarjeta de primeros pasos. */
-export function BotonRecorrido() {
-  return (
-    <BotonGuia id="resumen">
-      <PlayCircle className="size-4" />
-      Ver recorrido
-    </BotonGuia>
-  );
-}
-
 const pulsar = (selector: string) =>
   (document.querySelector(selector) as HTMLElement | null)?.click();
 
@@ -76,6 +67,14 @@ export function Recorrido({ usuarioId }: { usuarioId: string }) {
   const { setOpen, isMobile } = useSidebar();
   const activo = useRef<ReturnType<typeof driver> | null>(null);
   const rutaActual = useRef(pathname);
+  // El general conserva la clave de siempre; cada pantalla tiene la suya.
+  const claveVisto = useCallback(
+    (id: string) =>
+      id === "resumen"
+        ? `facilapr-recorrido-visto-${usuarioId}`
+        : `facilapr-recorrido-visto-${usuarioId}-${id}`,
+    [usuarioId]
+  );
   useEffect(() => {
     rutaActual.current = pathname;
   }, [pathname]);
@@ -100,6 +99,12 @@ export function Recorrido({ usuarioId }: { usuarioId: string }) {
         (p) => !p.selector || p.clic || document.querySelector(p.selector)
       );
       if (pasos.length === 0) return;
+
+      try {
+        localStorage.setItem(claveVisto(r.id), "1");
+      } catch {
+        // Sin almacenamiento, podría volver a salir: no es grave.
+      }
 
       const steps: DriveStep[] = pasos.map((p, i) => ({
         element: p.selector,
@@ -151,7 +156,7 @@ export function Recorrido({ usuarioId }: { usuarioId: string }) {
       }
       recorrido.drive();
     },
-    [isMobile, setOpen]
+    [isMobile, setOpen, claveVisto]
   );
 
   // Pedidos de recorrido desde botones.
@@ -198,7 +203,9 @@ export function Recorrido({ usuarioId }: { usuarioId: string }) {
 
     let cancelado = false;
     const espera = window.setTimeout(async () => {
-      if (!document.querySelector('[data-tour="primeros-pasos"]')) return;
+      // Un comité que ya terminó lo esencial no necesita el recorrido.
+      const progreso = await progresoPrimerosPasos().catch(() => null);
+      if (!progreso || cancelado) return;
 
       const enBase = await recorridoYaVisto().catch(() => null);
       if (cancelado) return;
@@ -220,6 +227,25 @@ export function Recorrido({ usuarioId }: { usuarioId: string }) {
       window.clearTimeout(espera);
     };
   }, [pathname, usuarioId, empezar]);
+
+  // Cada pantalla se explica sola la primera vez que se entra, una vez que el
+  // recorrido general ya salió (así no se apilan dos recorridos seguidos). Un
+  // comité que nunca vio el general, porque ya terminó lo esencial, no los ve.
+  useEffect(() => {
+    const r = RECORRIDOS.find((x) => x.ruta === pathname && x.id !== "resumen");
+    if (!r) return;
+    if (new URLSearchParams(window.location.search).get("recorrido")) return;
+
+    try {
+      if (localStorage.getItem(claveVisto(r.id))) return;
+      if (!localStorage.getItem(claveVisto("resumen"))) return;
+    } catch {
+      return;
+    }
+
+    const espera = window.setTimeout(() => void empezar(r), 1200);
+    return () => window.clearTimeout(espera);
+  }, [pathname, empezar, claveVisto]);
 
   return null;
 }

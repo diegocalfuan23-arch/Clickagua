@@ -16,7 +16,6 @@ import {
 import { db } from "@/lib/db";
 import { boletas, socios, solicitudesAcceso } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/apr-session";
-import { PrimerosPasos } from "@/components/panel/primeros-pasos";
 import {
   GraficoArea,
   GraficoBarras,
@@ -421,8 +420,6 @@ export default async function PanelPage({
           </Link>
         </div>
       )}
-
-      {!demo && <PrimerosPasos apr={apr} />}
 
       {/* Resumen: los cuatro KPI con un filtro de período único para toda la
           vista, en vez de un selector por tarjeta. */}

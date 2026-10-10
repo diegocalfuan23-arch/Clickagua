@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Recorrido } from "@/components/panel/recorrido";
+import { PrimerosPasosFlotante } from "@/components/panel/primeros-pasos-flotante";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 export default async function PanelLayout({
@@ -29,6 +30,7 @@ export default async function PanelLayout({
       <SidebarProvider>
         <PanelSidebar apr={apr.nombre} comuna={apr.comuna} rol={rol} />
         {!esOperador && <Recorrido usuarioId={user.id} />}
+        {!esOperador && <PrimerosPasosFlotante />}
 
         {/* El gradiente va en el contenedor, no en el área de contenido: así
             cubre también el header. Centrado en 50% 50% para que el velo quede

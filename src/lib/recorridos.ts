@@ -37,73 +37,65 @@ export const RECORRIDOS: Recorrido[] = [
     id: "resumen",
     ruta: "/panel",
     titulo: "Conoce el panel",
-    resumen: "Un paseo por el menú: dónde está cada cosa y en qué orden usarla.",
+    resumen: "Un resumen de cada sección del menú, en el orden en que conviene usarlas.",
     minutos: 1,
     pasos: [
       {
         titulo: "Bienvenido a Facilapr 👋",
         texto:
-          "Te mostramos dónde está cada cosa para que emitas tu primera boleta. Toma menos de un minuto.",
+          "Te mostramos para qué sirve cada sección. Es rápido: una frase por cada una.",
       },
       {
         selector: '[data-tour="primeros-pasos"]',
-        titulo: "Tu guía de primeros pasos",
+        titulo: "Tu avance",
         texto:
-          "Aquí ves tu avance. Se marca sola a medida que haces cada paso, y cada uno tiene su recorrido con el botón «Guíame».",
-        lado: "bottom",
+          "Este botón te acompaña en todas las pantallas. Ábrelo para ver los pasos que faltan y cuánto llevas.",
+        lado: "left",
       },
       {
         selector: enMenu("/panel/configuracion"),
-        titulo: "1 · Configuración",
-        texto:
-          "Empieza aquí: tus tarifas (cargo fijo y valor del m³) y los datos que salen en cada recibo, como el teléfono y cómo se paga.",
+        titulo: "Configuración",
+        texto: "Tus tarifas y los datos de tu comité. Empieza por aquí.",
       },
       {
         selector: enMenu("/panel/socios"),
-        titulo: "2 · Socios",
-        texto:
-          "Carga tu padrón completo desde tu planilla de Excel, o agrégalos de a uno. Aquí también filtras entre socios y usuarios.",
+        titulo: "Socios",
+        texto: "Tu padrón de socios y usuarios.",
       },
       {
         selector: enMenu("/panel/lecturas"),
-        titulo: "3 · Lecturas",
-        texto:
-          "Aquí revisas y apruebas las lecturas de los medidores. Solo las aprobadas generan boleta.",
+        titulo: "Lecturas",
+        texto: "Las lecturas de los medidores, para revisar y aprobar.",
       },
       {
         selector: enMenu("/panel/lecturas/terreno"),
         titulo: "Modo terreno",
-        texto:
-          "Para tomar las lecturas desde el celular, incluso sin señal. Se envían solas cuando vuelve la conexión.",
+        texto: "Tomar lecturas desde el celular, incluso sin señal.",
       },
       {
         selector: enMenu("/panel/tecnicos"),
         titulo: "Técnicos",
-        texto:
-          "Invita a quien recorre los medidores. Solo ve la sección de lecturas, nada más.",
+        texto: "Quienes toman las lecturas en terreno.",
       },
       {
         selector: enMenu("/panel/boletas"),
-        titulo: "4 · Boletas",
-        texto:
-          "Aquí emites las boletas, mandas el recibo en PDF por WhatsApp y registras los pagos.",
+        titulo: "Boletas",
+        texto: "Emitir boletas, enviar el recibo en PDF y registrar los pagos.",
       },
       {
         selector: enMenu("/panel/socios/solicitudes"),
         titulo: "Solicitudes",
-        texto:
-          "Cuando un socio pida entrar a su cuenta en línea, lo apruebas aquí. Solo si reconoces su RUT.",
+        texto: "Los socios que piden entrar a su cuenta en línea.",
       },
       {
         selector: enMenu("/panel/ayuda"),
         titulo: "Ayuda",
-        texto:
-          "Aquí están todos los recorridos: elige uno y la pantalla te muestra, parte por parte, cómo se usa.",
+        texto: "Los recorridos de cada pantalla, para repetirlos cuando quieras.",
       },
       {
-        titulo: "¡Listo! 🎉",
+        titulo: "Listo 🎉",
         texto:
-          "Empieza por el primer paso de tu guía. Puedes repetir cualquier recorrido cuando quieras desde «Ayuda».",
+          "Al entrar a cada sección, te explicamos qué hace cada parte, solo la primera vez. Después puedes repetirlo desde Ayuda.",
       },
     ],
   },
