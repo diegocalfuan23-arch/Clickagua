@@ -9,6 +9,7 @@ import {
   socios,
 } from "@/lib/db/schema";
 import { cn } from "@/lib/utils";
+import { BotonRecorrido } from "@/components/panel/recorrido";
 
 type Paso = {
   id: string;
@@ -131,7 +132,9 @@ export async function PrimerosPasos({ apr }: { apr: Comite }) {
   const porcentaje = Math.round((hechos / esenciales.length) * 100);
 
   return (
-    <section className="rounded-xl border border-primary/25 bg-primary/[0.04] p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+    <section
+      data-tour="primeros-pasos"
+      className="rounded-xl border border-primary/25 bg-primary/[0.04] p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-start gap-3">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -147,14 +150,17 @@ export async function PrimerosPasos({ apr }: { apr: Comite }) {
             </p>
           </div>
         </div>
-        <Link
-          href="/ayuda"
-          target="_blank"
-          className="inline-flex items-center gap-1.5 text-[0.85rem] font-medium text-primary hover:underline"
-        >
-          <BookOpen className="size-4" />
-          Centro de ayuda
-        </Link>
+        <div className="flex items-center gap-4">
+          <BotonRecorrido />
+          <Link
+            href="/ayuda"
+            target="_blank"
+            className="inline-flex items-center gap-1.5 text-[0.85rem] font-medium text-primary hover:underline"
+          >
+            <BookOpen className="size-4" />
+            Centro de ayuda
+          </Link>
+        </div>
       </div>
 
       <div

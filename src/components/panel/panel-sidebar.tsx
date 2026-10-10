@@ -171,7 +171,7 @@ function GrupoEnlaces({
           {enlaces.map((enlace) => (
             <SidebarMenuItem key={enlace.href}>
               {/* useLinkStatus solo funciona dentro de un <Link>. */}
-              <Link href={enlace.href}>
+              <Link href={enlace.href} data-tour={enlace.href}>
                 <EnlaceMenu {...enlace} activo={pathname === enlace.href} />
               </Link>
             </SidebarMenuItem>
