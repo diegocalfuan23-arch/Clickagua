@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "sonner";
 import { useState, useTransition } from "react";
 import { Check, Loader2, Trash2, UserCheck, X } from "lucide-react";
 import {
@@ -69,8 +70,13 @@ function FilaSolicitud({
     setError(null);
     iniciarAprobar(async () => {
       const r = await aprobarSolicitud(solicitud.id);
-      if (r.ok) onCambio(solicitud.id, { estado: "APROBADA" });
-      else setError(r.error);
+      if (r.ok) {
+        onCambio(solicitud.id, { estado: "APROBADA" });
+        toast.success(`Acceso aprobado para ${solicitud.nombre}`);
+      } else {
+        setError(r.error);
+        toast.error(r.error);
+      }
     });
   }
 
@@ -80,6 +86,7 @@ function FilaSolicitud({
       const r = await rechazarSolicitud(solicitud.id, motivo.trim());
       if (r.ok) {
         setDialogo(null);
+        toast.success(`Solicitud de ${solicitud.nombre} rechazada`);
         onCambio(solicitud.id, {
           estado: "RECHAZADA",
           motivoRechazo: motivo.trim() || null,
@@ -96,6 +103,7 @@ function FilaSolicitud({
       const r = await eliminarSolicitud(solicitud.id);
       if (r.ok) {
         setDialogo(null);
+        toast.success("Solicitud eliminada");
         onEliminada(solicitud.id);
       } else {
         setError(r.error);

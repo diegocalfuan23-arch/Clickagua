@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "sonner";
 import { useMemo, useState, useTransition } from "react";
 import {
   ArrowUpDown,
@@ -729,6 +730,11 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
                               onClick={() =>
                                 startTransition(async () => {
                                   await alternarActivo(socio.id, !socio.activo);
+                                  toast.success(
+                                    socio.activo
+                                      ? `${socio.nombre} quedó inactivo`
+                                      : `${socio.nombre} quedó activo`
+                                  );
                                 })
                               }
                             >
@@ -864,7 +870,10 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
               disabled={pendiente}
               onClick={() =>
                 startTransition(async () => {
-                  if (porEliminar) await eliminarSocio(porEliminar.id);
+                  if (porEliminar) {
+                    await eliminarSocio(porEliminar.id);
+                    toast.success(`${porEliminar.nombre} fue eliminado`);
+                  }
                   setPorEliminar(null);
                 })
               }
@@ -916,8 +925,15 @@ function AccionMasivaDialog({
       const r = eliminar
         ? await eliminarSociosSinMovimientos(ids)
         : await desactivarSocios(ids);
-      if (r.ok) setResultado({ hechos: r.hechos, omitidos: r.omitidos });
-      else setError(r.error);
+      if (r.ok) {
+        setResultado({ hechos: r.hechos, omitidos: r.omitidos });
+        toast.success(
+          `${r.hechos} ${r.hechos === 1 ? "arranque" : "arranques"} ${eliminar ? "eliminados" : "desactivados"}`
+        );
+      } else {
+        setError(r.error);
+        toast.error(r.error);
+      }
     });
   }
 

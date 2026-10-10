@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "sonner";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Copy, Loader2, UserPlus, Clock } from "lucide-react";
@@ -148,9 +149,13 @@ function TecnicoFila({ tecnico: t }: { tecnico: Tecnico }) {
       const r = await accion();
       if (r.ok) {
         setConfirmando(false);
+        toast.success(
+          t.activo ? `${t.nombre} fue desactivado` : `${t.nombre} fue reactivado`
+        );
         router.refresh();
       } else {
         setError(r.error ?? "No pudimos completar la acción.");
+        toast.error(r.error ?? "No pudimos completar la acción.");
       }
     });
   }
@@ -273,6 +278,7 @@ function InvitacionFila({ invitacion }: { invitacion: InvitacionPendiente }) {
             onClick={() =>
               iniciar(async () => {
                 await cancelarInvitacion(invitacion.id);
+                toast.success("Invitación cancelada");
                 router.refresh();
               })
             }
@@ -301,13 +307,17 @@ function InvitarTecnico() {
     iniciar(async () => {
       const r = await generarInvitacionOperador();
       if (r.ok) setUrl(r.url);
-      else setError(r.error);
+      else {
+        setError(r.error);
+        toast.error(r.error);
+      }
     });
   }
 
   async function copiar() {
     if (!url) return;
     await navigator.clipboard.writeText(url);
+    toast.success("Enlace de invitación copiado");
     setCopiado(true);
     setTimeout(() => setCopiado(false), 2000);
   }

@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { toast } from "sonner";
+import { useActionState, useEffect, useState } from "react";
 import {
   Building2,
   Check,
@@ -91,6 +92,13 @@ function Bloque({
     ResultadoAccion | null,
     FormData
   >(accion, null);
+
+  // Cada guardado avisa con un toast, además del texto junto al botón.
+  useEffect(() => {
+    if (!estado) return;
+    if (estado.ok) toast.success("Cambios guardados");
+    else toast.error(estado.error);
+  }, [estado]);
 
   return (
     <section

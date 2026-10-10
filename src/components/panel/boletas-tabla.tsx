@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "sonner";
 import {
   useActionState,
   useMemo,
@@ -620,6 +621,7 @@ export function BoletasTabla({
                                   onClick={() =>
                                     iniciar(async () => {
                                       await anularBoleta(b.id);
+                                      toast.success("Boleta anulada");
                                     })
                                   }
                                 >
@@ -741,7 +743,10 @@ export function BoletasTabla({
               disabled={pendiente}
               onClick={() =>
                 iniciar(async () => {
-                  if (porEliminar) await eliminarBoleta(porEliminar.id);
+                  if (porEliminar) {
+                    await eliminarBoleta(porEliminar.id);
+                    toast.success("Boleta eliminada");
+                  }
                   setPorEliminar(null);
                 })
               }
@@ -1008,8 +1013,13 @@ function PagoDialog({
             onClick={() =>
               iniciar(async () => {
                 const r = await registrarPago(boleta.id, Number(monto || 0));
-                if (r.ok) onCerrar();
-                else setError(r.error);
+                if (r.ok) {
+                  toast.success("Pago registrado");
+                  onCerrar();
+                } else {
+                  setError(r.error);
+                  toast.error(r.error);
+                }
               })
             }
           >

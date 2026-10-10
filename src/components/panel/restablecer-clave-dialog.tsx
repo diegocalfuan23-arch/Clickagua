@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "sonner";
 import { useState, useTransition } from "react";
 import { Check, Copy, Loader2, RefreshCw } from "lucide-react";
 import { restablecerClaveSocio } from "@/app/panel/socios/actions";
@@ -40,6 +41,7 @@ export function RestablecerClaveDialog({
   async function copiar() {
     try {
       await navigator.clipboard.writeText(clave);
+      toast.success("Clave copiada");
       setCopiada(true);
       setTimeout(() => setCopiada(false), 2000);
     } catch {
@@ -51,8 +53,13 @@ export function RestablecerClaveDialog({
     setError(null);
     iniciar(async () => {
       const r = await restablecerClaveSocio(socio.id, clave);
-      if (r.ok) setHecho(true);
-      else setError(r.error);
+      if (r.ok) {
+        setHecho(true);
+        toast.success(`Clave de ${socio.nombre} restablecida`);
+      } else {
+        setError(r.error);
+        toast.error(r.error);
+      }
     });
   }
 

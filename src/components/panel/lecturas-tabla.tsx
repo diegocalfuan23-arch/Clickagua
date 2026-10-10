@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "sonner";
 import { useActionState, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -645,8 +646,10 @@ function FilaLectura({
                 iniciar(async () => {
                   setError(null);
                   const r = await aprobarLectura(l.id);
-                  if (r.ok) onAprobada();
-                  else if (r.codigo === "PRIMERA_LECTURA") onConfirmar("primera");
+                  if (r.ok) {
+                    toast.success("Lectura aprobada");
+                    onAprobada();
+                  } else if (r.codigo === "PRIMERA_LECTURA") onConfirmar("primera");
                   else if (r.codigo === "LECTURA_MENOR") onConfirmar("menor");
                   else setError(r.error);
                 });
@@ -776,6 +779,9 @@ function AprobarListasDialog({
                   const r = await aprobarLecturasListas(listas.map((l) => l.id));
                   if (!r.ok) return setError(r.error);
                   setResultado({ aprobadas: r.aprobadas, fallidas: r.fallidas });
+                  toast.success(
+                    `${r.aprobadas} ${r.aprobadas === 1 ? "lectura aprobada" : "lecturas aprobadas"}`
+                  );
                   onHecho();
                 });
               }}
@@ -910,6 +916,7 @@ function EliminarLecturaDialog({
       const r = await eliminarLectura(lectura.id, { tambienBoleta: conBoleta });
       if (r.ok) {
         setConBoleta(false);
+        toast.success("Lectura eliminada");
         onHecho();
       } else if (r.codigo === "TIENE_BOLETA") {
         setConBoleta(true);
