@@ -43,6 +43,8 @@ import {
   DropdownMenuItem,
   DropdownMenuGroup,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -185,6 +187,7 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
   const [soloConTelefono, setSoloConTelefono] = useState(false);
   const [soloSinDireccion, setSoloSinDireccion] = useState(false);
   const [soloSinNumero, setSoloSinNumero] = useState(false);
+  const [tipo, setTipo] = useState<"todos" | "SOCIO" | "USUARIO">("todos");
   const [importando, setImportando] = useState(false);
   const [creando, setCreando] = useState(false);
   const [editando, setEditando] = useState<SocioFila | null>(null);
@@ -201,8 +204,14 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
   /** La dirección es opcional y suele faltar: es la ficha incompleta. */
   const listaSinDireccion = socios.filter((s) => !s.direccion);
 
+  const nSocios = socios.filter((s) => s.tipo === "SOCIO").length;
+  const nUsuarios = socios.length - nSocios;
+
   const filtrosActivos =
-    Number(soloConTelefono) + Number(soloSinDireccion) + Number(soloSinNumero);
+    Number(soloConTelefono) +
+    Number(soloSinDireccion) +
+    Number(soloSinNumero) +
+    Number(tipo !== "todos");
 
   const filtrados = useMemo(() => {
     const termino = busqueda.trim().toLowerCase();
@@ -214,6 +223,7 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
       if (soloConTelefono && !socio.telefono) return false;
       if (soloSinDireccion && socio.direccion) return false;
       if (soloSinNumero && socio.numeroCliente) return false;
+      if (tipo !== "todos" && socio.tipo !== tipo) return false;
 
       if (!termino) return true;
 
@@ -244,6 +254,7 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
     soloConTelefono,
     soloSinDireccion,
     soloSinNumero,
+    tipo,
   ]);
 
   /** Exporta lo que está filtrado, no todo: es lo que el usuario está viendo. */
@@ -483,6 +494,28 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
                 />
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuGroup>
+                  <DropdownMenuLabel>Tipo</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup
+                    value={tipo}
+                    onValueChange={(v) =>
+                      cambiarFiltro(() =>
+                        setTipo(v as "todos" | "SOCIO" | "USUARIO")
+                      )
+                    }
+                  >
+                    <DropdownMenuRadioItem value="todos">
+                      Todos ({socios.length})
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="SOCIO">
+                      Socios ({nSocios})
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="USUARIO">
+                      Usuarios ({nUsuarios})
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                  </DropdownMenuGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
                   <DropdownMenuLabel>Mostrar solo</DropdownMenuLabel>
                   <DropdownMenuCheckboxItem
                     checked={soloConTelefono}
@@ -517,6 +550,7 @@ export function SociosTabla({ socios }: { socios: SocioFila[] }) {
                         setSoloConTelefono(false);
                         setSoloSinDireccion(false);
                         setSoloSinNumero(false);
+                        setTipo("todos");
                       })
                     }
                   >
