@@ -28,9 +28,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 export type DatosConfiguracion = {
+  /** Cómo y dónde pagar: sale en cada recibo. */
+  infoPago: string | null;
   /** La dirección del comité: portal de socios y sitio. */
   slug: string | null;
   nombre: string;
@@ -488,6 +491,20 @@ export function ConfiguracionForm({
               </span>
             </span>
           </label>
+
+          <Campo
+            id="infoPago"
+            label="Cómo y dónde pagar"
+            ayuda="Sale en cada recibo y en el mensaje de WhatsApp. Ej: «Transferencia a la cuenta RUT 12.345.678-9, Banco Estado, a nombre del comité. En el comentario escribe tu número de cliente. También en efectivo en la oficina.»"
+          >
+            <Textarea
+              id="infoPago"
+              name="infoPago"
+              rows={4}
+              maxLength={600}
+              defaultValue={datos.infoPago ?? ""}
+            />
+          </Campo>
         </Bloque>
       )}
 

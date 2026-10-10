@@ -17,6 +17,7 @@ export type Categoria =
   | "Primeros pasos"
   | "Lecturas"
   | "Boletas y cobros"
+  | "Portal de socios"
   | "Equipo";
 
 export type Articulo = {
@@ -43,6 +44,10 @@ export const CATEGORIAS: { nombre: Categoria; descripcion: string }[] = [
   {
     nombre: "Boletas y cobros",
     descripcion: "De la lectura aprobada a la boleta y el pago.",
+  },
+  {
+    nombre: "Portal de socios",
+    descripcion: "Que cada socio vea su cuenta, sus recibos y te escriba.",
   },
   {
     nombre: "Equipo",
@@ -159,6 +164,39 @@ export const ARTICULOS: Articulo[] = [
     ],
   },
   {
+    slug: "completar-datos-comite",
+    titulo: "Completar los datos del comité",
+    resumen:
+      "Teléfono, dirección y cómo se paga: salen en cada recibo que le llega a tus socios.",
+    categoria: "Primeros pasos",
+    para: "Administrador",
+    minutos: 3,
+    pasos: [
+      {
+        titulo: "Abre Configuración → Comité",
+        texto:
+          "En el menú entra a Configuración. La primera sección es Comité, con los datos de tu organización.",
+      },
+      {
+        titulo: "Revisa tus datos",
+        texto:
+          "Nombre, RUT, teléfono, dirección y correo. Aparecen en las boletas y en el recibo en PDF, así que conviene que estén al día. Pulsa Guardar.",
+        nota: "Cada bloque se guarda por separado: un cambio en uno no depende de los otros.",
+      },
+      {
+        titulo: "Escribe cómo y dónde se paga",
+        texto:
+          "Ve a Configuración → Facturación y baja hasta «Cómo y dónde pagar». Escribe el banco, el tipo y número de cuenta, a nombre de quién, y si también reciben efectivo en la oficina.",
+        nota: "Pídele a quien transfiera que escriba su número de cliente en el comentario: así es más fácil saber quién pagó.",
+      },
+      {
+        titulo: "Guarda",
+        texto:
+          "Ese texto sale en cada recibo en PDF y en el mensaje de WhatsApp con el que envías la boleta.",
+      },
+    ],
+  },
+  {
     slug: "configurar-tarifas",
     titulo: "Configurar las tarifas del comité",
     resumen:
@@ -223,6 +261,76 @@ export const ARTICULOS: Articulo[] = [
         titulo: "Confirma la importación",
         texto:
           "Las cuentas quedan en el padrón. Si una cuenta ya no corresponde (fallecido, sin agua), puedes desactivarla desde Socios.",
+      },
+    ],
+  },
+  {
+    slug: "portal-de-socios",
+    titulo: "Que tus socios entren a su cuenta en línea",
+    resumen:
+      "Cada socio ve lo que debe, sus boletas y recibos en PDF, y puede escribirle al comité.",
+    categoria: "Portal de socios",
+    para: "Administrador",
+    minutos: 5,
+    pasos: [
+      {
+        titulo: "Revisa el enlace de tu comité",
+        texto:
+          "En Configuración → Comité encuentras «Tu enlace en Facilapr». El portal queda en facilapr.cl/tu-enlace/cuenta/entrar. Puedes cambiar el nombre del enlace si quieres uno más corto.",
+        nota: "Si lo cambias, el enlace anterior deja de funcionar: avísale a tus socios.",
+      },
+      {
+        titulo: "Comparte el enlace",
+        texto:
+          "Mándalo por WhatsApp o pégalo donde tus socios lo vean. El mensaje con el que envías cada boleta ya lo incluye.",
+      },
+      {
+        titulo: "El socio pide acceso",
+        texto:
+          "Entra al enlace, pulsa «Solicítala aquí» y escribe su RUT y una clave de su elección (mínimo 8 caracteres). Tiene que ser el RUT que está en tu padrón.",
+        nota: "Quien no tiene RUT en el padrón no puede pedir acceso: agrégaselo en Socios.",
+      },
+      {
+        titulo: "Tú apruebas la solicitud",
+        texto:
+          "En Solicitudes verás una tabla con cada pedido. Aprueba solo si reconoces el RUT como parte del comité; puedes rechazar con un motivo o eliminar el registro.",
+      },
+      {
+        titulo: "El socio entra y ve su cuenta",
+        texto:
+          "Con su RUT y su clave ve cuánto debe, sus boletas, el recibo en PDF de cada una, y puede escribirle al comité por el chat.",
+      },
+    ],
+  },
+  {
+    slug: "restablecer-clave-socio",
+    titulo: "Restablecer la clave de un socio",
+    resumen:
+      "Si un socio olvidó su clave, le pones una nueva desde el panel y se la entregas.",
+    categoria: "Portal de socios",
+    para: "Administrador",
+    minutos: 2,
+    pasos: [
+      {
+        titulo: "Busca al socio",
+        texto:
+          "En Socios encuentra su fila y abre el menú de los tres puntos.",
+      },
+      {
+        titulo: "Elige «Restablecer clave»",
+        texto:
+          "Solo está disponible para quien ya tiene cuenta en el portal. Si dice «Sin cuenta en el portal», todavía no ha pedido acceso.",
+      },
+      {
+        titulo: "Revisa la clave nueva",
+        texto:
+          "Se propone una clave fácil de leer. Puedes generar otra con el botón de flechas, o escribir la que quieras (mínimo 8 caracteres).",
+      },
+      {
+        titulo: "Guarda y entrégasela",
+        texto:
+          "Pulsa Guardar clave, cópiala y dásela al socio por teléfono, WhatsApp o en persona. Entra con su RUT.",
+        nota: "La clave se muestra una sola vez, y se cierran las sesiones que tuviera abiertas.",
       },
     ],
   },

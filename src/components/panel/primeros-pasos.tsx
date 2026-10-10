@@ -73,8 +73,9 @@ export async function PrimerosPasos({ apr }: { apr: Comite }) {
       id: "datos",
       titulo: "Completa los datos del comité",
       texto:
-        "Teléfono, dirección y cómo se paga. Salen en cada recibo que le llega a tus socios.",
+        "Teléfono y dirección (en Comité) y cómo se paga (en Facturación). Salen en cada recibo que le llega a tus socios.",
       href: "/panel/configuracion",
+      guia: "completar-datos-comite",
       hecho: Boolean(
         apr.telefono?.trim() && apr.direccion?.trim() && apr.infoPago?.trim()
       ),

@@ -157,6 +157,12 @@ export async function guardarFacturacion(
     return { ok: false, error: "El prefijo no puede superar 10 caracteres." };
   }
 
+  // Sale en cada recibo y en el mensaje de WhatsApp ({como_pagar}).
+  const infoPago = aTexto(formData.get("infoPago"));
+  if (infoPago && infoPago.length > 600) {
+    return { ok: false, error: "«Cómo y dónde pagar» no puede superar 600 caracteres." };
+  }
+
   await db
     .update(aprs)
     .set({
@@ -167,11 +173,13 @@ export async function guardarFacturacion(
       prefijoBoleta: prefijo || "BOL-",
       incluyeIva: formData.get("incluyeIva") === "on",
       porcentajeIva: iva,
+      infoPago,
       updatedAt: new Date(),
     })
     .where(eq(aprs.id, apr.id));
 
   revalidatePath("/panel/configuracion");
+  revalidatePath("/panel");
   return { ok: true };
 }
 

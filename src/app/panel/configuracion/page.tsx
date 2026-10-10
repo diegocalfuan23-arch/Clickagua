@@ -16,6 +16,7 @@ export default async function ConfiguracionPage() {
       resumenDatos={resumen}
       datos={{
         slug: apr.slug,
+        infoPago: apr.infoPago,
         nombre: apr.nombre,
         razonSocial: apr.razonSocial,
         rut: apr.rut,
